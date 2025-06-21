@@ -26,41 +26,41 @@ const categories = [
 ];
 
 const popularCategoriesWithSubs = [
-  {
-    name: 'Land',
-    icon: LandPlot,
-    subcategories: ['Land for Sale', 'Land for Rent'],
-  },
-  {
-    name: 'Property',
-    icon: HomeIcon,
-    subcategories: ['Houses & Apartments for Rent', 'Commercial Property for Sale', 'Event Centres & Venues'],
-  },
-  {
-    name: 'Vehicles',
-    icon: Car,
-    subcategories: ['Cars', 'Buses & Microbuses', 'Trucks & Trailers', 'Vehicle Parts & Accessories'],
-  },
-  {
-    name: 'Electronics',
-    icon: Sparkles,
-    subcategories: ['Phones', 'Laptops', 'TVs', 'Gaming', 'Accessories'],
-  },
-  {
-    name: 'Jobs',
-    icon: Briefcase,
-    subcategories: ['IT & Tech', 'Sales & Marketing', 'Health & Beauty', 'Remote Jobs'],
-  },
-  {
-    name: 'Fashion',
-    icon: Shirt,
-    subcategories: ['Clothing', 'Shoes', 'Jewelry & Watches', 'Bags'],
-  },
-  {
-    name: 'Services',
-    icon: Wrench,
-    subcategories: ['Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Events & Catering'],
-  },
+    {
+        name: 'Land',
+        icon: LandPlot,
+        subcategories: ['Land for Sale', 'Land for Rent'],
+    },
+    {
+        name: 'Property',
+        icon: HomeIcon,
+        subcategories: ['Houses & Apartments for Rent', 'Commercial Property for Sale', 'Event Centres & Venues'],
+    },
+    {
+        name: 'Vehicles',
+        icon: Car,
+        subcategories: ['Cars', 'Buses & Microbuses', 'Trucks & Trailers', 'Vehicle Parts & Accessories'],
+    },
+    {
+        name: 'Electronics',
+        icon: Sparkles,
+        subcategories: ['Phones', 'Laptops', 'TVs', 'Gaming', 'Accessories'],
+    },
+    {
+        name: 'Jobs',
+        icon: Briefcase,
+        subcategories: ['IT & Tech', 'Sales & Marketing', 'Health & Beauty', 'Remote Jobs'],
+    },
+    {
+        name: 'Fashion',
+        icon: Shirt,
+        subcategories: ['Clothing', 'Shoes', 'Jewelry & Watches', 'Bags'],
+    },
+    {
+        name: 'Services',
+        icon: Wrench,
+        subcategories: ['Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Events & Catering'],
+    },
 ];
 
 
@@ -421,13 +421,15 @@ export default function Home() {
                 {/* --- Subcategories --- */}
                 <div className="hidden lg:block mb-10">
                     <h3 className="text-2xl font-bold mb-6">{activeCategory?.name}</h3>
-                    <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+                     <ul className="space-y-4">
                         {activeCategory?.subcategories.map(sub => (
-                            <Link key={sub} href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`} className="text-muted-foreground hover:text-primary hover:underline">
+                           <li key={sub}>
+                             <Link href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`} className="text-muted-foreground hover:text-primary text-lg">
                                 {sub}
-                            </Link>
+                             </Link>
+                           </li>
                         ))}
-                    </div>
+                    </ul>
                 </div>
 
               {/* --- Recent Listings --- */}
