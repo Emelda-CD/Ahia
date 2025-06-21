@@ -37,9 +37,10 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   
-  const [modalView, setModalView] = useState<'lga' | 'village' | 'community'>('lga');
+  const [modalView, setModalView] = useState<'lga' | 'village' | 'community' | 'autonomousCommunity'>('lga');
   const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
   const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,12 +59,21 @@ export default function Home() {
   };
   
   const handleCommunitySelect = (community: string) => {
-    setLocation(community);
+    setSelectedCommunity(community);
+    setModalView('autonomousCommunity');
+    setModalSearch('');
+  };
+
+  const handleAutonomousCommunitySelect = (autoCommunity: string) => {
+    setLocation(autoCommunity);
     setIsModalOpen(false);
   };
 
   const handleBack = () => {
-    if (modalView === 'community') {
+    if (modalView === 'autonomousCommunity') {
+      setModalView('community');
+      setSelectedCommunity(null);
+    } else if (modalView === 'community') {
       setModalView('village');
       setSelectedVillage(null);
     } else if (modalView === 'village') {
@@ -77,18 +87,22 @@ export default function Home() {
     setModalView('lga');
     setSelectedLGA(null);
     setSelectedVillage(null);
+    setSelectedCommunity(null);
     setModalSearch('');
   }
 
   const lgaList = Object.keys(locations).filter(lga => lga.toLowerCase().includes(modalSearch.toLowerCase()));
-  const villageList = selectedLGA ? Object.keys(locations[selectedLGA]).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
-  const communityList = selectedLGA && selectedVillage ? locations[selectedLGA][selectedVillage].filter(c => c.toLowerCase().includes(modalSearch.toLowerCase())) : [];
-  
+  const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  const communityList = selectedLGA && selectedVillage ? Object.keys(locations[selectedLGA]?.[selectedVillage] || {}).filter(c => c.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  const autonomousCommunityList = selectedLGA && selectedVillage && selectedCommunity ? (locations[selectedLGA]?.[selectedVillage]?.[selectedCommunity] || []).filter(ac => ac.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+
   let modalTitle = 'Select a Local Government';
   if (modalView === 'village' && selectedLGA) {
     modalTitle = `Select a Village in ${selectedLGA}`;
   } else if (modalView === 'community' && selectedVillage) {
     modalTitle = `Select a Community in ${selectedVillage}`;
+  } else if (modalView === 'autonomousCommunity' && selectedCommunity) {
+    modalTitle = `Select an Autonomous Community in ${selectedCommunity}`;
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +133,7 @@ export default function Home() {
   
   return (
     <>
-      <section className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white py-20 sm:py-32">
+      <section className="bg-[linear-gradient(135deg,_#7928CA_0%,_#FF0080_100%)] text-white py-20 sm:py-32">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
             Welcome to Ahia
@@ -167,6 +181,9 @@ export default function Home() {
                         ))}
                         {modalView === 'community' && communityList.map(community => (
                             <Button key={community} variant="outline" onClick={() => handleCommunitySelect(community)}>{community}</Button>
+                        ))}
+                        {modalView === 'autonomousCommunity' && autonomousCommunityList.map(autoCommunity => (
+                            <Button key={autoCommunity} variant="outline" onClick={() => handleAutonomousCommunitySelect(autoCommunity)}>{autoCommunity}</Button>
                         ))}
                     </div>
                 </DialogContent>
