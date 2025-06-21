@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,10 @@ const recentListings = [
     { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
 ];
 
-const searchSampleData = ['Apple', 'Banana', 'Orange', 'Grapes', 'Pineapple', 'Toyota Camry', 'iPhone 13', '3-Bedroom Flat', 'Lexus'];
+const searchSampleData = [
+    'iPhone 14 Pro', 'Toyota Camry 2020', '3-Bedroom Flat in Lekki', 'Lexus RX 350', 'Honda Accord', 'HP Spectre x360', 'Digital Marketing Expert', 'Office Space for Rent', 'Samsung Galaxy S23', 'MacBook Pro M2', 'Land in Ibeju-Lekki', 'Toyota Corolla', 'Job Vacancy for Accountant', 'Used iPhone 12', 'Honda CR-V'
+];
+
 
 type SearchResult = {
   level: 1 | 2 | 3;
@@ -45,22 +48,24 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   
-  const [modalView, setModalView] = useState<'lga' | 'village' | 'town'>('lga');
+  const [modalView, setModalView] = useState<'lga' | 'community' | 'town'>('lga');
   const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
-  const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<{ exact: string[]; similar: string[] }>({ exact: [], similar: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
-    setModalView('village');
+    setModalView('community');
     setModalSearch('');
   };
 
-  const handleVillageSelect = (village: string) => {
-    setSelectedVillage(village);
+  const handleCommunitySelect = (community: string) => {
+    setSelectedCommunity(community);
     setModalView('town');
     setModalSearch('');
   };
@@ -72,8 +77,8 @@ export default function Home() {
 
   const handleBack = () => {
     if (modalView === 'town') {
-        setModalView('village');
-    } else if (modalView === 'village') {
+        setModalView('community');
+    } else if (modalView === 'community') {
       setModalView('lga');
     }
     setModalSearch('');
@@ -82,19 +87,19 @@ export default function Home() {
   const resetModal = () => {
     setModalView('lga');
     setSelectedLGA(null);
-    setSelectedVillage(null);
+    setSelectedCommunity(null);
     setModalSearch('');
   }
 
   const lgaList = Object.keys(locations);
-  const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}) : [];
-  const townList = selectedLGA && selectedVillage ? (locations[selectedLGA]?.[selectedVillage] || []) : [];
+  const communityList = selectedLGA ? Object.keys(locations[selectedLGA] || {}) : [];
+  const townList = selectedLGA && selectedCommunity ? (locations[selectedLGA]?.[selectedCommunity] || []) : [];
 
   let modalTitle = 'Select a Local Government Area';
-  if (modalView === 'village' && selectedLGA) {
+  if (modalView === 'community' && selectedLGA) {
     modalTitle = `Select a Community in ${selectedLGA}`;
-  } else if (modalView === 'town' && selectedVillage) {
-    modalTitle = `Select a Town in ${selectedVillage}`;
+  } else if (modalView === 'town' && selectedCommunity) {
+    modalTitle = `Select a Town in ${selectedCommunity}`;
   }
   
   const searchResults = useMemo<SearchResult[]>(() => {
@@ -107,14 +112,14 @@ export default function Home() {
       if (lga.toLowerCase().includes(query)) {
         results.push({ level: 1, name: lga });
       }
-      for (const village in locations[lga]) {
-        if (village.toLowerCase().includes(query)) {
-          results.push({ level: 2, name: village, parent: lga });
+      for (const community in locations[lga]) {
+        if (community.toLowerCase().includes(query)) {
+          results.push({ level: 2, name: community, parent: lga });
         }
-        const towns = locations[lga][village];
+        const towns = locations[lga][community];
         for (const town of towns) {
           if (town.toLowerCase().includes(query)) {
-            results.push({ level: 3, name: town, parent: village, grandparent: lga });
+            results.push({ level: 3, name: town, parent: community, grandparent: lga });
           }
         }
       }
@@ -126,19 +131,38 @@ export default function Home() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    if (query.length > 0) {
-      const filteredSuggestions = searchSampleData.filter(item =>
-        item.toLowerCase().includes(query.toLowerCase())
-      );
-      setSuggestions(filteredSuggestions);
-    } else {
-      setSuggestions([]);
+
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
     }
+
+    if (query.length === 0) {
+      setSuggestions({ exact: [], similar: [] });
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    searchTimeout.current = setTimeout(() => {
+      const lowerCaseQuery = query.toLowerCase();
+      
+      const exactMatches = searchSampleData.filter(item =>
+        item.toLowerCase().startsWith(lowerCaseQuery)
+      );
+      
+      const similarMatches = searchSampleData.filter(item =>
+        item.toLowerCase().includes(lowerCaseQuery) && !item.toLowerCase().startsWith(lowerCaseQuery)
+      );
+
+      setSuggestions({ exact: exactMatches, similar: similarMatches });
+      setIsSearching(false);
+    }, 300); // 300ms debounce
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setSearchQuery(suggestion);
-    setSuggestions([]);
+    setSuggestions({ exact: [], similar: [] });
     router.push(`/listings?q=${encodeURIComponent(suggestion)}`);
   };
 
@@ -195,11 +219,11 @@ export default function Home() {
                         searchResults.length > 0 ? (
                            searchResults.map((result, index) => {
                             if (result.level === 1) {
-                              return <Button key={`${result.name}-${index}`} variant="outline" onClick={() => handleLgaSelect(result.name)}>{result.name}</Button>
+                              return <Button key={`${result.name}-${index}`} variant="outline" onClick={() => { setSelectedLGA(result.name); setModalView('community'); setModalSearch(''); }}>{result.name}</Button>
                             }
                             if (result.level === 2 && result.parent) {
                               return (
-                                <Button key={`${result.name}-${index}`} variant="outline" className="text-left h-auto py-2" onClick={() => { setSelectedLGA(result.parent!); handleVillageSelect(result.name); }}>
+                                <Button key={`${result.name}-${index}`} variant="outline" className="text-left h-auto py-2" onClick={() => { setSelectedLGA(result.parent!); handleCommunitySelect(result.name); }}>
                                   {result.name}
                                   <span className="text-xs text-muted-foreground block w-full">in {result.parent}</span>
                                 </Button>
@@ -223,8 +247,8 @@ export default function Home() {
                           {modalView === 'lga' && lgaList.map(lga => (
                               <Button key={lga} variant="outline" onClick={() => handleLgaSelect(lga)}>{lga}</Button>
                           ))}
-                          {modalView === 'village' && villageList.map(village => (
-                              <Button key={village} variant="outline" onClick={() => handleVillageSelect(village)}>{village}</Button>
+                          {modalView === 'community' && communityList.map(community => (
+                              <Button key={community} variant="outline" onClick={() => handleCommunitySelect(community)}>{community}</Button>
                           ))}
                            {modalView === 'town' && townList.map(town => (
                               <Button key={town} variant="outline" onClick={() => handleTownSelect(town)}>{town}</Button>
@@ -235,32 +259,56 @@ export default function Home() {
                 </DialogContent>
               </Dialog>
 
-              <form onSubmit={handleSearchSubmit} className="flex-grow w-full sm:w-auto flex items-center gap-2">
-                <div className="relative flex-grow w-full" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setSuggestions([]); } }}>
+              <form onSubmit={handleSearchSubmit} className="relative flex-grow w-full sm:w-auto">
+                 <div className="relative w-full" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setSuggestions({ exact: [], similar: [] }); setIsSearching(false); } }}>
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                   <Input
                     type="text"
-                    placeholder="Search listings..."
-                    className="pl-12 h-14 text-lg w-full rounded-md shadow-md"
+                    placeholder="Search for cars, phones, jobs..."
+                    className="pl-12 pr-28 h-14 text-lg w-full rounded-md shadow-md"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onFocus={handleSearchChange}
+                    autoComplete="off"
                   />
-                  {suggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-20 text-black">
-                          {suggestions.map((item) => (
-                          <div
-                              key={item}
-                              className="p-3 hover:bg-secondary/20 cursor-pointer text-left"
-                              onMouseDown={() => handleSuggestionClick(item)}
-                          >
-                              {item}
-                          </div>
-                          ))}
+                  {(isSearching || suggestions.exact.length > 0 || suggestions.similar.length > 0) && searchQuery.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-20 text-black max-h-80 overflow-y-auto">
+                          {isSearching && <div className="p-3 text-muted-foreground">Searching...</div>}
+                          
+                          {!isSearching && suggestions.exact.length > 0 && (
+                            suggestions.exact.map((item) => (
+                            <div
+                                key={item}
+                                className="p-3 hover:bg-secondary cursor-pointer text-left"
+                                onMouseDown={() => handleSuggestionClick(item)}
+                            >
+                                {item}
+                            </div>
+                            ))
+                          )}
+                          
+                          {!isSearching && suggestions.exact.length === 0 && suggestions.similar.length > 0 && (
+                            <>
+                                <div className="p-3 text-sm text-muted-foreground border-b">No exact match found. Did you mean:</div>
+                                {suggestions.similar.map((item) => (
+                                    <div
+                                        key={item}
+                                        className="p-3 hover:bg-secondary cursor-pointer text-left"
+                                        onMouseDown={() => handleSuggestionClick(item)}
+                                    >
+                                        {item}
+                                    </div>
+                                ))}
+                            </>
+                          )}
+                          
+                          {!isSearching && suggestions.exact.length === 0 && suggestions.similar.length === 0 && (
+                            <div className="p-3 text-muted-foreground">No results found.</div>
+                          )}
                       </div>
                   )}
                 </div>
-                <Button type="submit" size="lg" className="h-14 w-auto text-lg shadow-md">
+                <Button type="submit" size="lg" className="absolute right-0 top-0 h-14 w-auto text-lg shadow-md rounded-l-none">
                   <Search className="h-5 w-5 md:hidden" />
                   <span className="hidden md:inline">Search</span>
                 </Button>
