@@ -82,9 +82,9 @@ export default function Home() {
   const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
   const townList = selectedLGA && selectedVillage ? (locations[selectedLGA]?.[selectedVillage] || []).filter(t => t.toLowerCase().includes(modalSearch.toLowerCase())) : [];
 
-  let modalTitle = 'Select a Local Government';
+  let modalTitle = 'Select a Local Government Area';
   if (modalView === 'village' && selectedLGA) {
-    modalTitle = `Select a Village in ${selectedLGA}`;
+    modalTitle = `Select a Community in ${selectedLGA}`;
   } else if (modalView === 'town' && selectedVillage) {
     modalTitle = `Select a Town in ${selectedVillage}`;
   }
