@@ -5,13 +5,12 @@ import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, ChevronRight, LandPlot } from 'lucide-react';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, LandPlot } from 'lucide-react';
 import Link from 'next/link';
 import { locations } from '@/lib/locations';
-import Image from 'next/image';
 
 const categories = [
   { name: 'Land', icon: LandPlot, color: 'bg-teal-100 text-teal-600' },
@@ -69,6 +68,8 @@ const recentListings = [
     { id: '5', title: 'Mountain Bike', price: '250,000', location: 'Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'mountain bike'},
     { id: '4', title: 'Graphic Design Services', price: 'Negotiable', location: 'Remote', image: 'https://placehold.co/600x400.png', data_ai_hint: 'graphic design'},
     { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
+    { id: '1', title: 'Clean Toyota Camry 2019', price: '12,500,000', location: 'Lekki, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota camry' },
+    { id: '2', title: 'Luxury 3-Bedroom Flat for Rent', price: '3,500,000', location: 'Ikeja, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'modern apartment' },
 ];
 
 const searchSampleData = [
@@ -98,10 +99,6 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<{ exact: string[]; similar: string[] }>({ exact: [], similar: [] });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-
-  const activeCategoryData = useMemo(() => popularCategoriesWithSubs.find(c => c.name === activeCategory), [activeCategory]);
-
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
@@ -364,116 +361,74 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-24">
+      <section className="bg-secondary/40 py-16 sm:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Popular Categories</h2>
-          
-           {/* Mobile & Tablet View */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-4 sm:gap-6 lg:hidden">
-            {categories.map((category) => (
-              <Link href="#" key={category.name}>
-                <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
-                  <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${category.color}`}>
-                      <category.icon className="w-8 h-8"/>
-                    </div>
-                    <span className="font-semibold text-sm mt-2">{category.name}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8">
+            
+            {/* ----- LEFT COLUMN: CATEGORIES ----- */}
+            <div className="lg:col-span-3">
+              <h2 className="text-2xl font-bold mb-6">Browse by Category</h2>
+              
+              {/* Mobile/Tablet Category Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden">
+                {categories.map((category) => (
+                   <Link href={`/listings?category=${encodeURIComponent(category.name)}`} key={category.name}>
+                    <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
+                      <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${category.color}`}>
+                          <category.icon className="w-8 h-8"/>
+                        </div>
+                        <span className="font-semibold text-sm mt-2">{category.name}</span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+              
+              {/* Desktop Category List */}
+              <div className="hidden lg:block">
+                <Card>
+                  <CardContent className="p-2">
+                    <ul className="space-y-1">
+                      {popularCategoriesWithSubs.map((category) => (
+                        <li key={category.name}>
+                          <Link 
+                            href={`/listings?category=${encodeURIComponent(category.name)}`}
+                            className="flex items-center gap-3 p-3 rounded-md hover:bg-secondary text-foreground/80 hover:text-foreground font-medium"
+                          >
+                            <category.icon className="w-5 h-5" />
+                            <span>{category.name}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
-          </div>
-
-          {/* Desktop View */}
-          <div className="hidden lg:grid grid-cols-4 gap-6" onMouseLeave={() => setActiveCategory(null)}>
-            {/* Sidebar */}
-            <div className="col-span-1">
-              <ul className="space-y-1 border rounded-lg p-2 h-full">
-                {popularCategoriesWithSubs.map((category) => (
-                  <li key={category.name}
-                      onMouseEnter={() => setActiveCategory(category.name)}
-                      className="flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-secondary text-foreground/80 hover:text-foreground font-medium"
-                  >
-                    <div className="flex items-center gap-3">
-                        <category.icon className="w-5 h-5" />
-                        <span>{category.name}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4" />
-                  </li>
-                ))}
-              </ul>
+              </div>
+            </div>
+            
+            {/* ----- RIGHT COLUMN: RECENT LISTINGS ----- */}
+            <div className="lg:col-span-9 mt-16 lg:mt-0">
+              <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Recent Listings</h2>
+                  <Button asChild variant="outline" className="hidden sm:flex">
+                    <Link href="/listings">View All</Link>
+                  </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {recentListings.map((ad) => (
+                    <AdCard key={ad.id} {...ad} />
+                  ))}
+              </div>
+              
+              <div className="text-center mt-8 sm:hidden">
+                  <Button size="lg" asChild variant="outline">
+                    <Link href="/listings">View All Listings</Link>
+                  </Button>
+              </div>
             </div>
 
-            {/* Subcategory Panel & Content */}
-            <div className="col-span-3" onMouseEnter={() => activeCategoryData && setActiveCategory(activeCategoryData.name)}>
-                {activeCategoryData ? (
-                    <div className="grid grid-cols-3 gap-6 h-full">
-                        {/* Subcategory "Sidebar" */}
-                        <div className="col-span-1">
-                            <div className="border rounded-lg p-2 h-full bg-card">
-                                <h3 className="text-lg font-bold mb-4 px-3 pt-2">{activeCategoryData.name}</h3>
-                                <ul className="space-y-1">
-                                {activeCategoryData.subcategories.map((sub) => (
-                                    <li key={sub}>
-                                    <Link 
-                                        href={`/listings?category=${encodeURIComponent(activeCategoryData.name)}&sub=${encodeURIComponent(sub)}`}
-                                        className="flex items-center justify-between p-3 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-sm"
-                                    >
-                                      <span>{sub}</span>
-                                      <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                    </li>
-                                ))}
-                                </ul>
-                            </div>
-                        </div>
-                         {/* Content for active category */}
-                        <div className="col-span-2 relative w-full h-full bg-secondary rounded-lg overflow-hidden">
-                            <Image 
-                                src={`https://placehold.co/600x400.png`}
-                                alt={`${activeCategoryData.name} Ads`}
-                                fill
-                                className="object-cover"
-                                data-ai-hint="products sale" 
-                            />
-                            <div className="absolute inset-0 bg-black/10 flex items-end justify-start p-6">
-                                <h3 className="text-white text-2xl font-semibold">Top deals in {activeCategoryData.name}</h3>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* Default Content */
-                    <div className="relative w-full h-[350px] bg-secondary rounded-lg overflow-hidden">
-                        <Image 
-                            src="https://placehold.co/800x450.png" 
-                            alt="Featured Ads" 
-                            fill
-                            className="object-cover"
-                            data-ai-hint="marketplace products" 
-                        />
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        <p className="text-white text-2xl font-semibold">Hover over a category to see more</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      <section className="bg-card py-16 sm:py-24">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Recent Listings</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {recentListings.map((ad) => (
-              <AdCard key={ad.id} {...ad} />
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Button size="lg" asChild variant="outline">
-              <Link href="/listings">View All Listings</Link>
-            </Button>
           </div>
         </div>
       </section>
