@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, LandPlot } from 'lucide-react';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, LandPlot, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { locations } from '@/lib/locations';
+import { cn } from '@/lib/utils';
 
 const categories = [
   { name: 'Land', icon: LandPlot, color: 'bg-teal-100 text-teal-600' },
@@ -99,6 +100,8 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<{ exact: string[]; similar: string[] }>({ exact: [], similar: [] });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0]>(popularCategoriesWithSubs[0]);
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
@@ -391,13 +394,19 @@ export default function Home() {
                   <CardContent className="p-2">
                     <ul className="space-y-1">
                       {popularCategoriesWithSubs.map((category) => (
-                        <li key={category.name}>
+                        <li key={category.name} onMouseEnter={() => setActiveCategory(category)}>
                           <Link 
                             href={`/listings?category=${encodeURIComponent(category.name)}`}
-                            className="flex items-center gap-3 p-3 rounded-md hover:bg-secondary text-foreground/80 hover:text-foreground font-medium"
+                             className={cn(
+                                "flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium",
+                                activeCategory?.name === category.name ? 'bg-secondary text-foreground' : 'hover:bg-secondary'
+                            )}
                           >
-                            <category.icon className="w-5 h-5" />
-                            <span>{category.name}</span>
+                            <div className="flex items-center gap-3">
+                                <category.icon className="w-5 h-5" />
+                                <span>{category.name}</span>
+                            </div>
+                            <ChevronRight className="w-4 h-4" />
                           </Link>
                         </li>
                       ))}
@@ -407,8 +416,21 @@ export default function Home() {
               </div>
             </div>
             
-            {/* ----- RIGHT COLUMN: RECENT LISTINGS ----- */}
+            {/* ----- RIGHT COLUMN: SUBCATEGORIES + RECENT LISTINGS ----- */}
             <div className="lg:col-span-9 mt-16 lg:mt-0">
+                {/* --- Subcategories --- */}
+                <div className="hidden lg:block mb-10">
+                    <h3 className="text-2xl font-bold mb-6">{activeCategory?.name}</h3>
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+                        {activeCategory?.subcategories.map(sub => (
+                            <Link key={sub} href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`} className="text-muted-foreground hover:text-primary hover:underline">
+                                {sub}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+              {/* --- Recent Listings --- */}
               <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold">Recent Listings</h2>
                   <Button asChild variant="outline" className="hidden sm:flex">
