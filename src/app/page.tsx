@@ -265,7 +265,7 @@ export default function Home() {
                   <Input
                     type="text"
                     placeholder="Search for cars, phones, jobs..."
-                    className="pl-12 pr-28 h-14 text-lg w-full rounded-md shadow-md"
+                    className="pl-12 pr-28 h-14 text-lg w-full rounded-md shadow-md text-black"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onFocus={handleSearchChange}
