@@ -236,7 +236,7 @@ export default function Home() {
                    }
                 }}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="h-14 text-lg w-full sm:w-auto justify-between shadow-md mb-2 sm:mb-0 sm:mr-2">
+                  <Button variant="secondary" className="h-14 text-lg w-full sm:w-auto justify-between shadow-md mb-2 sm:mb-0 sm:mr-2 text-black">
                     {location}
                     <ChevronDown className="ml-2 h-5 w-5" />
                   </Button>
@@ -370,7 +370,7 @@ export default function Home() {
             
             {/* ----- LEFT COLUMN: CATEGORIES ----- */}
             <div className="lg:col-span-3">
-              <h2 className="text-2xl font-bold mb-6">Browse by Category</h2>
+              <h2 className="text-2xl font-bold mb-6 hidden lg:block">Browse by Category</h2>
               
               {/* Mobile/Tablet Category Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden">
@@ -421,24 +421,34 @@ export default function Home() {
                 <div className="hidden lg:flex lg:gap-8">
                     {/* --- Subcategories Sidebar --- */}
                     <div className="w-1/3 flex-shrink-0">
-                        <h3 className="text-2xl font-bold mb-6 h-8">{activeCategory?.name}</h3>
-                        <div className="pr-4">
-                            <ul className="space-y-4">
-                                {activeCategory?.subcategories.map(sub => (
-                                <li key={sub}>
-                                    <Link href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`} className="text-muted-foreground hover:text-primary text-lg">
-                                        {sub}
-                                    </Link>
-                                </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <h3 className="text-2xl font-bold mb-6 h-8 flex items-center">
+                            {activeCategory?.name}
+                        </h3>
+                        {activeCategory && (
+                            <Card>
+                                <CardContent className="p-2">
+                                    <ul className="space-y-1">
+                                        {activeCategory.subcategories.map((sub) => (
+                                            <li key={sub}>
+                                                <Link
+                                                    href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
+                                                    className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
+                                                >
+                                                    <span>{sub}</span>
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     {/* --- Recent Listings --- */}
                     <div className="flex-grow">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold">Recent Listings</h2>
+                            <h2 className="text-2xl font-bold h-8 flex items-center">Recent Listings</h2>
                             <Button asChild variant="outline">
                                 <Link href="/listings">View All</Link>
                             </Button>
@@ -480,5 +490,3 @@ export default function Home() {
     </>
   );
 }
-
-    
