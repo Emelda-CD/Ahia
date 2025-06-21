@@ -140,7 +140,8 @@ export const locations: Record<string, Record<string, string[]>> = {
     ],
     "Orba-Road": [
       "Highway-hamlet-1","Highway-hamlet-2"
-    ]
+    ],
+    "Ovoko": ["Ovoko-Ulo", "Ovoko-Agu", "Ovoko-Eke"]
   },
   "Udi": {
     "Udi Urban": ["Udi-Town", "Udi-Siding", "Udi-Station", "Udi-Central"],
