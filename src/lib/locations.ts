@@ -113,30 +113,33 @@ export const locations: Record<string, Record<string, string[]>> = {
   },
   "Udenu": {
     "Orba": [
-      "Agu Orba",
-      "Ajuona",
-      "Amalla",
-      "Amaoba",
-      "Oham",
-      "Ohebe-Orba",
-      "Owerri Amagu",
-      "Owerri-Ezeorba",
-      "Owerri-Okpu",
-      "Umu-Ugwu",
-      "Umunkpume"
+      "Agu Orba","Ajuona","Amalla","Amaoba","Oham",
+      "Ohebe-Orba","Owerri-Amagu","Owerri-Ezeorba",
+      "Owerri-Okpu","Umu-Ugwu","Umunkpume"
     ],
     "Obollo-Afor": [
-      "Agu-Afor",
-      "Oblukpa",
-      "Amankwa",
-      "Umueze",
-      "Ugwuoba"
+      "Agu-Afor","Obollo-Afor","Umueze","Ugwuoba"
     ],
     "Ezimo-Uno": [
-      "Ezi-Agu",
-      "Ezi-Uno",
-      "Obilo",
-      "Umuneke"
+      "Ezimo-Agu","Ezimo-Uno","Obilo","Umuneke"
+    ],
+    "Imilike-Uno": [
+      "Imilike-Uno","Ezi-Uwani"
+    ],
+    "Imilike-Agu": [
+      "Imilike-Agu"
+    ],
+    "Obollo-Etiti": [
+      "Obollo-Etiti","Umu-Okoye"
+    ],
+    "Obollo-Eke": [
+      "Obollo-Eke","Umu-Abosi","Umuogudu"
+    ],
+    "Obollo-Aba": [
+      "Obollo-Aba","Umu-Amadi","Umu-Odo"
+    ],
+    "Orba-Road": [
+      "Highway-hamlet-1","Highway-hamlet-2"
     ]
   },
   "Udi": {
