@@ -7,8 +7,8 @@ export const locations: Record<string, Record<string, string[]>> = {
       "Okpanku": ["Amagu", "Umu-Agbo", "Ishi-Agba", "Ama-Ofia", "Ama-Eke"]
     },
     "Awgu": {
-      "Awgu": ["Awgu-Town", "Ugwu-Ega", "Obodo-Oma", "Uhueke", "Amokwe"],
-      "Mgbowo": ["Mgbowo-I", "Mgbowo-II", "Mgbowo-III", "Inyi", "Ohaofia"],
+      "Awgu": ["Awgu Town", "Ugwu-Ega", "Obodo-Oma", "Uhueke", "Amokwe"],
+      "Mgbowo": ["Amaetiti Mgbowo", "Eziama Mgbowo", "Imama Mgbowo", "Inyi", "Ohaofia"],
       "Ogbaku": ["Achi-Uno", "Achi-Agu", "Achi-Agbo", "Achi-Eke", "Achi-Orji"],
       "Ihe": ["Ihe-Agbogugu", "Ihe-Owerre", "Ihe-Ndi-Agu", "Ihe-Ndi-Uno", "Ihe-Logu"],
       "Agbogugu": ["Agbogugu-Uno", "Agbogugu-Agu", "Amurri", "Obeagu", "Owelli"]
@@ -34,14 +34,14 @@ export const locations: Record<string, Record<string, string[]>> = {
         "Achara Layout": ["Achara Layout I", "Achara Layout II", "Idaw-River Layout"]
     },
     "Ezeagu": {
-        "Aguobu-Owa": ["Aguobu Owa I", "Aguobu Owa II", "Aguobu Owa III", "Central"],
+        "Aguobu-Owa": ["Aguobu Owa Central", "Amansii", "Okwe", "Obunofia"],
         "Imezi-Owa": ["Umudim", "Umu-Agu", "Umu-Ezike", "Umu-Oma"],
         "Umana": ["Umana Ndiuno", "Umana Ndiagu", "Umana-Oghu", "Umana-Central"],
         "Olo": ["Olo-Uno", "Olo-Agu", "Olo-Central", "Amandim"],
         "Okpogho": ["Okpogho-Uno", "Okpogho-Agu", "Okpogho-Central"]
     },
     "Igbo Etiti": {
-        "Ogbede": ["Ogbede Central", "Ogbede-Aku", "Ogbede-Ani"],
+        "Ogbede": ["Ogbede Central", "Agu-Ogbede", "Ezi-Ogbede"],
         "Ekwegbe": ["Ekwegbe-Uno", "Ekwegbe-Agu", "Ekwegbe-Eke"],
         "Ukehe": ["Ukehe-Central", "Amadim", "Ukehe-Eke", "Idoha"],
         "Ozalla": ["Ozalla-Uno", "Ozalla-Agu", "Ozalla-Eke"],
@@ -98,7 +98,19 @@ export const locations: Record<string, Record<string, string[]>> = {
     },
     "Udenu": {
         "Obollo-Afor": ["Obollo-Afor Market", "Amalla", "Umu-Enyi", "Afor-Opi"],
-        "Orba": ["Orba-Uno", "Orba-Agu", "Orba-Eke", "Orba-Central"],
+        "Orba": [
+            "Agu Orba",
+            "Ajuona",
+            "Amalla",
+            "Amaoba",
+            "Oham",
+            "Ohebe-Orba",
+            "Owerri Amagu",
+            "Owerri-Ezeorba",
+            "Owerri-Okpu",
+            "Umu-Ugwu",
+            "Umunkpume"
+        ],
         "Imilike": ["Imilike-Ani", "Imilike-Agu", "Imilike-Eke"],
         "Ezimo": ["Ezimo-Uno", "Ezimo-Agu", "Ezimo-Eke"],
         "Obollo-Eke": ["Obollo-Eke Uno", "Obollo-Eke Agu", "Obollo-Eke Central"]
