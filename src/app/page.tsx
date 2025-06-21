@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,6 +102,8 @@ export default function Home() {
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0] | null>(null);
+  const popularCategoriesSectionRef = useRef<HTMLElement>(null);
+
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
@@ -216,6 +218,18 @@ export default function Home() {
       router.push(`/listings?q=${encodeURIComponent(searchQuery)}`);
     }
   };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (popularCategoriesSectionRef.current && !popularCategoriesSectionRef.current.contains(event.target as Node)) {
+        setActiveCategory(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [popularCategoriesSectionRef]);
   
   return (
     <>
@@ -364,7 +378,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-secondary/40 py-16 sm:py-24" onMouseLeave={() => setActiveCategory(null)}>
+      <section ref={popularCategoriesSectionRef} className="bg-secondary/40 py-16 sm:py-24">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8">
             
@@ -373,7 +387,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-6 hidden lg:block">Popular Categories</h2>
               
               {/* Mobile/Tablet Category Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden mb-12">
                 {categories.map((category) => (
                    <Link href={`/listings?category=${encodeURIComponent(category.name)}`} key={category.name}>
                     <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
@@ -420,22 +434,24 @@ export default function Home() {
             <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
                 {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
                 {activeCategory && (
-                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10">
-                        <div className="bg-background/90 backdrop-blur-sm rounded-lg p-2 h-full overflow-y-auto shadow-lg">
-                            <ul className="space-y-1">
-                                {activeCategory.subcategories.map((sub) => (
-                                    <li key={sub}>
-                                        <Link
-                                            href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
-                                            className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
-                                        >
-                                            <span>{sub}</span>
-                                            <ChevronRight className="w-4 h-4" />
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                    <div className="hidden lg:block absolute top-0 left-full ml-2 w-[calc(100%_/_3)] h-full z-10">
+                        <Card className="h-full">
+                            <CardContent className="p-2">
+                                <ul className="space-y-1">
+                                    {activeCategory.subcategories.map((sub) => (
+                                        <li key={sub}>
+                                            <Link
+                                                href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
+                                                className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
+                                            >
+                                                <span>{sub}</span>
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
                     </div>
                 )}
 
