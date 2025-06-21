@@ -37,10 +37,9 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   
-  const [modalView, setModalView] = useState<'lga' | 'village' | 'community' | 'town'>('lga');
+  const [modalView, setModalView] = useState<'lga' | 'village' | 'town'>('lga');
   const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
   const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
-  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,16 +53,10 @@ export default function Home() {
 
   const handleVillageSelect = (village: string) => {
     setSelectedVillage(village);
-    setModalView('community');
-    setModalSearch('');
-  };
-  
-  const handleCommunitySelect = (community: string) => {
-    setSelectedCommunity(community);
     setModalView('town');
     setModalSearch('');
   };
-
+  
   const handleTownSelect = (town: string) => {
     setLocation(town);
     setIsModalOpen(false);
@@ -71,14 +64,9 @@ export default function Home() {
 
   const handleBack = () => {
     if (modalView === 'town') {
-        setModalView('community');
-        setSelectedCommunity(null);
-    } else if (modalView === 'community') {
-      setModalView('village');
-      setSelectedVillage(null);
+        setModalView('village');
     } else if (modalView === 'village') {
       setModalView('lga');
-      setSelectedLGA(null);
     }
     setModalSearch('');
   };
@@ -87,22 +75,18 @@ export default function Home() {
     setModalView('lga');
     setSelectedLGA(null);
     setSelectedVillage(null);
-    setSelectedCommunity(null);
     setModalSearch('');
   }
 
   const lgaList = Object.keys(locations).filter(lga => lga.toLowerCase().includes(modalSearch.toLowerCase()));
   const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
-  const communityList = selectedLGA && selectedVillage ? Object.keys(locations[selectedLGA]?.[selectedVillage] || {}).filter(c => c.toLowerCase().includes(modalSearch.toLowerCase())) : [];
-  const townList = selectedLGA && selectedVillage && selectedCommunity ? (locations[selectedLGA]?.[selectedVillage]?.[selectedCommunity] || []).filter(t => t.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  const townList = selectedLGA && selectedVillage ? (locations[selectedLGA]?.[selectedVillage] || []).filter(t => t.toLowerCase().includes(modalSearch.toLowerCase())) : [];
 
   let modalTitle = 'Select a Local Government';
   if (modalView === 'village' && selectedLGA) {
     modalTitle = `Select a Village in ${selectedLGA}`;
-  } else if (modalView === 'community' && selectedVillage) {
-    modalTitle = `Select a Community in ${selectedVillage}`;
-  } else if (modalView === 'town' && selectedCommunity) {
-    modalTitle = `Select a Town in ${selectedCommunity}`;
+  } else if (modalView === 'town' && selectedVillage) {
+    modalTitle = `Select a Town in ${selectedVillage}`;
   }
 
 
@@ -179,9 +163,6 @@ export default function Home() {
                         ))}
                         {modalView === 'village' && villageList.map(village => (
                             <Button key={village} variant="outline" onClick={() => handleVillageSelect(village)}>{village}</Button>
-                        ))}
-                        {modalView === 'community' && communityList.map(community => (
-                            <Button key={community} variant="outline" onClick={() => handleCommunitySelect(community)}>{community}</Button>
                         ))}
                          {modalView === 'town' && townList.map(town => (
                             <Button key={town} variant="outline" onClick={() => handleTownSelect(town)}>{town}</Button>
