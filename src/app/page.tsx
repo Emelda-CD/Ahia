@@ -29,7 +29,7 @@ const popularCategoriesWithSubs = [
   {
     name: 'Land',
     icon: LandPlot,
-    subcategories: ['Residential Land', 'Commercial Land', 'Farmland', 'Industrial Land'],
+    subcategories: ['Land for Sale', 'Land for Rent'],
   },
   {
     name: 'Property',
