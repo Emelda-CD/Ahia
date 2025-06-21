@@ -102,7 +102,6 @@ export default function Home() {
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0] | null>(null);
-  const popularCategoriesSectionRef = useRef<HTMLElement>(null);
 
 
   const handleLgaSelect = (lga: string) => {
@@ -218,18 +217,6 @@ export default function Home() {
       router.push(`/listings?q=${encodeURIComponent(searchQuery)}`);
     }
   };
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (popularCategoriesSectionRef.current && !popularCategoriesSectionRef.current.contains(event.target as Node)) {
-        setActiveCategory(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [popularCategoriesSectionRef]);
   
   return (
     <>
@@ -378,7 +365,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section ref={popularCategoriesSectionRef} className="bg-secondary/40 py-16 sm:py-24">
+      <section className="bg-secondary/40 py-16 sm:py-24">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8">
             
@@ -434,9 +421,12 @@ export default function Home() {
             <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
                 {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
                 {activeCategory && (
-                    <div className="hidden lg:block absolute top-0 left-full ml-2 w-[calc(100%_/_3)] h-full z-10">
+                    <div className="hidden lg:block absolute top-0 left-0 w-[calc(33.33%-1rem)] h-full z-10">
                         <Card className="h-full">
-                            <CardContent className="p-2">
+                             <CardHeader className="p-4">
+                                <CardTitle className="text-xl">{activeCategory.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-2 pt-0">
                                 <ul className="space-y-1">
                                     {activeCategory.subcategories.map((sub) => (
                                         <li key={sub}>
