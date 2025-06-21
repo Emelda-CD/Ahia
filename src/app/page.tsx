@@ -5,12 +5,13 @@ import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { locations } from '@/lib/locations';
+import Image from 'next/image';
 
 const categories = [
   { name: 'Property', icon: HomeIcon, color: 'bg-purple-100 text-purple-600' },
@@ -22,6 +23,40 @@ const categories = [
   { name: 'Fashion', icon: Shirt, color: 'bg-pink-100 text-pink-600' },
   { name: 'Gaming', icon: Gamepad2, color: 'bg-indigo-100 text-indigo-600' },
 ];
+
+const popularCategoriesWithSubs = [
+  {
+    name: 'Property',
+    icon: HomeIcon,
+    subcategories: ['Land for Sale', 'Houses & Apartments for Rent', 'Commercial Property for Sale', 'Event Centres & Venues'],
+  },
+  {
+    name: 'Vehicles',
+    icon: Car,
+    subcategories: ['Cars', 'Buses & Microbuses', 'Trucks & Trailers', 'Vehicle Parts & Accessories'],
+  },
+  {
+    name: 'Electronics',
+    icon: Sparkles,
+    subcategories: ['Phones', 'Laptops', 'TVs', 'Gaming', 'Accessories'],
+  },
+  {
+    name: 'Jobs',
+    icon: Briefcase,
+    subcategories: ['IT & Tech', 'Sales & Marketing', 'Health & Beauty', 'Remote Jobs'],
+  },
+  {
+    name: 'Fashion',
+    icon: Shirt,
+    subcategories: ['Clothing', 'Shoes', 'Jewelry & Watches', 'Bags'],
+  },
+  {
+    name: 'Services',
+    icon: Wrench,
+    subcategories: ['Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Events & Catering'],
+  },
+];
+
 
 const recentListings = [
     { id: '3', title: 'Used iPhone 13', price: '300,000', location: 'Enugu', image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone 13'},
@@ -57,6 +92,10 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<{ exact: string[]; similar: string[] }>({ exact: [], similar: [] });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const activeCategoryData = useMemo(() => popularCategoriesWithSubs.find(c => c.name === activeCategory), [activeCategory]);
+
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
@@ -116,8 +155,7 @@ export default function Home() {
         if (community.toLowerCase().includes(query)) {
           results.push({ level: 2, name: community, parent: lga });
         }
-        const towns = locations[lga][community];
-        for (const town of towns) {
+        for (const town of locations[lga][community]) {
           if (town.toLowerCase().includes(query)) {
             results.push({ level: 3, name: town, parent: community, grandparent: lga });
           }
@@ -198,15 +236,17 @@ export default function Home() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                    <div className="flex items-center justify-center relative mb-4">
-                        {modalView !== 'lga' && !modalSearch.trim() && (
-                            <Button variant="ghost" onClick={handleBack} className="absolute left-0 text-sm">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back
-                            </Button>
-                        )}
-                        <DialogTitle>{modalSearch.trim() ? "Search Results" : modalTitle}</DialogTitle>
+                   <DialogHeader>
+                    <div className="flex items-center justify-center relative">
+                      {modalView !== 'lga' && !modalSearch.trim() && (
+                        <Button variant="ghost" onClick={handleBack} className="absolute left-0 text-sm p-2 h-auto">
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back
+                        </Button>
+                      )}
+                      <DialogTitle className="text-center">{modalSearch.trim() ? "Search Results" : modalTitle}</DialogTitle>
                     </div>
+                  </DialogHeader>
                     
                     <Input 
                       placeholder="Search location..." 
@@ -321,7 +361,9 @@ export default function Home() {
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Popular Categories</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-4 sm:gap-6">
+          
+           {/* Mobile & Tablet View */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-4 sm:gap-6 lg:hidden">
             {categories.map((category) => (
               <Link href="#" key={category.name}>
                 <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
@@ -335,8 +377,70 @@ export default function Home() {
               </Link>
             ))}
           </div>
+
+          {/* Desktop View */}
+          <div className="hidden lg:grid grid-cols-4 gap-6" onMouseLeave={() => setActiveCategory(null)}>
+            {/* Sidebar */}
+            <div className="col-span-1">
+              <ul className="space-y-1 border rounded-lg p-2">
+                {popularCategoriesWithSubs.map((category) => (
+                  <li key={category.name}
+                      onMouseEnter={() => setActiveCategory(category.name)}
+                      className="flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-secondary text-foreground/80 hover:text-foreground font-medium"
+                  >
+                    <div className="flex items-center gap-3">
+                        <category.icon className="w-5 h-5" />
+                        <span>{category.name}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Subcategory Panel */}
+            <div className="col-span-3 relative">
+              <div 
+                className={`absolute inset-0 bg-card rounded-lg shadow-lg border z-10 p-6 transition-all duration-300 ${activeCategoryData ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                onMouseEnter={() => setActiveCategory(activeCategoryData?.name || null)}
+              >
+                {activeCategoryData && (
+                  <div>
+                    <h3 className="text-2xl font-bold mb-6">{activeCategoryData.name}</h3>
+                    <ul className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {activeCategoryData.subcategories.map((sub) => (
+                        <li key={sub}>
+                          <Link 
+                            href={`/listings?category=${encodeURIComponent(activeCategoryData.name)}&sub=${encodeURIComponent(sub)}`}
+                            className="block p-2 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {sub}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Default Content */}
+              <div className="relative w-full h-[350px] bg-secondary rounded-lg overflow-hidden">
+                <Image 
+                  src="https://placehold.co/800x450.png" 
+                  alt="Featured Ads" 
+                  fill
+                  className="object-cover"
+                  data-ai-hint="marketplace products" 
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                  <p className="text-white text-2xl font-semibold">Hover over a category to see more</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
+
 
       <section className="bg-card py-16 sm:py-24">
         <div className="container mx-auto px-4">
