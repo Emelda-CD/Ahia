@@ -71,6 +71,16 @@ const recentListings = [
     { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
     { id: '1', title: 'Clean Toyota Camry 2019', price: '12,500,000', location: 'Lekki, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota camry' },
     { id: '2', title: 'Luxury 3-Bedroom Flat for Rent', price: '3,500,000', location: 'Ikeja, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'modern apartment' },
+    { id: '8', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Port Harcourt', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
+    { id: '9', title: 'Office Space for Lease', price: '800,000', location: 'Victoria Island', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
+    { id: '10', title: 'Honda CR-V 2018', price: '15,000,000', location: 'Maitama, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
+    { id: '11', title: 'Cute Puppy for a new home', price: '150,000', location: 'Surulere, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+    { id: '12', title: 'Brand New iPhone 14 Pro Max', price: '950,000', location: 'Wuse, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone pro' },
+    { id: '13', title: 'Digital Marketing Expert', price: 'Negotiable', location: 'Remote', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office desk' },
+    { id: '14', title: 'Samsung 55" QLED TV', price: '450,000', location: 'Ikeja, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'television living' },
+    { id: '15', title: 'Wedding Gown for Sale', price: '120,000', location: 'Asaba, Delta', image: 'https://placehold.co/600x400.png', data_ai_hint: 'wedding dress' },
+    { id: '16', title: '2-Bedroom Apartment', price: '1,200,000', location: 'Uwani, Enugu', image: 'https://placehold.co/600x400.png', data_ai_hint: 'apartment exterior' },
+    { id: '17', title: 'Honda Accord 2017', price: '9,000,000', location: 'Owerri, Imo', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda accord' },
 ];
 
 const searchSampleData = [
@@ -102,8 +112,7 @@ export default function Home() {
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0] | null>(null);
-
-
+  
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
     setModalView('community');
@@ -365,13 +374,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-secondary/40 py-16 sm:py-24">
+      <section className="bg-secondary/40 py-16 sm:py-24" onMouseLeave={() => setActiveCategory(null)}>
         <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Popular Categories</h2>
+            </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8">
             
             {/* ----- LEFT COLUMN: CATEGORIES ----- */}
             <div className="lg:col-span-3">
-              <h2 className="text-2xl font-bold mb-6 hidden lg:block">Popular Categories</h2>
               
               {/* Mobile/Tablet Category Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden mb-12">
@@ -390,8 +401,8 @@ export default function Home() {
               </div>
               
               {/* Desktop Category List */}
-              <div className="hidden lg:block">
-                <Card className="h-full">
+              <div className="hidden lg:block relative">
+                <Card className="h-full self-start">
                   <CardContent className="p-2">
                     <ul className="space-y-1">
                       {popularCategoriesWithSubs.map((category) => (
@@ -414,15 +425,11 @@ export default function Home() {
                     </ul>
                   </CardContent>
                 </Card>
-              </div>
-            </div>
-            
-            {/* ----- RIGHT COLUMN: SUBCATEGORIES + RECENT LISTINGS ----- */}
-            <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
-                {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
+                
+                 {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
                 {activeCategory && (
-                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10">
-                        <Card className="h-full">
+                    <div className="hidden lg:block absolute top-0 left-full w-full h-full z-10 ml-2">
+                         <Card className="h-full">
                             <CardContent className="p-2">
                                 <ul className="space-y-1 mt-2">
                                     {activeCategory.subcategories.map((sub) => (
@@ -441,8 +448,11 @@ export default function Home() {
                         </Card>
                     </div>
                 )}
-
-                {/* --- Recent Listings (Base Layer) --- */}
+              </div>
+            </div>
+            
+            {/* ----- RIGHT COLUMN: RECENT LISTINGS ----- */}
+            <div className="lg:col-span-9 mt-16 lg:mt-0">
                 <div className="w-full">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold">Recent Listings</h2>
@@ -464,10 +474,10 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-
           </div>
         </div>
       </section>
     </>
   );
 }
+
