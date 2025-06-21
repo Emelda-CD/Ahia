@@ -1,8 +1,13 @@
+
+"use client";
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 const categories = [
@@ -52,24 +57,59 @@ const recentListings = [
 ];
 
 export default function Home() {
+  const [location, setLocation] = useState('Enugu');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const communities = ['New Haven', 'Independence Layout', 'GRA', 'Abakpa', 'Uwani', 'Trans-Ekulu'];
+  
+  const handleLocationSelect = (community: string) => {
+    setLocation(community);
+    setIsModalOpen(false);
+  };
+
   return (
     <>
       <section className="bg-secondary/50 py-20 sm:py-32">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-6xl">
-            Welcome to Classified Ads
+            Welcome to Ahia
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
             Find or sell anything, anytime!
           </p>
-          <div className="mt-10 mx-auto max-w-2xl">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="mt-10 mx-auto max-w-3xl">
+            <div className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg shadow-lg">
+              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" className="h-14 text-lg w-full sm:w-auto justify-between sm:justify-center">
+                    {location}
+                    <ChevronDown className="ml-2 h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Select a Community</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-2">
+                    {communities.map((community) => (
+                      <Button
+                        key={community}
+                        variant="outline"
+                        onClick={() => handleLocationSelect(community)}
+                      >
+                        {community}
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <div className="relative flex-grow w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search listings..."
-                  className="pl-12 h-14 text-lg"
+                  className="pl-12 h-14 text-lg border-0 focus-visible:ring-0"
                 />
               </div>
               <Button size="lg" className="h-14 w-full sm:w-auto text-lg">
