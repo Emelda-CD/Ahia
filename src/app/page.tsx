@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,14 @@ const recentListings = [
 ];
 
 const searchSampleData = ['Apple', 'Banana', 'Orange', 'Grapes', 'Pineapple', 'Toyota Camry', 'iPhone 13', '3-Bedroom Flat', 'Lexus'];
+
+type SearchResult = {
+  level: 1 | 2 | 3;
+  name: string;
+  parent?: string;
+  grandparent?: string;
+};
+
 
 export default function Home() {
   const [location, setLocation] = useState('Enugu');
@@ -78,9 +86,9 @@ export default function Home() {
     setModalSearch('');
   }
 
-  const lgaList = Object.keys(locations).filter(lga => lga.toLowerCase().includes(modalSearch.toLowerCase()));
-  const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
-  const townList = selectedLGA && selectedVillage ? (locations[selectedLGA]?.[selectedVillage] || []).filter(t => t.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  const lgaList = Object.keys(locations);
+  const villageList = selectedLGA ? Object.keys(locations[selectedLGA] || {}) : [];
+  const townList = selectedLGA && selectedVillage ? (locations[selectedLGA]?.[selectedVillage] || []) : [];
 
   let modalTitle = 'Select a Local Government Area';
   if (modalView === 'village' && selectedLGA) {
@@ -88,6 +96,31 @@ export default function Home() {
   } else if (modalView === 'town' && selectedVillage) {
     modalTitle = `Select a Town in ${selectedVillage}`;
   }
+  
+  const searchResults = useMemo<SearchResult[]>(() => {
+    if (!modalSearch.trim()) return [];
+    
+    const query = modalSearch.trim().toLowerCase();
+    const results: SearchResult[] = [];
+
+    for (const lga in locations) {
+      if (lga.toLowerCase().includes(query)) {
+        results.push({ level: 1, name: lga });
+      }
+      for (const village in locations[lga]) {
+        if (village.toLowerCase().includes(query)) {
+          results.push({ level: 2, name: village, parent: lga });
+        }
+        const towns = locations[lga][village];
+        for (const town of towns) {
+          if (town.toLowerCase().includes(query)) {
+            results.push({ level: 3, name: town, parent: village, grandparent: lga });
+          }
+        }
+      }
+    }
+    return results;
+  }, [modalSearch]);
 
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,38 +168,69 @@ export default function Home() {
                    }
                 }}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="h-14 text-lg w-full sm:w-auto justify-between shadow-md">
+                  <Button variant="secondary" className="h-14 text-lg w-full sm:w-auto justify-between shadow-md mb-2 sm:mb-0 sm:mr-2">
                     {location}
                     <ChevronDown className="ml-2 h-5 w-5" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                     <div className="flex items-center justify-center relative mb-4">
-                        {modalView !== 'lga' && (
+                        {modalView !== 'lga' && !modalSearch.trim() && (
                             <Button variant="ghost" onClick={handleBack} className="absolute left-0 text-sm">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back
                             </Button>
                         )}
-                        <DialogTitle>{modalTitle}</DialogTitle>
+                        <DialogTitle>{modalSearch.trim() ? "Search Results" : modalTitle}</DialogTitle>
                     </div>
                     
                     <Input 
-                      placeholder="Search..." 
+                      placeholder="Search location..." 
                       value={modalSearch}
                       onChange={(e) => setModalSearch(e.target.value)}
                       className="my-2"
                     />
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-4 max-h-[60vh] overflow-y-auto">
-                        {modalView === 'lga' && lgaList.map(lga => (
-                            <Button key={lga} variant="outline" onClick={() => handleLgaSelect(lga)}>{lga}</Button>
-                        ))}
-                        {modalView === 'village' && villageList.map(village => (
-                            <Button key={village} variant="outline" onClick={() => handleVillageSelect(village)}>{village}</Button>
-                        ))}
-                         {modalView === 'town' && townList.map(town => (
-                            <Button key={town} variant="outline" onClick={() => handleTownSelect(town)}>{town}</Button>
-                        ))}
+                      {modalSearch.trim() ? (
+                        searchResults.length > 0 ? (
+                           searchResults.map((result, index) => {
+                            if (result.level === 1) {
+                              return <Button key={`${result.name}-${index}`} variant="outline" onClick={() => handleLgaSelect(result.name)}>{result.name}</Button>
+                            }
+                            if (result.level === 2 && result.parent) {
+                              return (
+                                <Button key={`${result.name}-${index}`} variant="outline" className="text-left h-auto py-2" onClick={() => { setSelectedLGA(result.parent!); handleVillageSelect(result.name); }}>
+                                  {result.name}
+                                  <span className="text-xs text-muted-foreground block w-full">in {result.parent}</span>
+                                </Button>
+                              )
+                            }
+                            if (result.level === 3) {
+                              return (
+                                <Button key={`${result.name}-${index}`} variant="outline" className="text-left h-auto py-2" onClick={() => handleTownSelect(result.name)}>
+                                  {result.name}
+                                  <span className="text-xs text-muted-foreground block w-full">in {result.parent}</span>
+                                </Button>
+                              )
+                            }
+                            return null;
+                           })
+                        ) : (
+                          <div className="col-span-full text-center text-muted-foreground">No location found</div>
+                        )
+                      ) : (
+                        <>
+                          {modalView === 'lga' && lgaList.map(lga => (
+                              <Button key={lga} variant="outline" onClick={() => handleLgaSelect(lga)}>{lga}</Button>
+                          ))}
+                          {modalView === 'village' && villageList.map(village => (
+                              <Button key={village} variant="outline" onClick={() => handleVillageSelect(village)}>{village}</Button>
+                          ))}
+                           {modalView === 'town' && townList.map(town => (
+                              <Button key={town} variant="outline" onClick={() => handleTownSelect(town)}>{town}</Button>
+                          ))}
+                        </>
+                      )}
                     </div>
                 </DialogContent>
               </Dialog>
