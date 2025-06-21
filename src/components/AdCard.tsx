@@ -1,0 +1,43 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { MapPin } from 'lucide-react';
+
+interface AdCardProps {
+  id: string;
+  title: string;
+  price: string;
+  location: string;
+  image: string;
+  data_ai_hint: string;
+}
+
+export default function AdCard({ id, title, price, location, image, data_ai_hint }: AdCardProps) {
+  return (
+    <Link href={`/listings/${id}`} className="group">
+      <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div className="relative w-full aspect-[4/3] overflow-hidden">
+          <Image
+            src={image}
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            data-ai-hint={data_ai_hint}
+          />
+        </div>
+        <CardContent className="p-4 flex-grow flex flex-col">
+          <h3 className="font-semibold text-lg leading-snug truncate mb-2">{title}</h3>
+          <div className="flex-grow" />
+          <div className="flex items-center text-sm text-muted-foreground mb-2">
+            <MapPin className="w-4 h-4 mr-1.5" />
+            <span>{location}</span>
+          </div>
+          <p className="text-xl font-bold text-primary">
+            &#8358;{price}
+          </p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
