@@ -113,12 +113,11 @@ export default function Home() {
           <p className="mt-6 text-lg leading-8 text-gray-200">
             Find or sell anything, anytime!
           </p>
-          <form onSubmit={handleSearchSubmit} className="mt-10 mx-auto max-w-3xl">
-            <div className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg shadow-lg">
-               <Dialog open={isModalOpen} onOpenChange={(open) => {
+          <div className="mt-10 mx-auto max-w-4xl">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                <Dialog open={isModalOpen} onOpenChange={(open) => {
                    setIsModalOpen(open)
                    if (!open) {
-                        // Reset view when closing
                         setTimeout(() => {
                             setModalView('communities');
                             setSelectedCommunity(null);
@@ -126,7 +125,7 @@ export default function Home() {
                    }
                 }}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" className="h-14 text-lg w-full sm:w-auto justify-between sm:justify-center text-black">
+                  <Button variant="secondary" className="h-14 text-lg w-full sm:w-auto justify-between shadow-md">
                     {location}
                     <ChevronDown className="ml-2 h-5 w-5" />
                   </Button>
@@ -166,36 +165,38 @@ export default function Home() {
                 </DialogContent>
               </Dialog>
 
-              <div className="relative flex-grow w-full" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setSuggestions([]); } }}>
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-                <Input
-                  type="text"
-                  placeholder="Search listings..."
-                  className="pl-12 h-14 text-lg border-0 focus-visible:ring-0 text-black"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onFocus={handleSearchChange}
-                />
-                 {suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-20 text-black">
-                        {suggestions.map((item) => (
-                        <div
-                            key={item}
-                            className="p-3 hover:bg-secondary/20 cursor-pointer text-left"
-                            onMouseDown={() => handleSuggestionClick(item)}
-                        >
-                            {item}
-                        </div>
-                        ))}
-                    </div>
-                )}
-              </div>
-              <Button type="submit" size="lg" className="h-14 w-full sm:w-auto text-lg">
-                <Search className="h-5 w-5 md:hidden" />
-                <span className="hidden md:inline">Search</span>
-              </Button>
+              <form onSubmit={handleSearchSubmit} className="flex-grow w-full sm:w-auto flex items-center gap-2">
+                <div className="relative flex-grow w-full" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setSuggestions([]); } }}>
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                  <Input
+                    type="text"
+                    placeholder="Search listings..."
+                    className="pl-12 h-14 text-lg w-full rounded-md shadow-md"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={handleSearchChange}
+                  />
+                  {suggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-20 text-black">
+                          {suggestions.map((item) => (
+                          <div
+                              key={item}
+                              className="p-3 hover:bg-secondary/20 cursor-pointer text-left"
+                              onMouseDown={() => handleSuggestionClick(item)}
+                          >
+                              {item}
+                          </div>
+                          ))}
+                      </div>
+                  )}
+                </div>
+                <Button type="submit" size="lg" className="h-14 w-auto text-lg shadow-md">
+                  <Search className="h-5 w-5 md:hidden" />
+                  <span className="hidden md:inline">Search</span>
+                </Button>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </section>
 
