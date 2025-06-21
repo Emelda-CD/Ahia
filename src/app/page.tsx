@@ -142,14 +142,16 @@ export default function Home() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                    <DialogHeader className="pr-10">
+                    <div className="flex items-center justify-center relative mb-4">
+                        {modalView !== 'lga' && (
+                            <Button variant="ghost" onClick={handleBack} className="absolute left-0 text-sm">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back
+                            </Button>
+                        )}
                         <DialogTitle>{modalTitle}</DialogTitle>
-                    </DialogHeader>
-                     {modalView !== 'lga' && (
-                        <Button variant="ghost" onClick={handleBack} className="absolute left-4 top-4 text-sm">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                        </Button>
-                    )}
+                    </div>
+                    
                     <Input 
                       placeholder="Search..." 
                       value={modalSearch}
