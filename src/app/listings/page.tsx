@@ -1,6 +1,6 @@
 import AdCard from '@/components/AdCard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
@@ -54,7 +54,7 @@ export default function ListingsPage() {
                 <SelectContent>
                     <SelectItem value="newest">Newest</SelectItem>
                     <SelectItem value="price-low-high">Price: Low to High</SelectItem>
-                    <SelectItem value: "price-high-low">Price: High to Low</SelectItem>
+                    <SelectItem value="price-high-low">Price: High to Low</SelectItem>
                 </SelectContent>
             </Select>
         </div>
