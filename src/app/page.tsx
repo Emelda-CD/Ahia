@@ -2,12 +2,13 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown } from 'lucide-react';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 const categories = [
@@ -22,51 +23,86 @@ const categories = [
 ];
 
 const recentListings = [
-  {
-    id: '3',
-    title: 'Used iPhone 13',
-    price: '300,000',
-    location: 'Enugu',
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'iphone 13'
-  },
-  {
-    id: '5',
-    title: 'Mountain Bike',
-    price: '250,000',
-    location: 'Lagos',
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'mountain bike'
-  },
-  {
-    id: '4',
-    title: 'Graphic Design Services',
-    price: 'Negotiable',
-    location: 'Remote',
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'graphic design'
-  },
-  {
-    id: '7',
-    title: 'Lexus Hybrid Car',
-    price: '15,000,000',
-    location: 'Abuja',
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'lexus car'
-  },
+    { id: '3', title: 'Used iPhone 13', price: '300,000', location: 'Enugu', image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone 13'},
+    { id: '5', title: 'Mountain Bike', price: '250,000', location: 'Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'mountain bike'},
+    { id: '4', title: 'Graphic Design Services', price: 'Negotiable', location: 'Remote', image: 'https://placehold.co/600x400.png', data_ai_hint: 'graphic design'},
+    { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
 ];
+
+const communities = [
+    "Okpanku", "Mpu", "Ndiabor", "Oduma", "Nenwe", "Ituku",
+    "Agbogugu", "Ogbaku", "Ihe", "Isu Awaa", "Agbudu", "Owelli",
+    "Amoli", "Ugbo", "Ogugu", "Mgbowo", "Awgu", "Mgbidi",
+    "Mmaku", "Obeagu", "Ugwueme", "Nkwe", "Ezere", "Nenwenta",
+    "Awgunta", "Olo", "Okpogho", "Iwollo Oghe", "Neke Oghe", "Oyofo Oghe",
+    "Amansiodo Oghe", "Amankwo Oghe", "Akama Oghe", "Obinofia Ndiagu", "Umana Ndiuno"
+];
+
+const subOptions: { [key: string]: string[] } = {
+    "Okpanku": ["Obinofia Ndiuno", "Obeleagu Umana", "Umumba Ndiuno", "Umana Ndiagu", "Aguobu Umumba", "Umumba Ndiagu", "Umana Agba", "Awha Ndiagu", "Awha Imezi", "Mgbagbu Owa"],
+    "Mpu": ["Aguobu Owa", "Ezema Ogulogu", "Ibite Olo", "Nike Uno", "Mbulu Njodo", "Ugwuogo Nike", "Enugu", "Akwuke", "Amaechi", "Ugwuaji"],
+    "Ndiabor": ["Obeagu", "Ukehe", "Umunko", "Diogbe", "Ekwegbe", "Umuna", "Ozalla", "Ohodo", "Onyohor", "Ochima"],
+    "Oduma": ["Obinofia Ndiuno", "Obeleagu Umana", "Umumba Ndiuno", "Umana Ndiagu", "Aguobu Umumba", "Umumba Ndiagu", "Umana Agba", "Awha Ndiagu", "Awha Imezi", "Mgbagbu Owa"],
+};
+
+const searchSampleData = ['Apple', 'Banana', 'Orange', 'Grapes', 'Pineapple', 'Toyota Camry', 'iPhone 13', '3-Bedroom Flat', 'Lexus'];
 
 export default function Home() {
   const [location, setLocation] = useState('Enugu');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalView, setModalView] = useState<'communities' | 'subOptions'>('communities');
+  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
   
-  const communities = ['New Haven', 'Independence Layout', 'GRA', 'Abakpa', 'Uwani', 'Trans-Ekulu'];
-  
-  const handleLocationSelect = (community: string) => {
-    setLocation(community);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const router = useRouter();
+
+  const handleCommunitySelect = (community: string) => {
+    if (subOptions[community]) {
+      setSelectedCommunity(community);
+      setModalView('subOptions');
+    } else {
+      setLocation(community);
+      setIsModalOpen(false);
+    }
+  };
+
+  const handleSubOptionSelect = (subOption: string) => {
+    setLocation(`${subOption}, ${selectedCommunity}`);
     setIsModalOpen(false);
   };
 
+  const handleBackToCommunities = () => {
+    setModalView('communities');
+    setSelectedCommunity(null);
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 0) {
+      const filteredSuggestions = searchSampleData.filter(item =>
+        item.toLowerCase().includes(query.toLowerCase())
+      );
+      setSuggestions(filteredSuggestions);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setSuggestions([]);
+    router.push(`/listings?q=${encodeURIComponent(suggestion)}`);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/listings?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+  
   return (
     <>
       <section className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white py-20 sm:py-32">
@@ -77,9 +113,18 @@ export default function Home() {
           <p className="mt-6 text-lg leading-8 text-gray-200">
             Find or sell anything, anytime!
           </p>
-          <div className="mt-10 mx-auto max-w-3xl">
+          <form onSubmit={handleSearchSubmit} className="mt-10 mx-auto max-w-3xl">
             <div className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg shadow-lg">
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+               <Dialog open={isModalOpen} onOpenChange={(open) => {
+                   setIsModalOpen(open)
+                   if (!open) {
+                        // Reset view when closing
+                        setTimeout(() => {
+                            setModalView('communities');
+                            setSelectedCommunity(null);
+                        }, 300);
+                   }
+                }}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" className="h-14 text-lg w-full sm:w-auto justify-between sm:justify-center text-black">
                     {location}
@@ -87,37 +132,70 @@ export default function Home() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Select a Community</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-2">
-                    {communities.map((community) => (
-                      <Button
-                        key={community}
-                        variant="outline"
-                        onClick={() => handleLocationSelect(community)}
-                      >
-                        {community}
-                      </Button>
-                    ))}
-                  </div>
+                    <DialogHeader>
+                        <DialogTitle>
+                        {modalView === 'communities' ? 'Select a Community' : `Options for ${selectedCommunity}`}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {modalView === 'subOptions' && (
+                        <Button variant="ghost" onClick={handleBackToCommunities} className="absolute left-4 top-4 text-sm">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-4 max-h-[60vh] overflow-y-auto">
+                        {modalView === 'communities'
+                        ? communities.map((community) => (
+                            <Button
+                                key={community}
+                                variant="outline"
+                                onClick={() => handleCommunitySelect(community)}
+                            >
+                                {community}
+                            </Button>
+                            ))
+                        : (subOptions[selectedCommunity!] || []).map((subOption) => (
+                            <Button
+                                key={subOption}
+                                variant="outline"
+                                onClick={() => handleSubOptionSelect(subOption)}
+                            >
+                                {subOption}
+                            </Button>
+                            ))}
+                    </div>
                 </DialogContent>
               </Dialog>
 
-              <div className="relative flex-grow w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <div className="relative flex-grow w-full" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setSuggestions([]); } }}>
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   placeholder="Search listings..."
                   className="pl-12 h-14 text-lg border-0 focus-visible:ring-0 text-black"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={handleSearchChange}
                 />
+                 {suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-20 text-black">
+                        {suggestions.map((item) => (
+                        <div
+                            key={item}
+                            className="p-3 hover:bg-secondary/20 cursor-pointer text-left"
+                            onMouseDown={() => handleSuggestionClick(item)}
+                        >
+                            {item}
+                        </div>
+                        ))}
+                    </div>
+                )}
               </div>
-              <Button size="lg" className="h-14 w-full sm:w-auto text-lg">
+              <Button type="submit" size="lg" className="h-14 w-full sm:w-auto text-lg">
                 <Search className="h-5 w-5 md:hidden" />
                 <span className="hidden md:inline">Search</span>
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       </section>
 
