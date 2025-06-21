@@ -382,7 +382,7 @@ export default function Home() {
           <div className="hidden lg:grid grid-cols-4 gap-6" onMouseLeave={() => setActiveCategory(null)}>
             {/* Sidebar */}
             <div className="col-span-1">
-              <ul className="space-y-1 border rounded-lg p-2">
+              <ul className="space-y-1 border rounded-lg p-2 h-full">
                 {popularCategoriesWithSubs.map((category) => (
                   <li key={category.name}
                       onMouseEnter={() => setActiveCategory(category.name)}
@@ -398,44 +398,58 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Subcategory Panel */}
-            <div className="col-span-3 relative">
-              <div 
-                className={`absolute inset-0 bg-card rounded-lg shadow-lg border z-10 p-6 transition-all duration-300 ${activeCategoryData ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
-                onMouseEnter={() => setActiveCategory(activeCategoryData?.name || null)}
-              >
-                {activeCategoryData && (
-                  <div>
-                    <h3 className="text-2xl font-bold mb-6">{activeCategoryData.name}</h3>
-                    <ul className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      {activeCategoryData.subcategories.map((sub) => (
-                        <li key={sub}>
-                          <Link 
-                            href={`/listings?category=${encodeURIComponent(activeCategoryData.name)}&sub=${encodeURIComponent(sub)}`}
-                            className="block p-2 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {sub}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+            {/* Subcategory Panel & Content */}
+            <div className="col-span-3" onMouseEnter={() => activeCategoryData && setActiveCategory(activeCategoryData.name)}>
+                {activeCategoryData ? (
+                    <div className="grid grid-cols-3 gap-6 h-full">
+                        {/* Subcategory "Sidebar" */}
+                        <div className="col-span-1">
+                            <div className="border rounded-lg p-2 h-full bg-card">
+                                <h3 className="text-lg font-bold mb-4 px-3 pt-2">{activeCategoryData.name}</h3>
+                                <ul className="space-y-1">
+                                {activeCategoryData.subcategories.map((sub) => (
+                                    <li key={sub}>
+                                    <Link 
+                                        href={`/listings?category=${encodeURIComponent(activeCategoryData.name)}&sub=${encodeURIComponent(sub)}`}
+                                        className="flex items-center justify-between p-3 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-sm"
+                                    >
+                                      <span>{sub}</span>
+                                      <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                    </li>
+                                ))}
+                                </ul>
+                            </div>
+                        </div>
+                         {/* Content for active category */}
+                        <div className="col-span-2 relative w-full h-full bg-secondary rounded-lg overflow-hidden">
+                            <Image 
+                                src={`https://placehold.co/600x400.png`}
+                                alt={`${activeCategoryData.name} Ads`}
+                                fill
+                                className="object-cover"
+                                data-ai-hint="products sale" 
+                            />
+                            <div className="absolute inset-0 bg-black/10 flex items-end justify-start p-6">
+                                <h3 className="text-white text-2xl font-semibold">Top deals in {activeCategoryData.name}</h3>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* Default Content */
+                    <div className="relative w-full h-[350px] bg-secondary rounded-lg overflow-hidden">
+                        <Image 
+                            src="https://placehold.co/800x450.png" 
+                            alt="Featured Ads" 
+                            fill
+                            className="object-cover"
+                            data-ai-hint="marketplace products" 
+                        />
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <p className="text-white text-2xl font-semibold">Hover over a category to see more</p>
+                        </div>
+                    </div>
                 )}
-              </div>
-
-              {/* Default Content */}
-              <div className="relative w-full h-[350px] bg-secondary rounded-lg overflow-hidden">
-                <Image 
-                  src="https://placehold.co/800x450.png" 
-                  alt="Featured Ads" 
-                  fill
-                  className="object-cover"
-                  data-ai-hint="marketplace products" 
-                />
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                  <p className="text-white text-2xl font-semibold">Hover over a category to see more</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
