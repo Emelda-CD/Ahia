@@ -10,6 +10,7 @@ import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { locations } from '@/lib/locations';
 
 const categories = [
   { name: 'Property', icon: HomeIcon, color: 'bg-purple-100 text-purple-600' },
@@ -29,52 +30,65 @@ const recentListings = [
     { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
 ];
 
-const communities = [
-    "Okpanku", "Mpu", "Ndiabor", "Oduma", "Nenwe", "Ituku",
-    "Agbogugu", "Ogbaku", "Ihe", "Isu Awaa", "Agbudu", "Owelli",
-    "Amoli", "Ugbo", "Ogugu", "Mgbowo", "Awgu", "Mgbidi",
-    "Mmaku", "Obeagu", "Ugwueme", "Nkwe", "Ezere", "Nenwenta",
-    "Awgunta", "Olo", "Okpogho", "Iwollo Oghe", "Neke Oghe", "Oyofo Oghe",
-    "Amansiodo Oghe", "Amankwo Oghe", "Akama Oghe", "Obinofia Ndiagu", "Umana Ndiuno"
-];
-
-const subOptions: { [key: string]: string[] } = {
-    "Okpanku": ["Obinofia Ndiuno", "Obeleagu Umana", "Umumba Ndiuno", "Umana Ndiagu", "Aguobu Umumba", "Umumba Ndiagu", "Umana Agba", "Awha Ndiagu", "Awha Imezi", "Mgbagbu Owa"],
-    "Mpu": ["Aguobu Owa", "Ezema Ogulogu", "Ibite Olo", "Nike Uno", "Mbulu Njodo", "Ugwuogo Nike", "Enugu", "Akwuke", "Amaechi", "Ugwuaji"],
-    "Ndiabor": ["Obeagu", "Ukehe", "Umunko", "Diogbe", "Ekwegbe", "Umuna", "Ozalla", "Ohodo", "Onyohor", "Ochima"],
-    "Oduma": ["Obinofia Ndiuno", "Obeleagu Umana", "Umumba Ndiuno", "Umana Ndiagu", "Aguobu Umumba", "Umumba Ndiagu", "Umana Agba", "Awha Ndiagu", "Awha Imezi", "Mgbagbu Owa"],
-};
-
 const searchSampleData = ['Apple', 'Banana', 'Orange', 'Grapes', 'Pineapple', 'Toyota Camry', 'iPhone 13', '3-Bedroom Flat', 'Lexus'];
 
 export default function Home() {
   const [location, setLocation] = useState('Enugu');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalView, setModalView] = useState<'communities' | 'subOptions'>('communities');
-  const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
+  const router = useRouter();
   
+  const [modalView, setModalView] = useState<'lga' | 'village' | 'community'>('lga');
+  const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
+  const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
+  const [modalSearch, setModalSearch] = useState('');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const router = useRouter();
 
-  const handleCommunitySelect = (community: string) => {
-    if (subOptions[community]) {
-      setSelectedCommunity(community);
-      setModalView('subOptions');
-    } else {
-      setLocation(community);
-      setIsModalOpen(false);
-    }
+  const handleLgaSelect = (lga: string) => {
+    setSelectedLGA(lga);
+    setModalView('village');
+    setModalSearch('');
   };
 
-  const handleSubOptionSelect = (subOption: string) => {
-    setLocation(`${subOption}, ${selectedCommunity}`);
+  const handleVillageSelect = (village: string) => {
+    setSelectedVillage(village);
+    setModalView('community');
+    setModalSearch('');
+  };
+  
+  const handleCommunitySelect = (community: string) => {
+    setLocation(community);
     setIsModalOpen(false);
   };
 
-  const handleBackToCommunities = () => {
-    setModalView('communities');
-    setSelectedCommunity(null);
+  const handleBack = () => {
+    if (modalView === 'community') {
+      setModalView('village');
+      setSelectedVillage(null);
+    } else if (modalView === 'village') {
+      setModalView('lga');
+      setSelectedLGA(null);
+    }
+    setModalSearch('');
+  };
+
+  const resetModal = () => {
+    setModalView('lga');
+    setSelectedLGA(null);
+    setSelectedVillage(null);
+    setModalSearch('');
+  }
+
+  const lgaList = Object.keys(locations).filter(lga => lga.toLowerCase().includes(modalSearch.toLowerCase()));
+  const villageList = selectedLGA ? Object.keys(locations[selectedLGA]).filter(v => v.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  const communityList = selectedLGA && selectedVillage ? locations[selectedLGA][selectedVillage].filter(c => c.toLowerCase().includes(modalSearch.toLowerCase())) : [];
+  
+  let modalTitle = 'Select a Local Government';
+  if (modalView === 'village' && selectedLGA) {
+    modalTitle = `Select a Village in ${selectedLGA}`;
+  } else if (modalView === 'community' && selectedVillage) {
+    modalTitle = `Select a Community in ${selectedVillage}`;
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,12 +130,9 @@ export default function Home() {
           <div className="mt-10 mx-auto max-w-4xl">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                 <Dialog open={isModalOpen} onOpenChange={(open) => {
-                   setIsModalOpen(open)
+                   setIsModalOpen(open);
                    if (!open) {
-                        setTimeout(() => {
-                            setModalView('communities');
-                            setSelectedCommunity(null);
-                        }, 300);
+                        setTimeout(() => resetModal(), 300);
                    }
                 }}>
                 <DialogTrigger asChild>
@@ -130,37 +141,31 @@ export default function Home() {
                     <ChevronDown className="ml-2 h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                        {modalView === 'communities' ? 'Select a Community' : `Options for ${selectedCommunity}`}
-                        </DialogTitle>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader className="pr-10">
+                        <DialogTitle>{modalTitle}</DialogTitle>
                     </DialogHeader>
-                    {modalView === 'subOptions' && (
-                        <Button variant="ghost" onClick={handleBackToCommunities} className="absolute left-4 top-4 text-sm">
+                     {modalView !== 'lga' && (
+                        <Button variant="ghost" onClick={handleBack} className="absolute left-4 top-4 text-sm">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                     )}
+                    <Input 
+                      placeholder="Search..." 
+                      value={modalSearch}
+                      onChange={(e) => setModalSearch(e.target.value)}
+                      className="my-2"
+                    />
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-4 max-h-[60vh] overflow-y-auto">
-                        {modalView === 'communities'
-                        ? communities.map((community) => (
-                            <Button
-                                key={community}
-                                variant="outline"
-                                onClick={() => handleCommunitySelect(community)}
-                            >
-                                {community}
-                            </Button>
-                            ))
-                        : (subOptions[selectedCommunity!] || []).map((subOption) => (
-                            <Button
-                                key={subOption}
-                                variant="outline"
-                                onClick={() => handleSubOptionSelect(subOption)}
-                            >
-                                {subOption}
-                            </Button>
-                            ))}
+                        {modalView === 'lga' && lgaList.map(lga => (
+                            <Button key={lga} variant="outline" onClick={() => handleLgaSelect(lga)}>{lga}</Button>
+                        ))}
+                        {modalView === 'village' && villageList.map(village => (
+                            <Button key={village} variant="outline" onClick={() => handleVillageSelect(village)}>{village}</Button>
+                        ))}
+                        {modalView === 'community' && communityList.map(community => (
+                            <Button key={community} variant="outline" onClick={() => handleCommunitySelect(community)}>{community}</Button>
+                        ))}
                     </div>
                 </DialogContent>
               </Dialog>
