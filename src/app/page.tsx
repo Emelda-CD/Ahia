@@ -391,7 +391,7 @@ export default function Home() {
               
               {/* Desktop Category List */}
               <div className="hidden lg:block">
-                <Card>
+                <Card className="h-full">
                   <CardContent className="p-2">
                     <ul className="space-y-1">
                       {popularCategoriesWithSubs.map((category) => (
@@ -421,13 +421,10 @@ export default function Home() {
             <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
                 {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
                 {activeCategory && (
-                    <div className="hidden lg:block absolute top-0 left-0 w-[calc(33.33%-1rem)] h-full z-10">
+                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10">
                         <Card className="h-full">
-                             <CardHeader className="p-4">
-                                <CardTitle className="text-xl">{activeCategory.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 pt-0">
-                                <ul className="space-y-1">
+                            <CardContent className="p-2">
+                                <ul className="space-y-1 mt-2">
                                     {activeCategory.subcategories.map((sub) => (
                                         <li key={sub}>
                                             <Link
