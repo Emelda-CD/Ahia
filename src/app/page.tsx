@@ -420,25 +420,22 @@ export default function Home() {
             <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
                 {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
                 {activeCategory && (
-                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10 pr-4">
-                        <h2 className="text-2xl font-bold mb-6 h-8 flex items-center">{activeCategory.name}</h2>
-                        <Card className="h-[calc(100%-2.5rem)]">
-                            <CardContent className="p-2 overflow-y-auto h-full">
-                                <ul className="space-y-1">
-                                    {activeCategory.subcategories.map((sub) => (
-                                        <li key={sub}>
-                                            <Link
-                                                href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
-                                                className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
-                                            >
-                                                <span>{sub}</span>
-                                                <ChevronRight className="w-4 h-4" />
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
+                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10">
+                        <div className="bg-background/90 backdrop-blur-sm rounded-lg p-2 h-full overflow-y-auto shadow-lg">
+                            <ul className="space-y-1">
+                                {activeCategory.subcategories.map((sub) => (
+                                    <li key={sub}>
+                                        <Link
+                                            href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
+                                            className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
+                                        >
+                                            <span>{sub}</span>
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
                 )}
 
