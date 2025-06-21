@@ -69,19 +69,19 @@ export default function Home() {
 
   return (
     <>
-      <section className="bg-secondary/50 py-20 sm:py-32">
+      <section className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white py-20 sm:py-32">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-6xl">
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
             Welcome to Ahia
           </h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
+          <p className="mt-6 text-lg leading-8 text-gray-200">
             Find or sell anything, anytime!
           </p>
           <div className="mt-10 mx-auto max-w-3xl">
             <div className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-lg shadow-lg">
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" className="h-14 text-lg w-full sm:w-auto justify-between sm:justify-center">
+                  <Button variant="ghost" className="h-14 text-lg w-full sm:w-auto justify-between sm:justify-center text-black">
                     {location}
                     <ChevronDown className="ml-2 h-5 w-5" />
                   </Button>
@@ -109,7 +109,7 @@ export default function Home() {
                 <Input
                   type="text"
                   placeholder="Search listings..."
-                  className="pl-12 h-14 text-lg border-0 focus-visible:ring-0"
+                  className="pl-12 h-14 text-lg border-0 focus-visible:ring-0 text-black"
                 />
               </div>
               <Button size="lg" className="h-14 w-full sm:w-auto text-lg">
@@ -127,7 +127,7 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-4 sm:gap-6">
             {categories.map((category) => (
               <Link href="#" key={category.name}>
-                <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full">
+                <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
                   <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${category.color}`}>
                       <category.icon className="w-8 h-8"/>
