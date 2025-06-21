@@ -417,70 +417,52 @@ export default function Home() {
             </div>
             
             {/* ----- RIGHT COLUMN: SUBCATEGORIES + RECENT LISTINGS ----- */}
-            <div className="lg:col-span-9 mt-16 lg:mt-0">
-                {/* --- Desktop View --- */}
-                <div className="hidden lg:flex lg:gap-8">
-                    {/* --- Subcategories Sidebar --- */}
-                    {activeCategory && (
-                        <div className="w-1/3 flex-shrink-0">
-                            <h2 className="text-2xl font-bold mb-6 h-8 flex items-center">{activeCategory.name}</h2>
-                            <Card>
-                                <CardContent className="p-2">
-                                    <ul className="space-y-1">
-                                        {activeCategory.subcategories.map((sub) => (
-                                            <li key={sub}>
-                                                <Link
-                                                    href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
-                                                    className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
-                                                >
-                                                    <span>{sub}</span>
-                                                    <ChevronRight className="w-4 h-4" />
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
+            <div className="lg:col-span-9 mt-16 lg:mt-0 relative">
+                {/* --- Desktop View: Subcategories (absolutely positioned overlay) --- */}
+                {activeCategory && (
+                    <div className="hidden lg:block absolute top-0 left-0 w-1/3 h-full z-10 pr-4">
+                        <h2 className="text-2xl font-bold mb-6 h-8 flex items-center">{activeCategory.name}</h2>
+                        <Card className="h-[calc(100%-2.5rem)]">
+                            <CardContent className="p-2 overflow-y-auto h-full">
+                                <ul className="space-y-1">
+                                    {activeCategory.subcategories.map((sub) => (
+                                        <li key={sub}>
+                                            <Link
+                                                href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
+                                                className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
+                                            >
+                                                <span>{sub}</span>
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
-                    {/* --- Recent Listings --- */}
-                    <div className="flex-grow">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold h-8 flex items-center">Recent Listings</h2>
-                            <Button asChild variant="outline">
-                                <Link href="/listings">View All</Link>
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-6">
-                            {recentListings.slice(0, 6).map((ad) => (
-                                <AdCard key={ad.id} {...ad} />
-                            ))}
-                        </div>
+                {/* --- Recent Listings (Base Layer) --- */}
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold">Recent Listings</h2>
+                        <Button asChild variant="outline" className="hidden sm:flex">
+                          <Link href="/listings">View All</Link>
+                        </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {recentListings.map((ad) => (
+                          <AdCard key={ad.id} {...ad} />
+                        ))}
+                    </div>
+                    
+                    <div className="text-center mt-8 sm:hidden">
+                        <Button size="lg" asChild variant="outline">
+                          <Link href="/listings">View All Listings</Link>
+                        </Button>
                     </div>
                 </div>
-
-              {/* --- Recent Listings (Mobile) --- */}
-              <div className="lg:hidden">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">Recent Listings</h2>
-                    <Button asChild variant="outline" className="hidden sm:flex">
-                      <Link href="/listings">View All</Link>
-                    </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {recentListings.map((ad) => (
-                      <AdCard key={ad.id} {...ad} />
-                    ))}
-                </div>
-                
-                <div className="text-center mt-8 sm:hidden">
-                    <Button size="lg" asChild variant="outline">
-                      <Link href="/listings">View All Listings</Link>
-                    </Button>
-                </div>
-              </div>
             </div>
 
           </div>
