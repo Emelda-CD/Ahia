@@ -101,7 +101,7 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0]>(popularCategoriesWithSubs[0]);
+  const [activeCategory, setActiveCategory] = useState<(typeof popularCategoriesWithSubs)[0] | null>(null);
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
@@ -364,7 +364,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-secondary/40 py-16 sm:py-24">
+      <section className="bg-secondary/40 py-16 sm:py-24" onMouseLeave={() => setActiveCategory(null)}>
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8">
             
@@ -421,9 +421,9 @@ export default function Home() {
                 {/* --- Desktop View --- */}
                 <div className="hidden lg:flex lg:gap-8">
                     {/* --- Subcategories Sidebar --- */}
-                    <div className="w-1/3 flex-shrink-0">
-                         <h2 className="text-2xl font-bold mb-6 h-8 flex items-center">{activeCategory?.name}</h2>
-                        {activeCategory && (
+                    {activeCategory && (
+                        <div className="w-1/3 flex-shrink-0">
+                            <h2 className="text-2xl font-bold mb-6 h-8 flex items-center">{activeCategory.name}</h2>
                             <Card>
                                 <CardContent className="p-2">
                                     <ul className="space-y-1">
@@ -441,8 +441,8 @@ export default function Home() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* --- Recent Listings --- */}
                     <div className="flex-grow">
@@ -452,8 +452,8 @@ export default function Home() {
                                 <Link href="/listings">View All</Link>
                             </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            {recentListings.map((ad) => (
+                        <div className="grid grid-cols-3 gap-6">
+                            {recentListings.slice(0, 6).map((ad) => (
                                 <AdCard key={ad.id} {...ad} />
                             ))}
                         </div>
