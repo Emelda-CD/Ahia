@@ -418,6 +418,7 @@ export default function Home() {
             
             {/* ----- RIGHT COLUMN: SUBCATEGORIES + RECENT LISTINGS ----- */}
             <div className="lg:col-span-9 mt-16 lg:mt-0">
+                {/* --- Desktop View --- */}
                 <div className="hidden lg:flex lg:gap-8">
                     {/* --- Subcategories Sidebar --- */}
                     <div className="w-1/3 flex-shrink-0">
