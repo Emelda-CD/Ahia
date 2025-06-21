@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdCard from '@/components/AdCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wrench, ChevronDown, ArrowLeft, ChevronRight, LandPlot } from 'lucide-react';
 import Link from 'next/link';
 import { locations } from '@/lib/locations';
 import Image from 'next/image';
 
 const categories = [
+  { name: 'Land', icon: LandPlot, color: 'bg-teal-100 text-teal-600' },
   { name: 'Property', icon: HomeIcon, color: 'bg-purple-100 text-purple-600' },
   { name: 'Electronics', icon: Sparkles, color: 'bg-blue-100 text-blue-600' },
   { name: 'Vehicles', icon: Car, color: 'bg-green-100 text-green-600' },
@@ -26,9 +27,14 @@ const categories = [
 
 const popularCategoriesWithSubs = [
   {
+    name: 'Land',
+    icon: LandPlot,
+    subcategories: ['Residential Land', 'Commercial Land', 'Farmland', 'Industrial Land'],
+  },
+  {
     name: 'Property',
     icon: HomeIcon,
-    subcategories: ['Land for Sale', 'Houses & Apartments for Rent', 'Commercial Property for Sale', 'Event Centres & Venues'],
+    subcategories: ['Houses & Apartments for Rent', 'Commercial Property for Sale', 'Event Centres & Venues'],
   },
   {
     name: 'Vehicles',
