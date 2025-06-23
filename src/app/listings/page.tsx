@@ -231,37 +231,20 @@ const LocationModal = ({ onSelect, children }: { onSelect: (town: string) => voi
   );
 };
 
+const categoryKeywords: Record<string, string[]> = {
+    animals: ['dog', 'cat', 'puppy', 'goat', 'animal', 'boerboel', 'shepherd'],
+    electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic', 'hp', 'galaxy'],
+    property: ['land', 'apartment', 'shop', 'flat', 'property', 'plot', 'duplex'],
+    jobs: ['job', 'developer', 'manager', 'accountant', 'marketing'],
+    vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle', 'camry', 'cr-v', 'accord'],
+    furniture: ['sofa', 'chair', 'table', 'furniture'],
+    services: ['service', 'repair', 'cleaning', 'plumbing'],
+    fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion', 'handbag'],
+};
 
-export default function ListingsPage() {
-    const searchParams = useSearchParams();
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-    const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
-    
-    const initialCategory = useMemo(() => {
-        const query = (searchParams.get('q') || '').toLowerCase();
-        const categoryParam = searchParams.get('category');
-        if (categoryParam) return categoryParam;
-
-        const categoryKeywords: Record<string, string[]> = {
-            animals: ['dog', 'cat', 'puppy', 'goat', 'animal'],
-            electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic'],
-            property: ['land', 'apartment', 'shop', 'flat', 'property'],
-            jobs: ['job', 'developer', 'manager', 'accountant'],
-            vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
-            furniture: ['sofa', 'chair', 'table', 'furniture'],
-            services: ['service', 'repair', 'cleaning'],
-            fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion'],
-        };
-
-        for (const category in categoryKeywords) {
-            if (categoryKeywords[category].some(keyword => query.includes(keyword))) {
-                return category;
-            }
-        }
-        return null;
-    }, [searchParams]);
-
-    const [filters, setFilters] = useState<any>({
+const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
+    const query = (searchParams.get('q') || '').toLowerCase();
+    const newFilters: any = {
         location: searchParams.get('location') || null,
         minPrice: '',
         maxPrice: '',
@@ -270,36 +253,88 @@ export default function ListingsPage() {
         verifiedID: false,
         minRating: searchParams.get('rating') ? 4 : 0,
         popularity: '',
-        category: initialCategory,
-    });
+        category: searchParams.get('category') || null,
+    };
+
+    // Detect category if not provided
+    if (!newFilters.category) {
+        for (const category in categoryKeywords) {
+            if (categoryKeywords[category].some(keyword => query.includes(keyword))) {
+                newFilters.category = category;
+                break;
+            }
+        }
+    }
+
+    // Derive specific filters based on query and category
+    if (newFilters.category === 'property') {
+        if (query.includes('land')) newFilters.propertyType = 'land';
+        if (query.includes('shop')) newFilters.propertyType = 'shop';
+        if (query.includes('apartment')) newFilters.propertyType = 'apartment';
+        if (query.includes('sale')) newFilters.listingType = 'sale';
+        if (query.includes('rent')) newFilters.listingType = 'rent';
+        if (query.includes('c of o')) newFilters.propertyTitle = 'cofo';
+        if (query.includes('deed')) newFilters.propertyTitle = 'deed';
+        if (query.includes('residential')) newFilters.landUse = 'residential';
+        if (query.includes('commercial')) newFilters.landUse = 'commercial';
+        if (query.includes('farming') || query.includes('agricultural')) newFilters.landUse = 'agricultural';
+    } else if (newFilters.category === 'vehicles') {
+        if (query.includes('toyota')) newFilters.brand = 'Toyota';
+        if (query.includes('honda')) newFilters.brand = 'Honda';
+        if (query.includes('camry')) newFilters.model = 'Camry';
+        if (query.includes('cr-v')) newFilters.model = 'CR-V';
+        if (query.includes('automatic')) newFilters.transmission = 'automatic';
+        if (query.includes('manual')) newFilters.transmission = 'manual';
+    } else if (newFilters.category === 'electronics') {
+        if (query.includes('iphone')) newFilters.brand = 'Apple';
+        if (query.includes('samsung') || query.includes('galaxy')) newFilters.brand = 'Samsung';
+        if (query.includes('hp')) newFilters.brand = 'HP';
+        if (query.includes('new')) newFilters.condition = 'new';
+        if (query.includes('used')) newFilters.condition = 'used';
+    } else if (newFilters.category === 'animals') {
+        if (query.includes('german shepherd')) newFilters.breed = 'German Shepherd';
+        if (query.includes('boerboel')) newFilters.breed = 'Boerboel';
+        if (query.includes('male')) newFilters.gender = 'male';
+        if (query.includes('female')) newFilters.gender = 'female';
+    }
+
+    return newFilters;
+};
+
+
+export default function ListingsPage() {
+    const searchParams = useSearchParams();
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+    
+    const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
+    const [filters, setFilters] = useState<any>(initialFilters);
 
     const primaryCategory = filters.category;
 
-    const handleInputChange = useCallback((key: string, value: any) => {
-        setFilters((prev: any) => ({ ...prev, [key]: value }));
-    }, []);
-
     const handleCategoryFilterChange = (category: string | null) => {
-        const newFilters = { ...filters, category };
-        // If category is changed, we might want to clear the search query if it's not relevant
-        // For now, we'll let them coexist. Or, clear if a new category is selected.
-        if (category) {
-            // A specific category is chosen, maybe clear the general search?
-            // This is a UX decision. For now, let's keep it simple.
-        }
-        setFilters(newFilters);
+        // When a new category is selected, we reset the search query
+        // and other filters to avoid irrelevant filter combinations.
+        setSearchQuery('');
+        setFilters({
+          ...initialFilters, // Reset to base filters from URL if any
+          category: category,
+        });
     };
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
         setFilters((prev: any) => ({ ...prev, [key]: checked }));
     };
-    
+
+    const handleInputChange = useCallback((key: string, value: any) => {
+        setFilters((prev: any) => ({ ...prev, [key]: value }));
+    }, []);
+
     const applyFilters = useCallback(() => {
         let listings = allListings;
 
-        const currentCategory = filters.category;
-        if (currentCategory) {
-            listings = listings.filter(l => l.category === currentCategory);
+        if (primaryCategory) {
+            listings = listings.filter(l => l.category === primaryCategory);
         }
 
         const query = searchQuery.toLowerCase();
@@ -326,57 +361,43 @@ export default function ListingsPage() {
         if(filters.popularity === 'most_viewed') listings = listings.sort((a,b) => (b.views || 0) - (a.views || 0));
         if(filters.popularity === 'most_contacted') listings = listings.sort((a,b) => (b.contacts || 0) - (a.contacts || 0));
         
-        if (currentCategory === 'vehicles') {
+        if (primaryCategory === 'vehicles') {
             if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
             if (filters.model) listings = listings.filter(l => l.specifics?.model?.toLowerCase().includes(filters.model.toLowerCase()));
             if (filters.year) listings = listings.filter(l => l.specifics?.year === Number(filters.year));
             if (filters.transmission) listings = listings.filter(l => l.specifics?.transmission === filters.transmission);
-        } else if (currentCategory === 'electronics') {
+        } else if (primaryCategory === 'electronics') {
             if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
             if (filters.storage) listings = listings.filter(l => l.specifics?.storage === filters.storage);
             if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
-        } else if (currentCategory === 'animals') {
+        } else if (primaryCategory === 'animals') {
             if (filters.breed) listings = listings.filter(l => l.specifics?.breed?.toLowerCase().includes(filters.breed.toLowerCase()));
             if (filters.gender) listings = listings.filter(l => l.specifics?.gender === filters.gender);
-        } else if (currentCategory === 'property') {
+        } else if (primaryCategory === 'property') {
             if (filters.propertyType) listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
             if (filters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === filters.propertyTitle);
             if (filters.landUse) listings = listings.filter(l => l.specifics?.landUse === filters.landUse);
             if (filters.listingType) listings = listings.filter(l => l.specifics?.listingType === filters.listingType);
-        } else if (currentCategory === 'jobs') {
+        } else if (primaryCategory === 'jobs') {
             if (filters.jobType) listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
-        } else if (currentCategory === 'fashion') {
+        } else if (primaryCategory === 'fashion') {
             if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
             if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
         }
         
         setFilteredListings(listings);
-    }, [filters, searchQuery]);
+    }, [filters, searchQuery, primaryCategory]);
     
     useEffect(() => {
         applyFilters();
     }, [applyFilters]);
 
     const handleSearch = () => {
-        const query = searchQuery.toLowerCase();
-        const categoryKeywords: Record<string, string[]> = {
-            animals: ['dog', 'cat', 'puppy', 'goat', 'animal'],
-            electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic'],
-            property: ['land', 'apartment', 'shop', 'flat', 'property'],
-            jobs: ['job', 'developer', 'manager', 'accountant'],
-            vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
-            furniture: ['sofa', 'chair', 'table', 'furniture'],
-            services: ['service', 'repair', 'cleaning'],
-            fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion'],
-        };
-        let newCategory = null;
-        for (const category in categoryKeywords) {
-            if (categoryKeywords[category].some(keyword => query.includes(keyword))) {
-                newCategory = category;
-                break;
-            }
-        }
-        handleInputChange('category', newCategory);
+        const newUrlParams = new URLSearchParams(window.location.search);
+        newUrlParams.set('q', searchQuery);
+        const newFilters = deriveFiltersFromQuery(newUrlParams);
+        setFilters(newFilters);
+        // This will trigger the useEffect to re-filter
     }
     
     return (
@@ -396,13 +417,17 @@ export default function ListingsPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 text-center">
                     {categories.map(cat => (
-                        <a href={`/listings?category=${cat.value}&q=${cat.name.toLowerCase()}`} key={cat.name} className={cn(
-                            "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
-                            primaryCategory === cat.value && "bg-primary/10 ring-2 ring-primary"
-                        )}>
+                        <button
+                            key={cat.name}
+                            onClick={() => handleCategoryFilterChange(cat.value)}
+                            className={cn(
+                                "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
+                                primaryCategory === cat.value && "bg-primary/10 ring-2 ring-primary"
+                            )}
+                        >
                             <cat.icon className="h-8 w-8 text-primary mb-2" />
                             <span className="font-semibold text-sm">{cat.name}</span>
-                        </a>
+                        </button>
                     ))}
                 </div>
             </section>
