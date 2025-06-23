@@ -20,7 +20,7 @@ export const categoriesData: Category[] = [
       "Agricultural Land",
       "Joint Venture Land"
     ],
-    sort_order": 1
+    sort_order: 1
   },
   {
     name: "Phones",
@@ -34,7 +34,7 @@ export const categoriesData: Category[] = [
       "Other Phones",
       "Phone Accessories"
     ],
-    sort_order": 2
+    sort_order: 2
   },
   {
     name: "Vehicles",
@@ -48,7 +48,7 @@ export const categoriesData: Category[] = [
       "Buses",
       "Trailers"
     ],
-    sort_order": 3
+    sort_order: 3
   },
   {
     name: "Electronics",
@@ -62,7 +62,7 @@ export const categoriesData: Category[] = [
       "Cameras",
       "Accessories"
     ],
-    sort_order": 4
+    sort_order: 4
   },
   {
     name: "Jobs",
@@ -76,7 +76,7 @@ export const categoriesData: Category[] = [
       "Accounting & Finance",
       "Others"
     ],
-    sort_order": 5
+    sort_order: 5
   },
   {
     name: "Animals & Pets",
@@ -90,7 +90,7 @@ export const categoriesData: Category[] = [
       "Pet Accessories",
       "Others"
     ],
-    sort_order": 6
+    sort_order: 6
   },
   {
     name: "Fashion",
@@ -104,7 +104,7 @@ export const categoriesData: Category[] = [
       "Watches",
       "Jewelry"
     ],
-    sort_order": 7
+    sort_order: 7
   },
   {
     name: 'Property',
