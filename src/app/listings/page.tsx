@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 
 const categories = [
   { name: 'Land & Property', icon: LandPlot, value: 'property' },
@@ -28,6 +28,15 @@ const categories = [
   { name: 'Services', icon: Wrench, value: 'services' },
   { name: 'Fashion', icon: Shirt, value: 'fashion' },
 ];
+
+const subCategories: Record<string, { value: string; label: string }[]> = {
+  property: [
+    { value: 'land', label: 'Land' },
+    { value: 'shop', label: 'Shop' },
+    { value: 'apartment', label: 'Apartment' },
+  ],
+};
+
 
 const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { category: string | null, filters: any, setFilters: any, searchQuery: string }) => {
     const handleFilterChange = (key: string, value: any) => {
@@ -41,16 +50,6 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
 
         return (
             <div className="space-y-4">
-                <Label>Property Type</Label>
-                <Select value={filters.propertyType || ''} onValueChange={(val) => handleFilterChange('propertyType', val)}>
-                    <SelectTrigger><SelectValue placeholder="Any Type" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="land">Land</SelectItem>
-                        <SelectItem value="shop">Shop</SelectItem>
-                        <SelectItem value="apartment">Apartment</SelectItem>
-                    </SelectContent>
-                </Select>
-
                 {showLandFilters && (
                     <>
                         <Label>Purpose</Label>
@@ -313,14 +312,56 @@ export default function ListingsPage() {
     const primaryCategory = filters.category;
 
     const handleCategoryFilterChange = (category: string | null) => {
-        // When a new category is selected, we reset the search query
-        // and other filters to avoid irrelevant filter combinations.
-        setSearchQuery('');
+        // Reset specific filters when category changes, but keep search query
         setFilters({
-          ...initialFilters, // Reset to base filters from URL if any
+          ...initialFilters,
           category: category,
+          q: searchQuery,
+          // Clear sub-category filters
+          propertyType: null, 
         });
     };
+    
+    const handleCategoryValueChange = (value: string) => {
+        if (value === 'all') {
+            // User clicked 'Back to all' or 'All Categories'. Reset category filters.
+            setFilters(prev => {
+                const newFilters: any = { ...prev };
+                delete newFilters.category;
+                delete newFilters.propertyType;
+                // Add any other sub-category keys here to be deleted
+                return newFilters;
+            });
+            return;
+        }
+
+        const isTopLevel = categories.some(c => c.value === value);
+        if (isTopLevel) {
+            // User selected a top-level category from main list or "All in [Category]"
+            setFilters(prev => {
+                const newFilters: any = { ...prev };
+                newFilters.category = value;
+                // Clear any old sub-category filters
+                delete newFilters.propertyType;
+                return newFilters;
+            });
+            return;
+        }
+        
+        // If we're here, it must be a sub-category.
+        const parentCategory = Object.keys(subCategories).find(parent => 
+            subCategories[parent].some(sub => sub.value === value)
+        );
+
+        if (parentCategory === 'property') {
+             setFilters(prev => ({
+                ...prev,
+                category: parentCategory,
+                propertyType: value,
+            }));
+        }
+    };
+
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
         setFilters((prev: any) => ({ ...prev, [key]: checked }));
@@ -441,19 +482,35 @@ export default function ListingsPage() {
                         <div>
                             <Label>Category</Label>
                             <Select
-                                value={filters.category || 'all'}
-                                onValueChange={(value) => handleCategoryFilterChange(value === 'all' ? null : value)}
+                                value={filters.propertyType || primaryCategory || 'all'}
+                                onValueChange={handleCategoryValueChange}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
-                                    {categories.map(cat => (
-                                        <SelectItem key={cat.value} value={cat.value}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
+                                     {primaryCategory && subCategories[primaryCategory] ? (
+                                        <>
+                                            <SelectItem value={primaryCategory}>
+                                                All in {categories.find(c => c.value === primaryCategory)?.name}
+                                            </SelectItem>
+                                            <SelectSeparator />
+                                            {subCategories[primaryCategory].map(sub => (
+                                                <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+                                            ))}
+                                            <SelectSeparator />
+                                            <SelectItem value="all">Back to All Categories</SelectItem>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SelectItem value="all">All Categories</SelectItem>
+                                            {categories.map(cat => (
+                                                <SelectItem key={cat.value} value={cat.value}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -553,3 +610,5 @@ export default function ListingsPage() {
         </div>
     );
 }
+
+    
