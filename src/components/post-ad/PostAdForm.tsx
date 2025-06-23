@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,9 +17,11 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { handleSuggestTags } from '@/app/post-ad/actions';
 import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
+import { categoriesData } from '@/lib/categories-data';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
+  subcategory: z.string().min(1, 'Subcategory is required'),
   location: z.string().min(1, 'Location is required'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
@@ -37,9 +40,9 @@ type AdFormValues = z.infer<typeof adSchema>;
 export default function PostAdForm() {
   const [step, setStep] = useState(1);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [suggestedCategories, setSuggestedCategories] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
 
   const { toast } = useToast();
   const form = useForm<AdFormValues>({
@@ -47,16 +50,30 @@ export default function PostAdForm() {
     defaultValues: {
         negotiable: false,
         condition: 'used',
-        terms: false
+        terms: false,
+        category: '',
+        subcategory: ''
     }
   });
 
-  const { register, handleSubmit, control, trigger, getValues, setValue } = form;
+  const { register, handleSubmit, control, trigger, getValues, setValue, watch } = form;
+
+  const selectedCategory = watch('category');
+
+  useEffect(() => {
+    if (selectedCategory) {
+      const category = categoriesData.find(c => c.name === selectedCategory);
+      setSubcategories(category ? category.subcategories : []);
+      setValue('subcategory', '');
+    } else {
+      setSubcategories([]);
+    }
+  }, [selectedCategory, setValue]);
 
   const nextStep = async () => {
     let isValid = false;
     if (step === 1) {
-      isValid = await trigger(['category', 'location', 'socialLink']);
+      isValid = await trigger(['category', 'subcategory', 'location', 'socialLink']);
     } else if (step === 2) {
       isValid = await trigger(['title', 'description', 'price', 'phone', 'condition']);
     }
@@ -88,7 +105,6 @@ export default function PostAdForm() {
     setIsSuggesting(true);
     try {
       const result = await handleSuggestTags({ title, description });
-      setSuggestedCategories(result.categories);
       setSuggestedTags(result.tags);
     } catch (error) {
       toast({
@@ -133,14 +149,28 @@ export default function PostAdForm() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                       <SelectContent>
-                        {suggestedCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                         <SelectItem value="vehicles">Vehicles</SelectItem>
-                        <SelectItem value="property">Property</SelectItem>
+                        {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}
                 />
                 {form.formState.errors.category && <p className="text-red-500 text-sm">{form.formState.errors.category.message}</p>}
+              </div>
+               <div>
+                <Label htmlFor="subcategory">Subcategory</Label>
+                <Controller
+                  name="subcategory"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
+                      <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
+                      <SelectContent>
+                        {subcategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.subcategory && <p className="text-red-500 text-sm">{form.formState.errors.subcategory.message}</p>}
               </div>
               <div>
                 <Label htmlFor="location">Location</Label>
