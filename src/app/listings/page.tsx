@@ -559,12 +559,14 @@ export default function ListingsPage() {
 
                 {/* Listings Grid */}
                 <main className="lg:col-span-3">
-                    <div className="mb-4">
-                        <p className="text-muted-foreground">
-                            Showing {filteredListings.length} results
-                            {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
-                        </p>
-                    </div>
+                    {filteredListings.length > 0 && (
+                        <div className="mb-4">
+                            <p className="text-muted-foreground">
+                                Showing results
+                                {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
+                            </p>
+                        </div>
+                    )}
                     {filteredListings.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredListings.map(ad => (
