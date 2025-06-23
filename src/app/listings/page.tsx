@@ -559,20 +559,24 @@ export default function ListingsPage() {
 
                 {/* Listings Grid */}
                 <main className="lg:col-span-3">
-                    {filteredListings.length > 0 && (
-                        <div className="mb-4">
-                            <p className="text-muted-foreground">
-                                Showing results
-                                {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
-                            </p>
-                        </div>
-                    )}
-                    {filteredListings.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredListings.map(ad => (
-                                <AdCard key={ad.id} {...ad} />
-                            ))}
-                        </div>
+                     {filteredListings.length > 0 ? (
+                        <>
+                            <div className="mb-4">
+                                <p className="text-muted-foreground">
+                                    {filters.location ? (
+                                        <>Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}</>
+                                    ) : (
+                                        <>Showing {filteredListings.length} ad{filteredListings.length === 1 ? '' : 's'} found in Enugu</>
+                                    )}
+                                    {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredListings.map(ad => (
+                                    <AdCard key={ad.id} {...ad} />
+                                ))}
+                            </div>
+                        </>
                     ) : (
                         <div className="text-center py-16 border rounded-lg bg-card">
                             <h3 className="text-2xl font-bold">No results found</h3>
@@ -584,3 +588,5 @@ export default function ListingsPage() {
         </div>
     );
 }
+
+    
