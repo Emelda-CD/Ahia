@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import AdCard from '@/components/AdCard';
-import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint } from 'lucide-react';
-
+import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X } from 'lucide-react';
 import type { Listing } from '@/lib/listings-data';
 import { categoriesData } from '@/lib/categories-data';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { LocationModal } from '@/components/common/LocationModal';
+
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   Land: LandPlot,
@@ -36,6 +40,21 @@ const recentListings: Listing[] = [
 ];
 
 export default function Home() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [location, setLocation] = useState<string | null>(null);
+    const router = useRouter();
+
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+        if (searchQuery) {
+            params.set('q', searchQuery);
+        }
+        if (location) {
+            params.set('location', location);
+        }
+        router.push(`/listings?${params.toString()}`);
+    };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <section className="mb-12">
@@ -46,6 +65,27 @@ export default function Home() {
             <p className="mt-4 text-lg leading-8 text-gray-200">
               Your trusted online marketplace in Nigeria. Find or sell anything, anytime!
             </p>
+            <div className="mt-8 max-w-3xl mx-auto bg-white rounded-full p-2 flex items-center shadow-lg flex-col sm:flex-row gap-2 sm:gap-0">
+                <div className="relative flex-grow w-full">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                        placeholder="What are you looking for?"
+                        className="w-full pl-12 pr-4 py-3 text-gray-900 bg-transparent border-none rounded-full focus:ring-0"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                </div>
+                <div className="border-l border-gray-200 h-8 mx-2 hidden sm:block"></div>
+                <LocationModal onSelect={(town) => setLocation(town)}>
+                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto">
+                        <MapPin className="h-5 w-5" />
+                        <span>{location || 'All Enugu'}</span>
+                        {location && <X className="h-4 w-4 ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setLocation(null);}} />}
+                    </button>
+                </LocationModal>
+                <Button size="lg" className="rounded-full w-full sm:w-auto" onClick={handleSearch}>Search</Button>
+            </div>
             <div className="mt-8">
                <Button size="lg" asChild>
                  <Link href="/post-ad">Post Your Ad FREE</Link>
