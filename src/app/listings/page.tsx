@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { allListings, Listing } from '@/lib/listings-data';
 import { locations } from '@/lib/locations';
 import { cn } from '@/lib/utils';
+import { categoriesData } from '@/lib/categories-data';
 
 import AdCard from '@/components/AdCard';
 import { Button } from '@/components/ui/button';
@@ -15,65 +16,52 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt } from 'lucide-react';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 
-const categories = [
-  { name: 'Land & Property', icon: LandPlot, value: 'property' },
-  { name: 'Electronics', icon: Sparkles, value: 'electronics' },
-  { name: 'Vehicles', icon: Car, value: 'vehicles' },
-  { name: 'Jobs', icon: Briefcase, value: 'jobs' },
-  { name: 'Animals', icon: PawPrint, value: 'animals' },
-  { name: 'Furniture', icon: Sofa, value: 'furniture' },
-  { name: 'Services', icon: Wrench, value: 'services' },
-  { name: 'Fashion', icon: Shirt, value: 'fashion' },
-];
-
-const subCategories: Record<string, { value: string; label: string }[]> = {
-  property: [
-    { value: 'land', label: 'Land' },
-    { value: 'shop', label: 'Shop' },
-    { value: 'apartment', label: 'Apartment' },
-  ],
+const categoryIcons: { [key: string]: React.ElementType } = {
+  Property: Home,
+  Land: LandPlot,
+  Electronics: Sparkles,
+  Vehicles: Car,
+  Jobs: Briefcase,
+  'Animals & Pets': PawPrint,
+  'Furniture & Home': Sofa,
+  Services: Wrench,
+  Fashion: Shirt,
+  Phones: Sparkles,
 };
 
 
-const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { category: string | null, filters: any, setFilters: any, searchQuery: string }) => {
+const DynamicFilters = ({ category, filters, setFilters }: { category: string | null, filters: any, setFilters: any }) => {
     const handleFilterChange = (key: string, value: any) => {
         setFilters((prev: any) => ({ ...prev, [key]: value }));
     };
 
     if (!category) return null;
 
-    if (category === 'property') {
-        const showLandFilters = searchQuery.toLowerCase().includes('land') || filters.propertyType === 'land';
-
+    if (category === 'Land') {
         return (
             <div className="space-y-4">
-                {showLandFilters && (
-                    <>
-                        <Label>Purpose</Label>
-                        <Select value={filters.listingType || ''} onValueChange={(val) => handleFilterChange('listingType', val)}>
-                            <SelectTrigger><SelectValue placeholder="For Sale or Rent" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="sale">For Sale</SelectItem>
-                                <SelectItem value="rent">For Rent</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        
-                        <Label>Land Use</Label>
-                        <Select value={filters.landUse || ''} onValueChange={(val) => handleFilterChange('landUse', val)}>
-                            <SelectTrigger><SelectValue placeholder="Any Use" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="residential">Residential</SelectItem>
-                                <SelectItem value="commercial">Commercial</SelectItem>
-                                <SelectItem value="agricultural">Agricultural / Farming</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </>
-                )}
+                <Label>Purpose</Label>
+                <Select value={filters.listingType || ''} onValueChange={(val) => handleFilterChange('listingType', val)}>
+                    <SelectTrigger><SelectValue placeholder="For Sale or Rent" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="sale">For Sale</SelectItem>
+                        <SelectItem value="rent">For Rent</SelectItem>
+                    </SelectContent>
+                </Select>
                 
-                <Label>Title</Label>
+                <Label>Land Use</Label>
+                <Select value={filters.landUse || ''} onValueChange={(val) => handleFilterChange('landUse', val)}>
+                    <SelectTrigger><SelectValue placeholder="Any Use" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="residential">Residential</SelectItem>
+                        <SelectItem value="commercial">Commercial</SelectItem>
+                        <SelectItem value="agricultural">Agricultural / Farming</SelectItem>
+                    </SelectContent>
+                </Select>
+                 <Label>Title</Label>
                 <Select value={filters.propertyTitle || ''} onValueChange={(val) => handleFilterChange('propertyTitle', val)}>
                     <SelectTrigger><SelectValue placeholder="Any Title" /></SelectTrigger>
                     <SelectContent>
@@ -88,7 +76,7 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
 
     return (
         <>
-            {category === 'animals' && (
+            {category === 'Animals & Pets' && (
                 <div className="space-y-4">
                     <Label>Breed</Label>
                     <Input placeholder="e.g., German Shepherd" value={filters.breed || ''} onChange={(e) => handleFilterChange('breed', e.target.value)} />
@@ -102,7 +90,7 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
                     </Select>
                 </div>
             )}
-            {category === 'electronics' && (
+            {(category === 'Electronics' || category === 'Phones') && (
                  <div className="space-y-4">
                     <Label>Brand</Label>
                     <Input placeholder="e.g., Apple" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
@@ -126,7 +114,7 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
                     </Select>
                 </div>
             )}
-            {category === 'jobs' && (
+            {category === 'Jobs' && (
                  <div className="space-y-4">
                     <Label>Job Type</Label>
                      <Select value={filters.jobType || ''} onValueChange={(val) => handleFilterChange('jobType', val)}>
@@ -139,7 +127,7 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
                     </Select>
                 </div>
             )}
-             {category === 'vehicles' && (
+             {category === 'Vehicles' && (
                 <div className="space-y-4">
                     <Label>Brand</Label>
                     <Input placeholder="e.g., Toyota" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
@@ -157,7 +145,7 @@ const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { catego
                     </Select>
                 </div>
             )}
-            {category === 'fashion' && (
+            {category === 'Fashion' && (
                 <div className="space-y-4">
                     <Label>Brand</Label>
                     <Input placeholder="e.g., Gucci" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
@@ -230,15 +218,38 @@ const LocationModal = ({ onSelect, children }: { onSelect: (town: string) => voi
   );
 };
 
-const categoryKeywords: Record<string, string[]> = {
-    animals: ['dog', 'cat', 'puppy', 'goat', 'animal', 'boerboel', 'shepherd'],
-    electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic', 'hp', 'galaxy'],
-    property: ['land', 'apartment', 'shop', 'flat', 'property', 'plot', 'duplex'],
-    jobs: ['job', 'developer', 'manager', 'accountant', 'marketing'],
-    vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle', 'camry', 'cr-v', 'accord'],
-    furniture: ['sofa', 'chair', 'table', 'furniture'],
-    services: ['service', 'repair', 'cleaning', 'plumbing'],
-    fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion', 'handbag'],
+const categoryKeywords: Record<string, { category: string, subcategory?: string }> = {
+    'land': { category: 'Land' },
+    'plot': { category: 'Land' },
+    'acre': { category: 'Land' },
+    'hectare': { category: 'Land' },
+    'property': { category: 'Property' },
+    'apartment': { category: 'Property', subcategory: 'Houses & Apartments for Rent' },
+    'flat': { category: 'Property', subcategory: 'Houses & Apartments for Rent' },
+    'house': { category: 'Property', subcategory: 'Houses & Apartments for Sale' },
+    'shop': { category: 'Property', subcategory: 'Commercial Property for Sale' },
+    'office': { category: 'Property', subcategory: 'Commercial Property for Sale' },
+    'iphone': { category: 'Phones', subcategory: 'iPhones' },
+    'samsung': { category: 'Phones', subcategory: 'Samsung' },
+    'galaxy': { category: 'Phones', subcategory: 'Samsung' },
+    'tecno': { category: 'Phones', subcategory: 'Tecno' },
+    'infinix': { category: 'Phones', subcategory: 'Infinix' },
+    'phone': { category: 'Phones' },
+    'car': { category: 'Vehicles', subcategory: 'Cars' },
+    'camry': { category: 'Vehicles', subcategory: 'Cars' },
+    'honda': { category: 'Vehicles', subcategory: 'Cars' },
+    'toyota': { category: 'Vehicles', subcategory: 'Cars' },
+    'vehicle': { category: 'Vehicles' },
+    'job': { category: 'Jobs' },
+    'dog': { category: 'Animals & Pets', subcategory: 'Dogs' },
+    'puppy': { category: 'Animals & Pets', subcategory: 'Dogs' },
+    'cat': { category: 'Animals & Pets', subcategory: 'Cats' },
+    'pet': { category: 'Animals & Pets' },
+    'bag': { category: 'Fashion', subcategory: 'Bags' },
+    'shoe': { category: 'Fashion', subcategory: 'Shoes' },
+    'dress': { category: 'Fashion', subcategory: 'Women’s Fashion' },
+    'laptop': { category: 'Electronics', subcategory: 'Laptops' },
+    'tv': { category: 'Electronics', subcategory: 'TVs' },
 };
 
 const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
@@ -253,50 +264,20 @@ const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
         minRating: searchParams.get('rating') ? 4 : 0,
         popularity: '',
         category: searchParams.get('category') || null,
+        subcategory: searchParams.get('subcategory') || null,
     };
 
-    // Detect category if not provided
     if (!newFilters.category) {
-        for (const category in categoryKeywords) {
-            if (categoryKeywords[category].some(keyword => query.includes(keyword))) {
-                newFilters.category = category;
+        for (const keyword in categoryKeywords) {
+            if (query.includes(keyword)) {
+                newFilters.category = categoryKeywords[keyword].category;
+                if (categoryKeywords[keyword].subcategory) {
+                   newFilters.subcategory = categoryKeywords[keyword].subcategory;
+                }
                 break;
             }
         }
     }
-
-    // Derive specific filters based on query and category
-    if (newFilters.category === 'property') {
-        if (query.includes('land')) newFilters.propertyType = 'land';
-        if (query.includes('shop')) newFilters.propertyType = 'shop';
-        if (query.includes('apartment')) newFilters.propertyType = 'apartment';
-        if (query.includes('sale')) newFilters.listingType = 'sale';
-        if (query.includes('rent')) newFilters.listingType = 'rent';
-        if (query.includes('c of o')) newFilters.propertyTitle = 'cofo';
-        if (query.includes('deed')) newFilters.propertyTitle = 'deed';
-        if (query.includes('residential')) newFilters.landUse = 'residential';
-        if (query.includes('commercial')) newFilters.landUse = 'commercial';
-        if (query.includes('farming') || query.includes('agricultural')) newFilters.landUse = 'agricultural';
-    } else if (newFilters.category === 'vehicles') {
-        if (query.includes('toyota')) newFilters.brand = 'Toyota';
-        if (query.includes('honda')) newFilters.brand = 'Honda';
-        if (query.includes('camry')) newFilters.model = 'Camry';
-        if (query.includes('cr-v')) newFilters.model = 'CR-V';
-        if (query.includes('automatic')) newFilters.transmission = 'automatic';
-        if (query.includes('manual')) newFilters.transmission = 'manual';
-    } else if (newFilters.category === 'electronics') {
-        if (query.includes('iphone')) newFilters.brand = 'Apple';
-        if (query.includes('samsung') || query.includes('galaxy')) newFilters.brand = 'Samsung';
-        if (query.includes('hp')) newFilters.brand = 'HP';
-        if (query.includes('new')) newFilters.condition = 'new';
-        if (query.includes('used')) newFilters.condition = 'used';
-    } else if (newFilters.category === 'animals') {
-        if (query.includes('german shepherd')) newFilters.breed = 'German Shepherd';
-        if (query.includes('boerboel')) newFilters.breed = 'Boerboel';
-        if (query.includes('male')) newFilters.gender = 'male';
-        if (query.includes('female')) newFilters.gender = 'female';
-    }
-
     return newFilters;
 };
 
@@ -309,55 +290,50 @@ export default function ListingsPage() {
     const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
     const [filters, setFilters] = useState<any>(initialFilters);
 
-    const primaryCategory = filters.category;
-
-    const handleCategoryFilterChange = (category: string | null) => {
-        // Reset specific filters when category changes, but keep search query
-        setFilters({
-          ...initialFilters,
-          category: category,
-          q: searchQuery,
-          // Clear sub-category filters
-          propertyType: null, 
+    const handleCategoryClick = (categoryName: string) => {
+        setFilters((prev: any) => {
+            // if clicking the same category, do nothing
+            if(prev.category === categoryName) return prev;
+            // otherwise, set new category and clear subcategory
+            return {
+                ...prev,
+                q: '', // Clear search query when changing category
+                category: categoryName,
+                subcategory: null
+            };
         });
     };
     
     const handleCategoryValueChange = (value: string) => {
+        // If 'all', clear category filters
         if (value === 'all') {
-            // User clicked 'Back to all' or 'All Categories'. Reset category filters.
             setFilters(prev => {
                 const newFilters: any = { ...prev };
                 delete newFilters.category;
-                delete newFilters.propertyType;
-                // Add any other sub-category keys here to be deleted
+                delete newFilters.subcategory;
                 return newFilters;
             });
             return;
         }
 
-        const isTopLevel = categories.some(c => c.value === value);
-        if (isTopLevel) {
-            // User selected a top-level category from main list or "All in [Category]"
-            setFilters(prev => {
-                const newFilters: any = { ...prev };
-                newFilters.category = value;
-                // Clear any old sub-category filters
-                delete newFilters.propertyType;
-                return newFilters;
-            });
+        // Check if it's a main category
+        const mainCategory = categoriesData.find(c => c.name === value);
+        if (mainCategory) {
+            setFilters(prev => ({
+                ...prev,
+                category: value,
+                subcategory: null, // Reset subcategory when main category is selected
+            }));
             return;
         }
         
-        // If we're here, it must be a sub-category.
-        const parentCategory = Object.keys(subCategories).find(parent => 
-            subCategories[parent].some(sub => sub.value === value)
-        );
-
-        if (parentCategory === 'property') {
-             setFilters(prev => ({
+        // It must be a subcategory
+        const parentCategory = categoriesData.find(c => c.subcategories.includes(value));
+        if (parentCategory) {
+            setFilters(prev => ({
                 ...prev,
-                category: parentCategory,
-                propertyType: value,
+                category: parentCategory.name,
+                subcategory: value,
             }));
         }
     };
@@ -373,9 +349,12 @@ export default function ListingsPage() {
 
     const applyFilters = useCallback(() => {
         let listings = allListings;
-
-        if (primaryCategory) {
-            listings = listings.filter(l => l.category === primaryCategory);
+        
+        if (filters.category) {
+            listings = listings.filter(l => l.category === filters.category);
+        }
+        if (filters.subcategory) {
+            listings = listings.filter(l => l.subcategory === filters.subcategory);
         }
 
         const query = searchQuery.toLowerCase();
@@ -388,10 +367,10 @@ export default function ListingsPage() {
         }
 
         if (filters.minPrice) {
-            listings = listings.filter(l => l.price >= Number(filters.minPrice));
+            listings = listings.filter(l => typeof l.price === 'number' && l.price >= Number(filters.minPrice));
         }
         if (filters.maxPrice) {
-            listings = listings.filter(l => l.price <= Number(filters.maxPrice));
+            listings = listings.filter(l =>  typeof l.price === 'number' && l.price <= Number(filters.maxPrice));
         }
         
         if(filters.sellerVerified) listings = listings.filter(l => l.verifiedSeller);
@@ -402,32 +381,24 @@ export default function ListingsPage() {
         if(filters.popularity === 'most_viewed') listings = listings.sort((a,b) => (b.views || 0) - (a.views || 0));
         if(filters.popularity === 'most_contacted') listings = listings.sort((a,b) => (b.contacts || 0) - (a.contacts || 0));
         
-        if (primaryCategory === 'vehicles') {
-            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
-            if (filters.model) listings = listings.filter(l => l.specifics?.model?.toLowerCase().includes(filters.model.toLowerCase()));
-            if (filters.year) listings = listings.filter(l => l.specifics?.year === Number(filters.year));
-            if (filters.transmission) listings = listings.filter(l => l.specifics?.transmission === filters.transmission);
-        } else if (primaryCategory === 'electronics') {
-            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
-            if (filters.storage) listings = listings.filter(l => l.specifics?.storage === filters.storage);
-            if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
-        } else if (primaryCategory === 'animals') {
-            if (filters.breed) listings = listings.filter(l => l.specifics?.breed?.toLowerCase().includes(filters.breed.toLowerCase()));
-            if (filters.gender) listings = listings.filter(l => l.specifics?.gender === filters.gender);
-        } else if (primaryCategory === 'property') {
-            if (filters.propertyType) listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
-            if (filters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === filters.propertyTitle);
-            if (filters.landUse) listings = listings.filter(l => l.specifics?.landUse === filters.landUse);
-            if (filters.listingType) listings = listings.filter(l => l.specifics?.listingType === filters.listingType);
-        } else if (primaryCategory === 'jobs') {
-            if (filters.jobType) listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
-        } else if (primaryCategory === 'fashion') {
-            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
-            if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
+        if (filters.category) {
+            const dynamicFilters = filters; // simplified for clarity
+            if (dynamicFilters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(dynamicFilters.brand.toLowerCase()));
+            if (dynamicFilters.model) listings = listings.filter(l => l.specifics?.model?.toLowerCase().includes(dynamicFilters.model.toLowerCase()));
+            if (dynamicFilters.year) listings = listings.filter(l => l.specifics?.year === Number(dynamicFilters.year));
+            if (dynamicFilters.transmission) listings = listings.filter(l => l.specifics?.transmission === dynamicFilters.transmission);
+            if (dynamicFilters.storage) listings = listings.filter(l => l.specifics?.storage === dynamicFilters.storage);
+            if (dynamicFilters.condition) listings = listings.filter(l => l.specifics?.condition === dynamicFilters.condition);
+            if (dynamicFilters.breed) listings = listings.filter(l => l.specifics?.breed?.toLowerCase().includes(dynamicFilters.breed.toLowerCase()));
+            if (dynamicFilters.gender) listings = listings.filter(l => l.specifics?.gender === dynamicFilters.gender);
+            if (dynamicFilters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === dynamicFilters.propertyTitle);
+            if (dynamicFilters.landUse) listings = listings.filter(l => l.specifics?.landUse === dynamicFilters.landUse);
+            if (dynamicFilters.listingType) listings = listings.filter(l => l.specifics?.listingType === dynamicFilters.listingType);
+            if (dynamicFilters.jobType) listings = listings.filter(l => l.specifics?.jobType === dynamicFilters.jobType);
         }
         
         setFilteredListings(listings);
-    }, [filters, searchQuery, primaryCategory]);
+    }, [filters, searchQuery]);
     
     useEffect(() => {
         applyFilters();
@@ -438,7 +409,6 @@ export default function ListingsPage() {
         newUrlParams.set('q', searchQuery);
         const newFilters = deriveFiltersFromQuery(newUrlParams);
         setFilters(newFilters);
-        // This will trigger the useEffect to re-filter
     }
     
     return (
@@ -456,20 +426,22 @@ export default function ListingsPage() {
                      <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 text-center">
-                    {categories.map(cat => (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4 text-center">
+                    {categoriesData.map(cat => {
+                        const Icon = categoryIcons[cat.name] || Home;
+                        return (
                         <button
                             key={cat.name}
-                            onClick={() => handleCategoryFilterChange(cat.value)}
+                            onClick={() => handleCategoryClick(cat.name)}
                             className={cn(
-                                "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
-                                primaryCategory === cat.value && "bg-primary/10 ring-2 ring-primary"
+                                "flex flex-col items-center justify-center p-2 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
+                                filters.category === cat.name && "bg-primary/10 ring-2 ring-primary"
                             )}
                         >
-                            <cat.icon className="h-8 w-8 text-primary mb-2" />
-                            <span className="font-semibold text-sm">{cat.name}</span>
+                            <Icon className="h-8 w-8 text-primary mb-2" />
+                            <span className="font-semibold text-xs">{cat.name}</span>
                         </button>
-                    ))}
+                    )})}
                 </div>
             </section>
             
@@ -482,21 +454,21 @@ export default function ListingsPage() {
                         <div>
                             <Label>Category</Label>
                             <Select
-                                value={filters.propertyType || primaryCategory || 'all'}
+                                value={filters.subcategory || filters.category || 'all'}
                                 onValueChange={handleCategoryValueChange}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                     {primaryCategory && subCategories[primaryCategory] ? (
+                                    {filters.category && categoriesData.find(c => c.name === filters.category) ? (
                                         <>
-                                            <SelectItem value={primaryCategory}>
-                                                All in {categories.find(c => c.value === primaryCategory)?.name}
+                                            <SelectItem value={filters.category}>
+                                                All in {filters.category}
                                             </SelectItem>
                                             <SelectSeparator />
-                                            {subCategories[primaryCategory].map(sub => (
-                                                <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+                                            {categoriesData.find(c => c.name === filters.category)!.subcategories.map(sub => (
+                                                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                                             ))}
                                             <SelectSeparator />
                                             <SelectItem value="all">Back to All Categories</SelectItem>
@@ -504,8 +476,8 @@ export default function ListingsPage() {
                                     ) : (
                                         <>
                                             <SelectItem value="all">All Categories</SelectItem>
-                                            {categories.map(cat => (
-                                                <SelectItem key={cat.value} value={cat.value}>
+                                            {categoriesData.map(cat => (
+                                                <SelectItem key={cat.name} value={cat.name}>
                                                     {cat.name}
                                                 </SelectItem>
                                             ))}
@@ -536,11 +508,11 @@ export default function ListingsPage() {
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
-                             {primaryCategory && (
+                             {filters.category && (
                                 <AccordionItem value="dynamic">
                                     <AccordionTrigger>Details</AccordionTrigger>
                                     <AccordionContent>
-                                        <DynamicFilters category={primaryCategory} filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
+                                        <DynamicFilters category={filters.category} filters={filters} setFilters={setFilters} />
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
@@ -610,5 +582,3 @@ export default function ListingsPage() {
         </div>
     );
 }
-
-    

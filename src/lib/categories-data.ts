@@ -17,9 +17,10 @@ export const categoriesData: Category[] = [
       "Land for Rent",
       "Commercial Land",
       "Residential Land",
-      "Agricultural Land"
+      "Agricultural Land",
+      "Joint Venture Land"
     ],
-    sort_order: 1
+    sort_order": 1
   },
   {
     name: "Phones",
@@ -30,9 +31,10 @@ export const categoriesData: Category[] = [
       "Samsung",
       "Tecno",
       "Infinix",
-      "Others"
+      "Other Phones",
+      "Phone Accessories"
     ],
-    sort_order: 2
+    sort_order": 2
   },
   {
     name: "Vehicles",
@@ -42,9 +44,25 @@ export const categoriesData: Category[] = [
       "Cars",
       "Motorcycles",
       "Trucks",
-      "Vehicle Parts"
+      "Vehicle Parts",
+      "Buses",
+      "Trailers"
     ],
-    sort_order: 3
+    sort_order": 3
+  },
+  {
+    name: "Electronics",
+    slug: "electronics",
+    icon: "💻",
+    subcategories: [
+      "Laptops",
+      "TVs",
+      "Home Theaters",
+      "Refrigerators",
+      "Cameras",
+      "Accessories"
+    ],
+    sort_order": 4
   },
   {
     name: "Jobs",
@@ -54,10 +72,11 @@ export const categoriesData: Category[] = [
       "IT Jobs",
       "Teaching Jobs",
       "Driving Jobs",
-      "Accounting",
-      "Customer Service"
+      "Customer Service",
+      "Accounting & Finance",
+      "Others"
     ],
-    sort_order: 4
+    sort_order": 5
   },
   {
     name: "Animals & Pets",
@@ -68,9 +87,24 @@ export const categoriesData: Category[] = [
       "Cats",
       "Birds",
       "Fish",
-      "Pet Accessories"
+      "Pet Accessories",
+      "Others"
     ],
-    sort_order: 5
+    sort_order": 6
+  },
+  {
+    name: "Fashion",
+    slug: "fashion",
+    icon: "👗",
+    subcategories: [
+      "Men’s Fashion",
+      "Women’s Fashion",
+      "Shoes",
+      "Bags",
+      "Watches",
+      "Jewelry"
+    ],
+    sort_order": 7
   },
   {
     name: 'Property',
@@ -83,21 +117,7 @@ export const categoriesData: Category[] = [
       'Commercial Property for Rent',
       'Event Centres & Venues',
     ],
-    sort_order: 6,
-  },
-  {
-    name: 'Electronics',
-    slug: 'electronics',
-    icon: '📱',
-    subcategories: ['Laptops & Computers', 'TVs', 'Audio & Sound Systems', 'Video Games & Consoles', 'Cameras & Accessories'],
-    sort_order: 7,
-  },
-  {
-      name: 'Fashion',
-      slug: 'fashion',
-      icon: '👕',
-      subcategories: ['Clothing', 'Shoes', 'Jewelry & Watches', 'Bags'],
-      sort_order: 8
+    sort_order: 8,
   },
   {
       name: 'Furniture & Home',
