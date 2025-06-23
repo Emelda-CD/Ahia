@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X } from 'lucide-react';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const categories = [
@@ -26,6 +26,7 @@ const categories = [
   { name: 'Animals', icon: PawPrint, value: 'animals' },
   { name: 'Furniture', icon: Sofa, value: 'furniture' },
   { name: 'Services', icon: Wrench, value: 'services' },
+  { name: 'Fashion', icon: Shirt, value: 'fashion' },
 ];
 
 const DynamicFilters = ({ category, filters, setFilters }: { category: string | null, filters: any, setFilters: any }) => {
@@ -114,12 +115,30 @@ const DynamicFilters = ({ category, filters, setFilters }: { category: string | 
                 <div className="space-y-4">
                     <Label>Brand</Label>
                     <Input placeholder="e.g., Toyota" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
+                    <Label>Model</Label>
+                    <Input placeholder="e.g., Camry" value={filters.model || ''} onChange={(e) => handleFilterChange('model', e.target.value)} />
+                    <Label>Year</Label>
+                    <Input type="number" placeholder="e.g., 2019" value={filters.year || ''} onChange={(e) => handleFilterChange('year', e.target.value)} />
                     <Label>Transmission</Label>
                     <Select value={filters.transmission || ''} onValueChange={(val) => handleFilterChange('transmission', val)}>
                         <SelectTrigger><SelectValue placeholder="Any Transmission" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="automatic">Automatic</SelectItem>
                             <SelectItem value="manual">Manual</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+            {category === 'fashion' && (
+                <div className="space-y-4">
+                    <Label>Brand</Label>
+                    <Input placeholder="e.g., Gucci" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
+                    <Label>Condition</Label>
+                    <Select value={filters.condition || ''} onValueChange={(val) => handleFilterChange('condition', val)}>
+                        <SelectTrigger><SelectValue placeholder="Any Condition" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="used">Used</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -202,6 +221,7 @@ export default function ListingsPage() {
             vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
             furniture: ['sofa', 'chair', 'table', 'furniture'],
             services: ['service', 'repair', 'cleaning'],
+            fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion'],
         };
 
         for (const category in categoryKeywords) {
@@ -232,7 +252,6 @@ export default function ListingsPage() {
 
     const handleCategoryFilterChange = (category: string | null) => {
         handleInputChange('category', category);
-        setSearchQuery(''); 
     };
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
@@ -271,20 +290,26 @@ export default function ListingsPage() {
         if(filters.popularity === 'most_viewed') listings = listings.sort((a,b) => (b.views || 0) - (a.views || 0));
         if(filters.popularity === 'most_contacted') listings = listings.sort((a,b) => (b.contacts || 0) - (a.contacts || 0));
         
-        if(currentCategory && filters.brand) {
-            listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
-        }
-        if(currentCategory && filters.condition) {
-            listings = listings.filter(l => l.specifics?.condition === filters.condition);
-        }
-        if(currentCategory && filters.gender) {
-            listings = listings.filter(l => l.specifics?.gender === filters.gender);
-        }
-        if(currentCategory && filters.propertyType) {
-            listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
-        }
-         if(currentCategory && filters.jobType) {
-            listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
+        if (currentCategory === 'vehicles') {
+            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
+            if (filters.model) listings = listings.filter(l => l.specifics?.model?.toLowerCase().includes(filters.model.toLowerCase()));
+            if (filters.year) listings = listings.filter(l => l.specifics?.year === Number(filters.year));
+            if (filters.transmission) listings = listings.filter(l => l.specifics?.transmission === filters.transmission);
+        } else if (currentCategory === 'electronics') {
+            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
+            if (filters.storage) listings = listings.filter(l => l.specifics?.storage === filters.storage);
+            if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
+        } else if (currentCategory === 'animals') {
+            if (filters.breed) listings = listings.filter(l => l.specifics?.breed?.toLowerCase().includes(filters.breed.toLowerCase()));
+            if (filters.gender) listings = listings.filter(l => l.specifics?.gender === filters.gender);
+        } else if (currentCategory === 'property') {
+            if (filters.propertyType) listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
+            if (filters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === filters.propertyTitle);
+        } else if (currentCategory === 'jobs') {
+            if (filters.jobType) listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
+        } else if (currentCategory === 'fashion') {
+            if (filters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
+            if (filters.condition) listings = listings.filter(l => l.specifics?.condition === filters.condition);
         }
         
         setFilteredListings(listings);
@@ -295,7 +320,6 @@ export default function ListingsPage() {
     }, [applyFilters]);
 
     const handleSearch = () => {
-        // Re-detect category when a new search is performed
         const query = searchQuery.toLowerCase();
         const categoryKeywords: Record<string, string[]> = {
             animals: ['dog', 'cat', 'puppy', 'goat', 'animal'],
@@ -305,6 +329,7 @@ export default function ListingsPage() {
             vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
             furniture: ['sofa', 'chair', 'table', 'furniture'],
             services: ['service', 'repair', 'cleaning'],
+            fashion: ['bag', 'shoe', 'dress', 'shirt', 'fashion'],
         };
         let newCategory = null;
         for (const category in categoryKeywords) {
@@ -331,7 +356,7 @@ export default function ListingsPage() {
                      <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 text-center">
                     {categories.map(cat => (
                         <a href={`/listings?category=${cat.value}&search=${cat.name.toLowerCase()}`} key={cat.name} className={cn(
                             "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
@@ -349,29 +374,28 @@ export default function ListingsPage() {
                 <aside className="lg:col-span-1">
                     <div className="p-4 rounded-lg border bg-card space-y-6 sticky top-20">
                         <h3 className="text-xl font-bold">Filters</h3>
-                       <Accordion type="multiple" defaultValue={['category', 'location', 'price', 'verification', 'dynamic']} className="w-full">
-                             <AccordionItem value="category">
-                                <AccordionTrigger>Category</AccordionTrigger>
-                                <AccordionContent className="space-y-1">
-                                    <Button
-                                        variant={!filters.category ? 'secondary' : 'ghost'}
-                                        className="w-full justify-start font-normal"
-                                        onClick={() => handleCategoryFilterChange(null)}
-                                    >
-                                        All Categories
-                                    </Button>
+                        
+                        <div>
+                            <Label>Category</Label>
+                            <Select
+                                value={filters.category || ''}
+                                onValueChange={(value) => handleCategoryFilterChange(value || null)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">All Categories</SelectItem>
                                     {categories.map(cat => (
-                                        <Button
-                                            key={cat.value}
-                                            variant={filters.category === cat.value ? 'secondary' : 'ghost'}
-                                            className="w-full justify-start font-normal"
-                                            onClick={() => handleCategoryFilterChange(cat.value)}
-                                        >
+                                        <SelectItem key={cat.value} value={cat.value}>
                                             {cat.name}
-                                        </Button>
+                                        </SelectItem>
                                     ))}
-                                </AccordionContent>
-                            </AccordionItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'dynamic', 'popularity']} className="w-full">
                             <AccordionItem value="location">
                                 <AccordionTrigger>Location</AccordionTrigger>
                                 <AccordionContent className="space-y-2">

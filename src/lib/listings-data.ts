@@ -4,7 +4,7 @@ export type Listing = {
   title: string;
   description: string;
   price: number | 'Negotiable';
-  category: 'vehicles' | 'property' | 'electronics' | 'jobs' | 'animals' | 'furniture' | 'services';
+  category: 'vehicles' | 'property' | 'electronics' | 'jobs' | 'animals' | 'furniture' | 'services' | 'fashion';
   image: string;
   data_ai_hint: string;
   location: {
@@ -188,5 +188,31 @@ export const allListings: Listing[] = [
     views: 720,
     contacts: 60,
     specifics: { brand: 'Samsung', storage: '128gb', condition: 'used' },
+  },
+  {
+    id: '11',
+    title: 'Designer Leather Handbag',
+    description: 'A stylish leather handbag from a top designer. Perfect for all occasions.',
+    price: 75000,
+    category: 'fashion',
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'leather handbag',
+    location: { lga: 'Enugu North', town: 'GRA' },
+    verifiedSeller: true,
+    rating: 4.8,
+    specifics: { condition: 'new', brand: 'Designer Brand' },
+  },
+  {
+    id: '12',
+    title: 'Men\'s Formal Shoes',
+    description: 'Classic black leather shoes for formal wear. Size 42.',
+    price: 45000,
+    category: 'fashion',
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'mens shoes',
+    location: { lga: 'Enugu South', town: 'Uwani' },
+    verifiedID: true,
+    rating: 4.6,
+    specifics: { condition: 'new', brand: 'Fashion Co' },
   },
 ];
