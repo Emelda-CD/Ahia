@@ -378,14 +378,14 @@ export default function ListingsPage() {
                         <div>
                             <Label>Category</Label>
                             <Select
-                                value={filters.category || ''}
-                                onValueChange={(value) => handleCategoryFilterChange(value || null)}
+                                value={filters.category || 'all'}
+                                onValueChange={(value) => handleCategoryFilterChange(value === 'all' ? null : value)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All Categories</SelectItem>
+                                    <SelectItem value="all">All Categories</SelectItem>
                                     {categories.map(cat => (
                                         <SelectItem key={cat.value} value={cat.value}>
                                             {cat.name}
