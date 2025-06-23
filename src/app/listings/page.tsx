@@ -221,31 +221,41 @@ export default function ListingsPage() {
         verifiedID: false,
         minRating: searchParams.get('rating') ? 4 : 0,
         popularity: '',
-        category: null,
+        category: initialCategory,
     });
 
     const primaryCategory = filters.category;
 
-    const applyFilters = () => {
+    const handleInputChange = useCallback((key: string, value: any) => {
+        setFilters((prev: any) => ({ ...prev, [key]: value }));
+    }, []);
+
+    const handleCategoryFilterChange = (category: string | null) => {
+        handleInputChange('category', category);
+        setSearchQuery(''); 
+    };
+
+    const handleCheckboxChange = (key: string, checked: boolean) => {
+        setFilters((prev: any) => ({ ...prev, [key]: checked }));
+    };
+    
+    const applyFilters = useCallback(() => {
         let listings = allListings;
 
-        // Filter by primary category if detected from search
-        if (primaryCategory) {
-            listings = listings.filter(l => l.category === primaryCategory);
+        const currentCategory = filters.category;
+        if (currentCategory) {
+            listings = listings.filter(l => l.category === currentCategory);
         }
 
-        // Search query filter
         const query = searchQuery.toLowerCase();
         if (query) {
             listings = listings.filter(l => l.title.toLowerCase().includes(query) || l.description.toLowerCase().includes(query));
         }
 
-        // Location filter
         if (filters.location) {
             listings = listings.filter(l => l.location.town === filters.location);
         }
 
-        // Price filter
         if (filters.minPrice) {
             listings = listings.filter(l => l.price >= Number(filters.minPrice));
         }
@@ -253,64 +263,57 @@ export default function ListingsPage() {
             listings = listings.filter(l => l.price <= Number(filters.maxPrice));
         }
         
-        // Verification filters
         if(filters.sellerVerified) listings = listings.filter(l => l.verifiedSeller);
         if(filters.propertyVerified) listings = listings.filter(l => l.propertyVerified);
         if(filters.verifiedID) listings = listings.filter(l => l.verifiedID);
         if(filters.minRating > 0) listings = listings.filter(l => l.rating && l.rating >= filters.minRating);
 
-        // Popularity filters
         if(filters.popularity === 'most_viewed') listings = listings.sort((a,b) => (b.views || 0) - (a.views || 0));
         if(filters.popularity === 'most_contacted') listings = listings.sort((a,b) => (b.contacts || 0) - (a.contacts || 0));
         
-        // Dynamic filters
-        if(primaryCategory && filters.brand) {
+        if(currentCategory && filters.brand) {
             listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(filters.brand.toLowerCase()));
         }
-        if(primaryCategory && filters.condition) {
+        if(currentCategory && filters.condition) {
             listings = listings.filter(l => l.specifics?.condition === filters.condition);
         }
-        if(primaryCategory && filters.gender) {
+        if(currentCategory && filters.gender) {
             listings = listings.filter(l => l.specifics?.gender === filters.gender);
         }
-        if(primaryCategory && filters.propertyType) {
+        if(currentCategory && filters.propertyType) {
             listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
         }
-         if(primaryCategory && filters.jobType) {
+         if(currentCategory && filters.jobType) {
             listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
         }
         
         setFilteredListings(listings);
-    };
+    }, [filters, searchQuery]);
     
-    const handleCheckboxChange = (key: string, checked: boolean) => {
-        setFilters((prev: any) => ({ ...prev, [key]: checked }));
-    };
-
-    const handleInputChange = useCallback((key: string, value: any) => {
-        setFilters((prev: any) => ({ ...prev, [key]: value }));
-    }, []);
-    
-    useEffect(() => {
-        handleInputChange('category', initialCategory);
-    }, [initialCategory, handleInputChange]);
-
-    // Apply filters on initial load and when filters change
     useEffect(() => {
         applyFilters();
-    }, [searchParams, filters.location, filters.minPrice, filters.maxPrice, filters.sellerVerified, filters.propertyVerified, filters.verifiedID, filters.minRating, filters.popularity, filters.category]);
-    
-    // Re-apply filters when dynamic filter values change
-    useEffect(() => {
-        applyFilters();
-    }, [filters.brand, filters.condition, filters.gender, filters.propertyType, filters.jobType]);
-
+    }, [applyFilters]);
 
     const handleSearch = () => {
-        // We just need to trigger the effect that depends on searchParams
-        // The easiest way is to push a new URL, but since we are already on the page
-        // we can just call applyFilters manually
-        applyFilters();
+        // Re-detect category when a new search is performed
+        const query = searchQuery.toLowerCase();
+        const categoryKeywords: Record<string, string[]> = {
+            animals: ['dog', 'cat', 'puppy', 'goat', 'animal'],
+            electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic'],
+            property: ['land', 'apartment', 'shop', 'flat', 'property'],
+            jobs: ['job', 'developer', 'manager', 'accountant'],
+            vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
+            furniture: ['sofa', 'chair', 'table', 'furniture'],
+            services: ['service', 'repair', 'cleaning'],
+        };
+        let newCategory = null;
+        for (const category in categoryKeywords) {
+            if (categoryKeywords[category].some(keyword => query.includes(keyword))) {
+                newCategory = category;
+                break;
+            }
+        }
+        handleInputChange('category', newCategory);
     }
     
     return (
@@ -353,7 +356,7 @@ export default function ListingsPage() {
                                     <Button
                                         variant={!filters.category ? 'secondary' : 'ghost'}
                                         className="w-full justify-start font-normal"
-                                        onClick={() => handleInputChange('category', null)}
+                                        onClick={() => handleCategoryFilterChange(null)}
                                     >
                                         All Categories
                                     </Button>
@@ -362,7 +365,7 @@ export default function ListingsPage() {
                                             key={cat.value}
                                             variant={filters.category === cat.value ? 'secondary' : 'ghost'}
                                             className="w-full justify-start font-normal"
-                                            onClick={() => handleInputChange('category', cat.value)}
+                                            onClick={() => handleCategoryFilterChange(cat.value)}
                                         >
                                             {cat.name}
                                         </Button>
