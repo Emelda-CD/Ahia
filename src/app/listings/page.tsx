@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { allListings, Listing } from '@/lib/listings-data';
 import { locations } from '@/lib/locations';
@@ -189,18 +189,7 @@ export default function ListingsPage() {
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
     const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
     
-    const [filters, setFilters] = useState<any>({
-        location: searchParams.get('location') || null,
-        minPrice: '',
-        maxPrice: '',
-        sellerVerified: searchParams.get('verified') === 'true' || false,
-        propertyVerified: searchParams.get('property_verified') === 'true' || false,
-        verifiedID: false,
-        minRating: searchParams.get('rating') ? 4 : 0,
-        popularity: '',
-    });
-
-    const primaryCategory = useMemo(() => {
+    const initialCategory = useMemo(() => {
         const query = (searchParams.get('search') || '').toLowerCase();
         const categoryParam = searchParams.get('category');
         if (categoryParam) return categoryParam;
@@ -222,6 +211,20 @@ export default function ListingsPage() {
         }
         return null;
     }, [searchParams]);
+
+    const [filters, setFilters] = useState<any>({
+        location: searchParams.get('location') || null,
+        minPrice: '',
+        maxPrice: '',
+        sellerVerified: searchParams.get('verified') === 'true' || false,
+        propertyVerified: searchParams.get('property_verified') === 'true' || false,
+        verifiedID: false,
+        minRating: searchParams.get('rating') ? 4 : 0,
+        popularity: '',
+        category: null,
+    });
+
+    const primaryCategory = filters.category;
 
     const applyFilters = () => {
         let listings = allListings;
@@ -280,10 +283,22 @@ export default function ListingsPage() {
         setFilteredListings(listings);
     };
     
+    const handleCheckboxChange = (key: string, checked: boolean) => {
+        setFilters((prev: any) => ({ ...prev, [key]: checked }));
+    };
+
+    const handleInputChange = useCallback((key: string, value: any) => {
+        setFilters((prev: any) => ({ ...prev, [key]: value }));
+    }, []);
+    
+    useEffect(() => {
+        handleInputChange('category', initialCategory);
+    }, [initialCategory, handleInputChange]);
+
     // Apply filters on initial load and when filters change
     useEffect(() => {
         applyFilters();
-    }, [searchParams, filters.location, filters.minPrice, filters.maxPrice, filters.sellerVerified, filters.propertyVerified, filters.verifiedID, filters.minRating, filters.popularity]);
+    }, [searchParams, filters.location, filters.minPrice, filters.maxPrice, filters.sellerVerified, filters.propertyVerified, filters.verifiedID, filters.minRating, filters.popularity, filters.category]);
     
     // Re-apply filters when dynamic filter values change
     useEffect(() => {
@@ -291,14 +306,6 @@ export default function ListingsPage() {
     }, [filters.brand, filters.condition, filters.gender, filters.propertyType, filters.jobType]);
 
 
-    const handleCheckboxChange = (key: string, checked: boolean) => {
-        setFilters((prev: any) => ({ ...prev, [key]: checked }));
-    };
-
-    const handleInputChange = (key: string, value: string) => {
-        setFilters((prev: any) => ({ ...prev, [key]: value }));
-    };
-    
     const handleSearch = () => {
         // We just need to trigger the effect that depends on searchParams
         // The easiest way is to push a new URL, but since we are already on the page
@@ -339,7 +346,29 @@ export default function ListingsPage() {
                 <aside className="lg:col-span-1">
                     <div className="p-4 rounded-lg border bg-card space-y-6 sticky top-20">
                         <h3 className="text-xl font-bold">Filters</h3>
-                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'dynamic']} className="w-full">
+                       <Accordion type="multiple" defaultValue={['category', 'location', 'price', 'verification', 'dynamic']} className="w-full">
+                             <AccordionItem value="category">
+                                <AccordionTrigger>Category</AccordionTrigger>
+                                <AccordionContent className="space-y-1">
+                                    <Button
+                                        variant={!filters.category ? 'secondary' : 'ghost'}
+                                        className="w-full justify-start font-normal"
+                                        onClick={() => handleInputChange('category', null)}
+                                    >
+                                        All Categories
+                                    </Button>
+                                    {categories.map(cat => (
+                                        <Button
+                                            key={cat.value}
+                                            variant={filters.category === cat.value ? 'secondary' : 'ghost'}
+                                            className="w-full justify-start font-normal"
+                                            onClick={() => handleInputChange('category', cat.value)}
+                                        >
+                                            {cat.name}
+                                        </Button>
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
                             <AccordionItem value="location">
                                 <AccordionTrigger>Location</AccordionTrigger>
                                 <AccordionContent className="space-y-2">
