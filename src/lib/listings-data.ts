@@ -29,6 +29,8 @@ export type Listing = {
     condition?: 'new' | 'used';
     // Property
     propertyType?: 'land' | 'shop' | 'apartment';
+    listingType?: 'sale' | 'rent'; // For property and maybe vehicles
+    landUse?: 'residential' | 'commercial' | 'agricultural'; // for land
     size?: string;
     propertyTitle?: 'cofo' | 'deed' | 'allocation';
     // Animals
@@ -72,7 +74,7 @@ export const allListings: Listing[] = [
     rating: 4.9,
     views: 1200,
     contacts: 80,
-    specifics: { propertyType: 'apartment', propertyTitle: 'deed' },
+    specifics: { propertyType: 'apartment', propertyTitle: 'deed', listingType: 'rent' },
   },
   {
     id: '3',
@@ -141,7 +143,7 @@ export const allListings: Listing[] = [
     propertyVerified: true,
     verifiedSeller: true,
     rating: 4.9,
-    specifics: { propertyType: 'land', size: '1 plot', propertyTitle: 'cofo' },
+    specifics: { propertyType: 'land', size: '1 plot', propertyTitle: 'cofo', listingType: 'sale', landUse: 'residential' },
   },
   {
     id: '7',
@@ -214,5 +216,47 @@ export const allListings: Listing[] = [
     verifiedID: true,
     rating: 4.6,
     specifics: { condition: 'new', brand: 'Fashion Co' },
+  },
+  {
+    id: '18',
+    title: 'Farmland for Lease in Udi',
+    description: 'Vast expanse of fertile land suitable for large scale farming.',
+    price: 500000,
+    category: 'property',
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'farmland aerial',
+    location: { lga: 'Udi', town: 'Udi Urban' },
+    propertyVerified: false,
+    verifiedSeller: true,
+    rating: 4.2,
+    specifics: { propertyType: 'land', size: '5 Hectares', propertyTitle: 'deed', listingType: 'rent', landUse: 'agricultural' },
+  },
+  {
+    id: '19',
+    title: 'Commercial Plot on Enugu-PH Expressway',
+    description: 'Prime commercial land directly facing the expressway. Perfect for a business complex.',
+    price: 25000000,
+    category: 'property',
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'commercial land',
+    location: { lga: 'Enugu South', town: 'Awkunanaw' },
+    propertyVerified: true,
+    verifiedSeller: true,
+    rating: 4.9,
+    specifics: { propertyType: 'land', size: '2 plots', propertyTitle: 'cofo', listingType: 'sale', landUse: 'commercial' },
+  },
+  {
+    id: '20',
+    title: 'Land for Building a Duplex',
+    description: 'Half plot in a developing estate, perfect for building your dream home.',
+    price: 4500000,
+    category: 'property',
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'residential land',
+    location: { lga: 'Enugu East', town: 'Trans-Ekulu' },
+    propertyVerified: false,
+    verifiedSeller: false,
+    rating: 4.0,
+    specifics: { propertyType: 'land', size: '0.5 plot', propertyTitle: 'allocation', listingType: 'sale', landUse: 'residential' },
   },
 ];

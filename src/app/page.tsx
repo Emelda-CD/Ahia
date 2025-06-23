@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -12,6 +13,7 @@ import { Search, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Gamepad2, Wr
 import Link from 'next/link';
 import { locations } from '@/lib/locations';
 import { cn } from '@/lib/utils';
+import type { Listing } from '@/lib/listings-data';
 
 const categories = [
   { name: 'Land', icon: LandPlot, color: 'bg-teal-100 text-teal-600' },
@@ -64,24 +66,25 @@ const popularCategoriesWithSubs = [
 ];
 
 
-const recentListings = [
-    { id: '3', title: 'Used iPhone 13', price: '300,000', location: 'Enugu', image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone 13'},
-    { id: '5', title: 'Mountain Bike', price: '250,000', location: 'Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'mountain bike'},
-    { id: '4', title: 'Graphic Design Services', price: 'Negotiable', location: 'Remote', image: 'https://placehold.co/600x400.png', data_ai_hint: 'graphic design'},
-    { id: '7', title: 'Lexus Hybrid Car', price: '15,000,000', location: 'Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'lexus car'},
-    { id: '1', title: 'Clean Toyota Camry 2019', price: '12,500,000', location: 'Lekki, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota camry' },
-    { id: '2', title: 'Luxury 3-Bedroom Flat for Rent', price: '3,500,000', location: 'Ikeja, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'modern apartment' },
-    { id: '8', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Port Harcourt', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
-    { id: '9', title: 'Office Space for Lease', price: '800,000', location: 'Victoria Island', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
-    { id: '10', title: 'Honda CR-V 2018', price: '15,000,000', location: 'Maitama, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
-    { id: '11', title: 'Cute Puppy for a new home', price: '150,000', location: 'Surulere, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
-    { id: '12', title: 'Brand New iPhone 14 Pro Max', price: '950,000', location: 'Wuse, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone pro' },
-    { id: '13', title: 'Digital Marketing Expert', price: 'Negotiable', location: 'Remote', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office desk' },
-    { id: '14', title: 'Samsung 55" QLED TV', price: '450,000', location: 'Ikeja, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'television living' },
-    { id: '15', title: 'Wedding Gown for Sale', price: '120,000', location: 'Asaba, Delta', image: 'https://placehold.co/600x400.png', data_ai_hint: 'wedding dress' },
-    { id: '16', title: '2-Bedroom Apartment', price: '1,200,000', location: 'Uwani, Enugu', image: 'https://placehold.co/600x400.png', data_ai_hint: 'apartment exterior' },
-    { id: '17', title: 'Honda Accord 2017', price: '9,000,000', location: 'Owerri, Imo', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda accord' },
+const recentListings: Listing[] = [
+    { id: '1', title: 'Clean Toyota Camry 2019', price: 12500000, category: 'vehicles', location: { lga: 'Lekki', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota camry' },
+    { id: '2', title: 'Luxury 3-Bedroom Flat for Rent', price: 3500000, category: 'property', location: { lga: 'Ikeja', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'modern apartment' },
+    { id: '12', title: 'Brand New iPhone 14 Pro Max', price: 950000, category: 'electronics', location: { lga: 'Wuse', town: 'Abuja' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone pro' },
+    { id: '13', title: 'Digital Marketing Expert', price: 'Negotiable', category: 'jobs', location: { lga: 'Remote', town: '' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'office desk' },
+    { id: '8', title: 'HP Spectre x360 Laptop', price: 750000, category: 'electronics', location: { lga: 'Port Harcourt', town: 'Rivers' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
+    { id: '9', title: 'Office Space for Lease', price: 800000, category: 'property', location: { lga: 'Victoria Island', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
+    { id: '10', title: 'Honda CR-V 2018', price: 15000000, category: 'vehicles', location: { lga: 'Maitama', town: 'Abuja' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
+    { id: '11', title: 'Cute Puppy for a new home', price: 150000, category: 'animals', location: { lga: 'Surulere', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+    { id: '14', title: 'Samsung 55" QLED TV', price: 450000, category: 'electronics', location: { lga: 'Ikeja', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'television living' },
+    { id: '15', title: 'Wedding Gown for Sale', price: 120000, category: 'fashion', location: { lga: 'Asaba', town: 'Delta' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'wedding dress' },
+    { id: '16', title: '2-Bedroom Apartment', price: 1200000, category: 'property', location: { lga: 'Uwani', town: 'Enugu' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'apartment exterior' },
+    { id: '17', title: 'Honda Accord 2017', price: 9000000, category: 'vehicles', location: { lga: 'Owerri', town: 'Imo' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda accord' },
+    { id: '18', title: 'Leather Sofa Set', price: 250000, category: 'furniture', location: { lga: 'Festac', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'leather sofa' },
+    { id: '19', title: 'Plumbing Services', price: 'Negotiable', category: 'services', location: { lga: 'Yaba', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'plumbing tools' },
+    { id: '20', title: 'Plot of Land for Sale', price: 5000000, category: 'property', location: { lga: 'Ibeju-Lekki', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'land plot' },
+    { id: '21', title: 'Toyota RAV4 2021', price: 18000000, category: 'vehicles', location: { lga: 'Lekki', town: 'Lagos' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota rav4' },
 ];
+
 
 const searchSampleData = [
     'iPhone 14 Pro', 'Toyota Camry 2020', '3-Bedroom Flat in Lekki', 'Lexus RX 350', 'Honda Accord', 'HP Spectre x360', 'Digital Marketing Expert', 'Office Space for Rent', 'Samsung Galaxy S23', 'MacBook Pro M2', 'Land in Ibeju-Lekki', 'Toyota Corolla', 'Job Vacancy for Accountant', 'Used iPhone 12', 'Honda CR-V'
@@ -387,7 +390,7 @@ export default function Home() {
               {/* Mobile/Tablet Category Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:hidden mb-12">
                 {categories.map((category) => (
-                   <Link href={`/listings?category=${encodeURIComponent(category.name)}`} key={category.name}>
+                   <Link href={`/listings?q=${encodeURIComponent(category.name)}`} key={category.name}>
                     <Card className="text-center p-4 hover:shadow-lg transition-shadow duration-300 h-full hover:bg-primary hover:text-primary-foreground">
                       <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center ${category.color}`}>
@@ -408,7 +411,7 @@ export default function Home() {
                       {popularCategoriesWithSubs.map((category) => (
                         <li key={category.name} onMouseEnter={() => setActiveCategory(category)}>
                           <Link 
-                            href={`/listings?category=${encodeURIComponent(category.name)}`}
+                            href={`/listings?q=${encodeURIComponent(category.name)}`}
                              className={cn(
                                 "flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium",
                                 activeCategory?.name === category.name ? 'bg-secondary text-foreground' : 'hover:bg-secondary'
@@ -435,7 +438,7 @@ export default function Home() {
                                     {activeCategory.subcategories.map((sub) => (
                                         <li key={sub}>
                                             <Link
-                                                href={`/listings?category=${encodeURIComponent(activeCategory.name)}&sub=${encodeURIComponent(sub)}`}
+                                                href={`/listings?q=${encodeURIComponent(sub)}&category=${encodeURIComponent(activeCategory.name)}`}
                                                 className="flex items-center justify-between gap-3 p-3 rounded-md text-foreground/80 font-medium hover:bg-secondary"
                                             >
                                                 <span>{sub}</span>
@@ -480,4 +483,3 @@ export default function Home() {
     </>
   );
 }
-

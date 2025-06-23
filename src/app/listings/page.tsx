@@ -29,12 +29,63 @@ const categories = [
   { name: 'Fashion', icon: Shirt, value: 'fashion' },
 ];
 
-const DynamicFilters = ({ category, filters, setFilters }: { category: string | null, filters: any, setFilters: any }) => {
+const DynamicFilters = ({ category, filters, setFilters, searchQuery }: { category: string | null, filters: any, setFilters: any, searchQuery: string }) => {
     const handleFilterChange = (key: string, value: any) => {
         setFilters((prev: any) => ({ ...prev, [key]: value }));
     };
 
     if (!category) return null;
+
+    if (category === 'property') {
+        const showLandFilters = searchQuery.toLowerCase().includes('land') || filters.propertyType === 'land';
+
+        return (
+            <div className="space-y-4">
+                <Label>Property Type</Label>
+                <Select value={filters.propertyType || ''} onValueChange={(val) => handleFilterChange('propertyType', val)}>
+                    <SelectTrigger><SelectValue placeholder="Any Type" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="land">Land</SelectItem>
+                        <SelectItem value="shop">Shop</SelectItem>
+                        <SelectItem value="apartment">Apartment</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {showLandFilters && (
+                    <>
+                        <Label>Purpose</Label>
+                        <Select value={filters.listingType || ''} onValueChange={(val) => handleFilterChange('listingType', val)}>
+                            <SelectTrigger><SelectValue placeholder="For Sale or Rent" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="sale">For Sale</SelectItem>
+                                <SelectItem value="rent">For Rent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        
+                        <Label>Land Use</Label>
+                        <Select value={filters.landUse || ''} onValueChange={(val) => handleFilterChange('landUse', val)}>
+                            <SelectTrigger><SelectValue placeholder="Any Use" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="residential">Residential</SelectItem>
+                                <SelectItem value="commercial">Commercial</SelectItem>
+                                <SelectItem value="agricultural">Agricultural / Farming</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </>
+                )}
+                
+                <Label>Title</Label>
+                <Select value={filters.propertyTitle || ''} onValueChange={(val) => handleFilterChange('propertyTitle', val)}>
+                    <SelectTrigger><SelectValue placeholder="Any Title" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="cofo">C of O</SelectItem>
+                        <SelectItem value="deed">Deed of Assignment</SelectItem>
+                        <SelectItem value="allocation">Allocation</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        )
+    }
 
     return (
         <>
@@ -72,28 +123,6 @@ const DynamicFilters = ({ category, filters, setFilters }: { category: string | 
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="used">Used</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-             {category === 'property' && (
-                <div className="space-y-4">
-                    <Label>Property Type</Label>
-                    <Select value={filters.propertyType || ''} onValueChange={(val) => handleFilterChange('propertyType', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Type" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="land">Land</SelectItem>
-                            <SelectItem value="shop">Shop</SelectItem>
-                            <SelectItem value="apartment">Apartment</SelectItem>
-                        </SelectContent>
-                    </Select>
-                     <Label>Title</Label>
-                    <Select value={filters.propertyTitle || ''} onValueChange={(val) => handleFilterChange('propertyTitle', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Title" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="cofo">C of O</SelectItem>
-                            <SelectItem value="deed">Deed of Assignment</SelectItem>
-                            <SelectItem value="allocation">Allocation</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -205,11 +234,11 @@ const LocationModal = ({ onSelect, children }: { onSelect: (town: string) => voi
 
 export default function ListingsPage() {
     const searchParams = useSearchParams();
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
     
     const initialCategory = useMemo(() => {
-        const query = (searchParams.get('search') || '').toLowerCase();
+        const query = (searchParams.get('q') || '').toLowerCase();
         const categoryParam = searchParams.get('category');
         if (categoryParam) return categoryParam;
 
@@ -251,7 +280,14 @@ export default function ListingsPage() {
     }, []);
 
     const handleCategoryFilterChange = (category: string | null) => {
-        handleInputChange('category', category);
+        const newFilters = { ...filters, category };
+        // If category is changed, we might want to clear the search query if it's not relevant
+        // For now, we'll let them coexist. Or, clear if a new category is selected.
+        if (category) {
+            // A specific category is chosen, maybe clear the general search?
+            // This is a UX decision. For now, let's keep it simple.
+        }
+        setFilters(newFilters);
     };
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
@@ -305,6 +341,8 @@ export default function ListingsPage() {
         } else if (currentCategory === 'property') {
             if (filters.propertyType) listings = listings.filter(l => l.specifics?.propertyType === filters.propertyType);
             if (filters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === filters.propertyTitle);
+            if (filters.landUse) listings = listings.filter(l => l.specifics?.landUse === filters.landUse);
+            if (filters.listingType) listings = listings.filter(l => l.specifics?.listingType === filters.listingType);
         } else if (currentCategory === 'jobs') {
             if (filters.jobType) listings = listings.filter(l => l.specifics?.jobType === filters.jobType);
         } else if (currentCategory === 'fashion') {
@@ -358,7 +396,7 @@ export default function ListingsPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 text-center">
                     {categories.map(cat => (
-                        <a href={`/listings?category=${cat.value}&search=${cat.name.toLowerCase()}`} key={cat.name} className={cn(
+                        <a href={`/listings?category=${cat.value}&q=${cat.name.toLowerCase()}`} key={cat.name} className={cn(
                             "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
                             primaryCategory === cat.value && "bg-primary/10 ring-2 ring-primary"
                         )}>
@@ -420,7 +458,7 @@ export default function ListingsPage() {
                                 <AccordionItem value="dynamic">
                                     <AccordionTrigger>Details</AccordionTrigger>
                                     <AccordionContent>
-                                        <DynamicFilters category={primaryCategory} filters={filters} setFilters={setFilters} />
+                                        <DynamicFilters category={primaryCategory} filters={filters} setFilters={setFilters} searchQuery={searchQuery} />
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
