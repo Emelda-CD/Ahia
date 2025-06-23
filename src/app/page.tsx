@@ -38,6 +38,22 @@ const recentListings: Listing[] = [
 export default function Home() {
   return (
     <div className="container mx-auto px-4 py-12">
+      <section className="mb-12">
+        <div className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white rounded-lg p-10 text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Welcome to Ahia
+            </h1>
+            <p className="mt-4 text-lg leading-8 text-gray-200">
+              Your trusted online marketplace in Nigeria. Find or sell anything, anytime!
+            </p>
+            <div className="mt-8">
+               <Button size="lg" asChild>
+                 <Link href="/post-ad">Post Your Ad FREE</Link>
+               </Button>
+            </div>
+        </div>
+      </section>
+
       <div className="grid lg:grid-cols-4 gap-8 items-start">
         {/* Sidebar */}
         <aside className="lg:col-span-1 lg:sticky lg:top-24">
@@ -81,22 +97,6 @@ export default function Home() {
 
         {/* Main Content */}
         <main className="lg:col-span-3">
-           <section className="mb-16">
-              <div className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white rounded-lg p-10 text-center">
-                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                    Welcome to Ahia
-                  </h1>
-                  <p className="mt-4 text-lg leading-8 text-gray-200">
-                    Your trusted online marketplace in Nigeria. Find or sell anything, anytime!
-                  </p>
-                  <div className="mt-8">
-                     <Button size="lg" asChild>
-                       <Link href="/post-ad">Post Your Ad FREE</Link>
-                     </Button>
-                  </div>
-              </div>
-            </section>
-
           <section>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold">Recent Listings</h2>
