@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { allListings, Listing } from '@/lib/listings-data';
 import { locations } from '@/lib/locations';
+import { cn } from '@/lib/utils';
 
 import AdCard from '@/components/AdCard';
 import { Button } from '@/components/ui/button';
@@ -205,11 +206,13 @@ export default function ListingsPage() {
         if (categoryParam) return categoryParam;
 
         const categoryKeywords: Record<string, string[]> = {
-            animals: ['dog', 'cat', 'puppy', 'goat'],
-            electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung'],
+            animals: ['dog', 'cat', 'puppy', 'goat', 'animal'],
+            electronics: ['iphone', 'phone', 'laptop', 'tv', 'samsung', 'electronic'],
             property: ['land', 'apartment', 'shop', 'flat', 'property'],
             jobs: ['job', 'developer', 'manager', 'accountant'],
             vehicles: ['car', 'toyota', 'honda', 'lexus', 'vehicle'],
+            furniture: ['sofa', 'chair', 'table', 'furniture'],
+            services: ['service', 'repair', 'cleaning'],
         };
 
         for (const category in categoryKeywords) {
@@ -222,6 +225,11 @@ export default function ListingsPage() {
 
     const applyFilters = () => {
         let listings = allListings;
+
+        // Filter by primary category if detected from search
+        if (primaryCategory) {
+            listings = listings.filter(l => l.category === primaryCategory);
+        }
 
         // Search query filter
         const query = searchQuery.toLowerCase();
@@ -275,7 +283,13 @@ export default function ListingsPage() {
     // Apply filters on initial load and when filters change
     useEffect(() => {
         applyFilters();
-    }, [searchParams]);
+    }, [searchParams, filters.location, filters.minPrice, filters.maxPrice, filters.sellerVerified, filters.propertyVerified, filters.verifiedID, filters.minRating, filters.popularity]);
+    
+    // Re-apply filters when dynamic filter values change
+    useEffect(() => {
+        applyFilters();
+    }, [filters.brand, filters.condition, filters.gender, filters.propertyType, filters.jobType]);
+
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
         setFilters((prev: any) => ({ ...prev, [key]: checked }));
@@ -284,6 +298,13 @@ export default function ListingsPage() {
     const handleInputChange = (key: string, value: string) => {
         setFilters((prev: any) => ({ ...prev, [key]: value }));
     };
+    
+    const handleSearch = () => {
+        // We just need to trigger the effect that depends on searchParams
+        // The easiest way is to push a new URL, but since we are already on the page
+        // we can just call applyFilters manually
+        applyFilters();
+    }
     
     return (
         <div className="container mx-auto px-4 py-8">
@@ -295,14 +316,17 @@ export default function ListingsPage() {
                         className="pl-10 h-12 text-lg" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
-                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={applyFilters}>Search</Button>
+                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4 text-center">
                     {categories.map(cat => (
-                        <a href={`/listings?category=${cat.value}&search=${cat.value}`} key={cat.name} className="flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors">
+                        <a href={`/listings?category=${cat.value}&search=${cat.name.toLowerCase()}`} key={cat.name} className={cn(
+                            "flex flex-col items-center justify-center p-4 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
+                            primaryCategory === cat.value && "bg-primary/10 ring-2 ring-primary"
+                        )}>
                             <cat.icon className="h-8 w-8 text-primary mb-2" />
                             <span className="font-semibold text-sm">{cat.name}</span>
                         </a>
@@ -315,7 +339,7 @@ export default function ListingsPage() {
                 <aside className="lg:col-span-1">
                     <div className="p-4 rounded-lg border bg-card space-y-6 sticky top-20">
                         <h3 className="text-xl font-bold">Filters</h3>
-                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
+                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'dynamic']} className="w-full">
                             <AccordionItem value="location">
                                 <AccordionTrigger>Location</AccordionTrigger>
                                 <AccordionContent className="space-y-2">
@@ -388,10 +412,13 @@ export default function ListingsPage() {
                 {/* Listings Grid */}
                 <main className="lg:col-span-3">
                     <div className="mb-4">
-                        <p className="text-muted-foreground">Showing {filteredListings.length} results</p>
+                        <p className="text-muted-foreground">
+                            Showing {filteredListings.length} results
+                            {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
+                        </p>
                     </div>
                     {filteredListings.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredListings.map(ad => (
                                 <AdCard key={ad.id} {...ad} />
                             ))}
