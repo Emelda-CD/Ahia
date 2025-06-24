@@ -16,9 +16,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { handleSuggestTags } from '@/app/post-ad/actions';
-import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
+import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin, Wallet } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
+import { boostPlans } from '@/lib/boost-plans-data';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -54,7 +56,8 @@ export default function PostAdForm() {
         terms: false,
         category: '',
         subcategory: '',
-        location: ''
+        location: '',
+        promotion: 'none'
     }
   });
 
@@ -62,6 +65,13 @@ export default function PostAdForm() {
 
   const selectedCategory = watch('category');
   const locationValue = watch('location');
+  const selectedPromotion = watch('promotion');
+  
+  // This is a mock balance. In a real app, you would fetch this from your backend.
+  const walletBalance = 550; 
+  
+  const selectedPlan = boostPlans.find(p => p.id === selectedPromotion);
+  const insufficientBalance = selectedPlan && selectedPlan.price > walletBalance;
 
   useEffect(() => {
     if (selectedCategory) {
@@ -86,6 +96,17 @@ export default function PostAdForm() {
   const prevStep = () => setStep((s) => s - 1);
 
   const onSubmit = (data: AdFormValues) => {
+     if (data.promotion && data.promotion !== 'none') {
+        const plan = boostPlans.find(p => p.id === data.promotion);
+        if (plan && plan.price > walletBalance) {
+            toast({
+                variant: 'destructive',
+                title: 'Cannot Submit Ad',
+                description: 'Please fund your wallet or choose a different boost option.',
+            });
+            return;
+        }
+    }
     console.log({...data, tags});
     toast({
       title: 'Ad Submitted!',
@@ -134,9 +155,9 @@ export default function PostAdForm() {
     <Card>
       <CardHeader>
         <Progress value={(step / 3) * 100} className="mb-4" />
-        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : step === 2 ? 'Product Details' : 'Promotion'}</CardTitle>
+        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : step === 2 ? 'Product Details' : 'Boost Your Ad'}</CardTitle>
         <CardDescription>
-          {step === 1 ? 'Tell us what you are selling and where.' : step === 2 ? 'Provide details about your item.' : 'Boost your ad visibility.'}
+          {step === 1 ? 'Tell us what you are selling and where.' : step === 2 ? 'Provide details about your item.' : 'Get up to 10x more views by boosting your ad.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -290,23 +311,64 @@ export default function PostAdForm() {
 
           {step === 3 && (
             <div className="space-y-6">
-              <div>
-                <Label htmlFor="promotion">Promotion Plan (Optional)</Label>
+                 <div className="space-y-2">
+                    <Label>Wallet Balance</Label>
+                    <div className="flex items-center gap-2 text-2xl font-bold text-green-600">
+                        <Wallet className="h-7 w-7"/>
+                        <span>₦{walletBalance.toLocaleString()}</span>
+                    </div>
+                </div>
+              
                 <Controller
                     name="promotion"
                     control={control}
                     render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Select a promotion plan" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">No Promotion</SelectItem>
-                                <SelectItem value="basic">Basic (7 days)</SelectItem>
-                                <SelectItem value="premium">Premium (30 days)</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <RadioGroup 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        className="space-y-4"
+                    >
+                        <Label className="text-base font-semibold">Boost Your Ad (Optional)</Label>
+                        
+                        {boostPlans.map((plan) => (
+                        <Label 
+                            key={plan.id}
+                            htmlFor={plan.id}
+                            className="flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary"
+                        >
+                            <RadioGroupItem value={plan.id} id={plan.id} />
+                            <div className="flex-1">
+                                <p className="font-bold">{plan.name}</p>
+                                <p className="text-sm text-muted-foreground">Get more visibility for {plan.duration_days} days.</p>
+                            </div>
+                            <p className="text-lg font-semibold">₦{plan.price.toLocaleString()}</p>
+                        </Label>
+                        ))}
+
+                        <Label 
+                            htmlFor="none"
+                            className="flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary"
+                        >
+                            <RadioGroupItem value="none" id="none" />
+                            <div className="flex-1">
+                                <p className="font-bold">No Boost</p>
+                                <p className="text-sm text-muted-foreground">I'll post my ad without any promotion for now.</p>
+                            </div>
+                        </Label>
+                    </RadioGroup>
                     )}
                 />
-              </div>
+
+                {insufficientBalance && (
+                    <Alert variant="destructive">
+                    <AlertTitle>Insufficient Funds</AlertTitle>
+                    <AlertDescription className="flex justify-between items-center">
+                        <span>You do not have enough balance to purchase this boost.</span>
+                        <Button size="sm" variant="secondary">Fund Wallet</Button>
+                    </AlertDescription>
+                    </Alert>
+                )}
+              
               <div>
                 <Controller
                   name="terms"
@@ -336,7 +398,7 @@ export default function PostAdForm() {
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit">Submit Ad</Button>
+              <Button type="submit" disabled={insufficientBalance}>Submit Ad</Button>
             )}
           </div>
         </form>
