@@ -37,8 +37,8 @@ const adSchema = z.object({
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(2, '📸 Add at least 2 photos. Drag to reorder. The first photo is your main image.')
-    .max(20, 'Advert should contain from 2 to 20 images.'),
+    .min(2, 'Please upload between 2 and 20 photos.')
+    .max(20, 'You can upload a maximum of 20 photos.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
@@ -220,26 +220,26 @@ export default function PostAdForm() {
     setValue('images', updatedImages, { shouldValidate: true });
   };
   
-  // Drag and Drop reordering logic
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.setData('image/vnd.custom', String(index));
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); // This is necessary to allow dropping
+    e.preventDefault();
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) {
+    const draggedIdx = parseInt(e.dataTransfer.getData('image/vnd.custom'), 10);
+    if (draggedIdx === null || draggedIdx === targetIndex) {
       setDraggedIndex(null);
       return;
     }
 
     const currentImages = getValues('images');
     const newImages = [...currentImages];
-    const [draggedItem] = newImages.splice(draggedIndex, 1);
+    const [draggedItem] = newImages.splice(draggedIdx, 1);
     newImages.splice(targetIndex, 0, draggedItem);
     
     setValue('images', newImages, { shouldValidate: true });
@@ -397,14 +397,14 @@ export default function PostAdForm() {
                 />
               </div>
               <div>
-                <Label htmlFor="file-upload">📸 Add at least 2 photos. Drag to reorder. The first photo is your main image.</Label>
+                <Label htmlFor="file-upload">📸 Add at least 2 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
                 <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {imagePreviews.map((src, index) => (
                         <div 
                             key={src} 
                             className={cn(
                                 "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
-                                draggedIndex === index && "opacity-50 scale-95"
+                                draggedIndex === index && "opacity-50"
                             )}
                             draggable
                             onDragStart={(e) => handleDragStart(e, index)}
@@ -448,7 +448,7 @@ export default function PostAdForm() {
                     )}
                 </div>
 
-                {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
+                {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
 
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
