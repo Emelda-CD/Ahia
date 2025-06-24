@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
-import { format } from "date-fns";
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { locations } from '@/lib/locations';
 
@@ -14,14 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import AdCard from "@/components/AdCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Calendar as CalendarIcon, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck } from 'lucide-react';
+import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck } from 'lucide-react';
 
 const myAds = [
   {
@@ -57,7 +54,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function AccountPage() {
-    const [date, setDate] = useState<Date>();
+    const [birthYear, setBirthYear] = useState<string>();
+    const [birthMonth, setBirthMonth] = useState<string>();
+    const [birthDay, setBirthDay] = useState<string>();
     const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [profileImage, setProfileImage] = useState("https://placehold.co/100x100.png");
@@ -65,6 +64,36 @@ export default function AccountPage() {
     const idFileInputRef = useRef<HTMLInputElement>(null);
     const businessFileInputRef = useRef<HTMLInputElement>(null);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
+    
+    const years = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        return Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
+    }, []);
+
+    const months = useMemo(() => {
+        return Array.from({ length: 12 }, (_, i) => ({
+            value: (i + 1).toString(),
+            label: new Date(0, i).toLocaleString('en-US', { month: 'long' }),
+        }));
+    }, []);
+
+    const daysInMonth = useMemo(() => {
+        if (birthYear && birthMonth) {
+            return new Date(parseInt(birthYear), parseInt(birthMonth), 0).getDate();
+        }
+        return 31;
+    }, [birthYear, birthMonth]);
+
+    const days = useMemo(() => {
+        return Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+    }, [daysInMonth]);
+
+    useEffect(() => {
+        if (birthDay && parseInt(birthDay) > daysInMonth) {
+            setBirthDay(daysInMonth.toString());
+        }
+    }, [daysInMonth, birthDay, setBirthDay]);
+
 
     const handleProfileImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -205,20 +234,26 @@ export default function AccountPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Birthday</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn( "w-full justify-start text-left font-normal", !date && "text-muted-foreground" )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <Select value={birthYear} onValueChange={setBirthYear}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={birthMonth} onValueChange={setBirthMonth} disabled={!birthYear}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={birthDay} onValueChange={setBirthDay} disabled={!birthMonth}>
+                                            <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
+                                            <SelectContent>
+                                                {days.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
 
