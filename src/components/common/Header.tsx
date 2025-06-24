@@ -4,13 +4,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, User, Briefcase, Home, Info, Phone } from 'lucide-react';
+import { Menu, User, Info, Phone, Tag } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
 
 const navLinks = [
-  { href: '/', label: 'Home', icon: Home },
+  { href: '/post-ad', label: 'Sell', icon: Tag },
   { href: '/about', label: 'About', icon: Info },
   { href: '/contact', label: 'Contact', icon: Phone },
 ];
