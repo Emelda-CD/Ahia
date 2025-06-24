@@ -54,6 +54,31 @@ export default function AccountPage() {
     const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
 
+    const handleIdUpload = () => {
+        setIdStatus('pending');
+        setTimeout(() => {
+            // In a real app, this would be based on an API response.
+            // We'll simulate a successful verification.
+            setIdStatus('verified');
+        }, 3000); // 3-second delay to simulate review
+    };
+    
+    const handleBusinessDocUpload = () => {
+        setBusinessStatus('pending');
+        setTimeout(() => {
+            // Simulate a rejection for demonstration
+            setBusinessStatus('rejected');
+        }, 3000);
+    };
+
+    const resetIdVerification = () => {
+        setIdStatus('unverified');
+    };
+
+    const resetBusinessVerification = () => {
+        setBusinessStatus('unverified');
+    };
+
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
@@ -231,10 +256,10 @@ export default function AccountPage() {
                                                 <p className="text-sm text-muted-foreground">Verify using your Gov-issued ID.</p>
                                             </div>
                                         </div>
-                                        {idStatus === 'unverified' && <Button onClick={() => setIdStatus('pending')}><Upload className="mr-2 h-4 w-4"/> Upload ID</Button>}
+                                        {idStatus === 'unverified' && <Button onClick={handleIdUpload}><Upload className="mr-2 h-4 w-4"/> Upload ID</Button>}
                                         {idStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
                                         {idStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
-                                        {idStatus === 'rejected' && <Button variant="destructive" onClick={() => setIdStatus('unverified')}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
+                                        {idStatus === 'rejected' && <Button variant="destructive" onClick={resetIdVerification}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
                                     </div>
                                     {idStatus === 'rejected' && <Alert variant="destructive" className="mt-3"><AlertCircle className="h-4 w-4"/><AlertTitle>Verification Rejected</AlertTitle><AlertDescription>Your ID was not clear. Please upload again.</AlertDescription></Alert>}
                                 </div>
@@ -248,11 +273,12 @@ export default function AccountPage() {
                                                 <p className="text-sm text-muted-foreground">Verify your business with CAC documents.</p>
                                             </div>
                                         </div>
-                                        {businessStatus === 'unverified' && <Button onClick={() => setBusinessStatus('pending')}><Upload className="mr-2 h-4 w-4"/> Upload Docs</Button>}
+                                        {businessStatus === 'unverified' && <Button onClick={handleBusinessDocUpload}><Upload className="mr-2 h-4 w-4"/> Upload Docs</Button>}
                                         {businessStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
                                         {businessStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
-                                        {businessStatus === 'rejected' && <Button variant="destructive" onClick={() => setBusinessStatus('unverified')}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
+                                        {businessStatus === 'rejected' && <Button variant="destructive" onClick={resetBusinessVerification}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
                                     </div>
+                                     {businessStatus === 'rejected' && <Alert variant="destructive" className="mt-3"><AlertCircle className="h-4 w-4"/><AlertTitle>Verification Rejected</AlertTitle><AlertDescription>Your documents could not be verified.</AlertDescription></Alert>}
                                 </div>
                         </AccordionContent>
                     </AccordionItem>
