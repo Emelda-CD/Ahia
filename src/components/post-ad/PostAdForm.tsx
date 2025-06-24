@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -79,7 +79,7 @@ export default function PostAdForm() {
   const selectedPromotion = watch('promotion');
   const images = watch('images') || [];
   
-  const imagePreviews = images.map(file => URL.createObjectURL(file));
+  const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
   
   const walletBalance = 550; 
   
@@ -97,11 +97,12 @@ export default function PostAdForm() {
   }, [selectedCategory, setValue]);
   
   useEffect(() => {
+    // This will run on unmount or when imagePreviews array is recreated.
+    // It's important for cleaning up the object URLs to avoid memory leaks.
     return () => {
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images]);
+  }, [imagePreviews]);
 
   const nextStep = async () => {
     let isValid = false;
@@ -214,17 +215,15 @@ export default function PostAdForm() {
   };
 
   const handleImageDrop = (targetIndex: number) => {
-    if (draggedImageIndex === null || draggedImageIndex === targetIndex) {
-        setDraggedImageIndex(null);
-        return;
-    };
-
+    if (draggedImageIndex === null || draggedImageIndex === targetIndex) return;
     const currentImages = getValues('images') || [];
     const newImages = [...currentImages];
     const [draggedItem] = newImages.splice(draggedImageIndex, 1);
     newImages.splice(targetIndex, 0, draggedItem);
-    
     setValue('images', newImages, { shouldValidate: false });
+  };
+
+  const handleDragEnd = () => {
     setDraggedImageIndex(null);
   };
 
@@ -379,36 +378,40 @@ export default function PostAdForm() {
                 <p className="text-sm text-muted-foreground">First picture is the title picture. You can change the order of photos: just grab and drag.</p>
                 
                 <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                    {imagePreviews.map((src, index) => (
-                        <div 
-                            key={src} 
-                            className={cn(
-                                "relative group aspect-square cursor-grab rounded-md",
-                                draggedImageIndex === index && "opacity-50"
-                            )}
-                            draggable
-                            onDragStart={() => handleImageDragStart(index)}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={() => handleImageDrop(index)}
-                            onDragEnd={() => setDraggedImageIndex(null)}
-                        >
-                            <Image
-                                src={src}
-                                alt={`preview ${index}`}
-                                fill
-                                className="rounded-md object-cover border-2"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveImage(index)}
-                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                aria-label="Remove image"
+                    {imagePreviews.map((src, index) => {
+                        const file = images[index];
+                        const key = `${file.name}-${file.size}-${file.lastModified}`;
+                        return (
+                            <div 
+                                key={key} 
+                                className={cn(
+                                    "relative group aspect-square cursor-grab rounded-md",
+                                    draggedImageIndex === index && "opacity-50"
+                                )}
+                                draggable
+                                onDragStart={() => handleImageDragStart(index)}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => handleImageDrop(index)}
+                                onDragEnd={handleDragEnd}
                             >
-                                <X className="h-3 w-3" />
-                            </button>
-                            {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
-                        </div>
-                    ))}
+                                <Image
+                                    src={src}
+                                    alt={`preview ${index}`}
+                                    fill
+                                    className="rounded-md object-cover border-2"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(index)}
+                                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove image"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                                {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
+                            </div>
+                        )
+                    })}
                     
                     {images.length < 20 && (
                         <div
