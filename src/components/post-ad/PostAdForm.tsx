@@ -37,7 +37,7 @@ const adSchema = z.object({
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(2, '🖼️ Please add at least 2 photos for this category.')
+    .min(2, 'Please add at least 2 photos for your ad.')
     .max(20, 'Advert should contain from 2 to 20 images.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
@@ -404,11 +404,6 @@ export default function PostAdForm() {
               </div>
               <div>
                 <Label htmlFor="file-upload">Add Photos</Label>
-                <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                    <p>📌 The <strong>first picture</strong> will be used as the <strong>main title image</strong> for your ad.</p>
-                    <p>You can <strong>change the order of photos</strong> anytime – just drag and drop them into position.</p>
-                </div>
-                
                 <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {imagePreviews.map((src, index) => {
                         const file = images[index];
@@ -466,28 +461,31 @@ export default function PostAdForm() {
                         </div>
                     )}
                 </div>
-                
-                {images.length === 0 && (
-                    <div className="text-center text-muted-foreground mt-4">
-                        📂 No file selected yet.
-                    </div>
-                )}
 
                 {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
 
-                <div className="text-xs text-muted-foreground mt-4 space-y-3 bg-secondary/50 p-3 rounded-md">
-                    <div>
-                        <p className="font-medium">✅ Supported formats:</p>
-                        <ul className="list-disc list-inside pl-2">
-                            <li>JPG (*.jpg)</li>
-                            <li>PNG (*.png)</li>
-                        </ul>
+                {images.length === 0 && (
+                    <div className="text-center text-muted-foreground mt-4 border-2 border-dashed rounded-lg p-8">
+                        📂 No file selected yet.
                     </div>
-                    <div>
-                        <p className="font-medium">💡 Tip:</p>
-                        <p>High-quality, clear images help your ad stand out and attract more buyers.</p>
+                )}
+                
+                <div className="text-sm text-muted-foreground mt-4 space-y-3 bg-secondary/50 p-4 rounded-md">
+                    <h4 className="font-bold text-base text-foreground">📸 Image Upload Guide:</h4>
+                    <p>✅ You can upload at least <strong>2 photos</strong> for this ad.</p>
+                    <p className="font-semibold mt-2">🔁 To change the photo order:</p>
+                    <ul className="list-none pl-4 space-y-1">
+                        <li>👉 Tap and <strong>hold</strong> any photo</li>
+                        <li>👉 Then <strong>drag it</strong> to your desired position</li>
+                        <li>👉 The photo at the top will become your <strong>main display image</strong></li>
+                    </ul>
+                    <p className="mt-2">💡 <strong>Example:</strong> To make a different photo appear first, just drag it to the top of the list.</p>
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                        <p>📂 <strong>Supported formats:</strong> .jpg and .png</p>
+                        <p>📷 Clear photos help buyers trust your ad!</p>
                     </div>
                 </div>
+
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
             </div>
