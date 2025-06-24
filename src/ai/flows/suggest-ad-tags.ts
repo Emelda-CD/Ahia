@@ -1,4 +1,3 @@
-// This file is machine-generated - edit at your own risk!
 
 'use server';
 
@@ -35,16 +34,17 @@ export async function suggestAdTags(input: SuggestAdTagsInput): Promise<SuggestA
 
 const suggestAdTagsPrompt = ai.definePrompt({
   name: 'suggestAdTagsPrompt',
+  system: `You are an expert in generating relevant search tags for online classifieds.
+You will be given the title and description of an ad.
+Your task is to generate a list of short, relevant tags that a potential buyer might use to search for this item.
+The tags should be concise and related to the product, its brand, model, condition, or features.
+You must return your response in the JSON format requested.`,
   input: {schema: SuggestAdTagsInputSchema},
   output: {schema: SuggestAdTagsOutputSchema},
-  prompt: `You are an expert in generating relevant search tags for online classifieds.
-Based on the ad's title and description, generate a list of short, relevant tags that a potential buyer might use to search for this item.
-The tags should be concise and related to the product, its brand, model, condition, or features.
-
+  prompt: `
 Title: {{{title}}}
 Description: {{{description}}}
-
-Return a JSON object with a "tags" field containing an array of strings.`,
+`,
 });
 
 const suggestAdTagsFlow = ai.defineFlow(
@@ -55,6 +55,9 @@ const suggestAdTagsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await suggestAdTagsPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI failed to generate suggestions in the expected format.');
+    }
+    return output;
   }
 );
