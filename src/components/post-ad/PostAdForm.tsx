@@ -449,22 +449,6 @@ export default function PostAdForm() {
                 </div>
 
                 {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
-                
-                <div className="text-sm text-muted-foreground mt-4 space-y-3 bg-secondary/50 p-4 rounded-md">
-                    <h4 className="font-bold text-base text-foreground">📸 Image Upload Guide:</h4>
-                    <p>✅ You can upload at least <strong>2 photos</strong> for this ad.</p>
-                    <p className="font-semibold mt-2">🔁 To change the photo order:</p>
-                    <ul className="list-none pl-4 space-y-1">
-                        <li>👉 Tap and <strong>hold</strong> any photo</li>
-                        <li>👉 Then <strong>drag it</strong> to your desired position</li>
-                        <li>👉 The photo at the top will become your <strong>main display image</strong></li>
-                    </ul>
-                    <p className="mt-2">💡 <strong>Example:</strong> To make a different photo appear first, just drag it to the top of the list.</p>
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                        <p>📂 <strong>Supported formats:</strong> .jpg and .png</p>
-                        <p>📷 Clear photos help buyers trust your ad!</p>
-                    </div>
-                </div>
 
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
