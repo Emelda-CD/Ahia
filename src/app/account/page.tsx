@@ -53,9 +53,22 @@ export default function AccountPage() {
     const [date, setDate] = useState<Date>();
     const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
+    const [profileImage, setProfileImage] = useState("https://placehold.co/100x100.png");
 
     const idFileInputRef = useRef<HTMLInputElement>(null);
     const businessFileInputRef = useRef<HTMLInputElement>(null);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+    const handleProfileImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleIdUpload = () => {
         setIdStatus('pending');
@@ -105,7 +118,7 @@ export default function AccountPage() {
     <div className="container mx-auto px-4 py-12 md:py-20">
       <div className="flex items-center gap-6 mb-12">
         <Avatar className="w-24 h-24 border-4 border-primary/50">
-          <AvatarImage src="https://placehold.co/100x100.png" alt="User Name" data-ai-hint="man portrait"/>
+          <AvatarImage src={profileImage} alt="User Name" data-ai-hint="man portrait"/>
           <AvatarFallback>UA</AvatarFallback>
         </Avatar>
         <div>
@@ -143,12 +156,19 @@ export default function AccountPage() {
                              <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="w-20 h-20">
-                                        <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="man portrait"/>
+                                        <AvatarImage src={profileImage} data-ai-hint="man portrait"/>
                                         <AvatarFallback>UA</AvatarFallback>
                                     </Avatar>
-                                    <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 bg-background">
+                                    <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 bg-background" onClick={() => profileImageInputRef.current?.click()}>
                                         <Camera className="h-4 w-4"/>
                                     </Button>
+                                    <input
+                                        type="file"
+                                        ref={profileImageInputRef}
+                                        onChange={handleProfileImageSelect}
+                                        className="hidden"
+                                        accept="image/jpeg,image/png"
+                                    />
                                 </div>
                                 <div>
                                     <h4 className="font-semibold">Profile Photo</h4>
