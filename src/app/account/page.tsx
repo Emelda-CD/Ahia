@@ -27,20 +27,27 @@ const myAds = [
   {
     id: '1',
     title: 'Clean Toyota Camry 2019',
-    price: '12,500,000',
-    location: 'Lekki, Lagos',
+    price: 12500000,
+    location: { lga: 'Enugu North', town: 'GRA' },
     image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'toyota camry'
+    data_ai_hint: 'toyota camry',
+    description: '',
+    category: 'Vehicles',
+    subcategory: 'Cars',
   },
   {
     id: '3',
     title: 'Brand New iPhone 14 Pro Max',
-    price: '950,000',
-    location: 'Wuse, Abuja',
+    price: 950000,
+    location: { lga: 'Enugu South', town: 'Uwani' },
     image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'iphone pro'
+    data_ai_hint: 'iphone pro',
+    description: '',
+    category: 'Phones',
+    subcategory: 'iPhones',
   },
 ];
+
 
 const lgas = Object.keys(locations);
 
@@ -411,18 +418,18 @@ export default function AccountPage() {
               <CardContent className="space-y-6">
                 {myAds.map(ad => (
                   <Card key={ad.id} className="flex flex-col md:flex-row items-center gap-4 p-4">
-                    <div className="w-full md:w-1/4">
+                    <div className="w-full md:w-48">
                        <AdCard {...ad} />
                     </div>
                     <div className="flex-1">
                         <h3 className="font-bold text-lg">{ad.title}</h3>
-                        <p className="text-primary font-semibold">&#8358;{ad.price}</p>
-                        <p className="text-muted-foreground text-sm">{ad.location}</p>
+                        <p className="text-primary font-semibold">&#8358;{(ad.price as number).toLocaleString()}</p>
+                        <p className="text-muted-foreground text-sm">{ad.location.town}, {ad.location.lga}</p>
                     </div>
                     <div className="flex gap-2 self-start md:self-center">
-                        <Button variant="outline" size="icon"><Eye className="h-4 w-4"/></Button>
-                        <Button variant="outline" size="icon"><Edit className="h-4 w-4"/></Button>
-                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button>
+                        <Button variant="outline" size="icon" aria-label="View Ad"><Eye className="h-4 w-4"/></Button>
+                        <Button variant="outline" size="icon" aria-label="Edit Ad"><Edit className="h-4 w-4"/></Button>
+                        <Button variant="destructive" size="icon" aria-label="Delete Ad"><Trash2 className="h-4 w-4"/></Button>
                     </div>
                   </Card>
                 ))}
