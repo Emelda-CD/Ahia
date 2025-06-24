@@ -37,7 +37,7 @@ const adSchema = z.object({
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(2, 'Add at least 2 photos for this category.')
+    .min(2, '🖼️ Please add at least 2 photos for this category.')
     .max(20, 'Advert should contain from 2 to 20 images.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
@@ -404,7 +404,10 @@ export default function PostAdForm() {
               </div>
               <div>
                 <Label htmlFor="file-upload">Add Photos</Label>
-                <p className="text-sm text-muted-foreground">First picture is the title picture. You can change the order of photos: just grab your photos and drag.</p>
+                <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                    <p>📌 The <strong>first picture</strong> will be used as the <strong>main title image</strong> for your ad.</p>
+                    <p>You can <strong>change the order of photos</strong> anytime – just drag and drop them into position.</p>
+                </div>
                 
                 <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {imagePreviews.map((src, index) => {
@@ -466,15 +469,24 @@ export default function PostAdForm() {
                 
                 {images.length === 0 && (
                     <div className="text-center text-muted-foreground mt-4">
-                        No file chosen
+                        📂 No file selected yet.
                     </div>
                 )}
 
                 {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
 
-                <div className="text-xs text-muted-foreground mt-4 space-y-1">
-                    <p>Supported formats are *.jpg and *.png.</p>
-                    <p>Advert should contain from 2 to 20 images.</p>
+                <div className="text-xs text-muted-foreground mt-4 space-y-3 bg-secondary/50 p-3 rounded-md">
+                    <div>
+                        <p className="font-medium">✅ Supported formats:</p>
+                        <ul className="list-disc list-inside pl-2">
+                            <li>JPG (*.jpg)</li>
+                            <li>PNG (*.png)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p className="font-medium">💡 Tip:</p>
+                        <p>High-quality, clear images help your ad stand out and attract more buyers.</p>
+                    </div>
                 </div>
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
