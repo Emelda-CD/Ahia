@@ -18,9 +18,10 @@ import { Loader2 } from 'lucide-react';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onLoginSuccess: () => void;
 }
 
-export function AuthModal({ open, onOpenChange }: AuthModalProps) {
+export function AuthModal({ open, onOpenChange, onLoginSuccess }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -30,6 +31,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
+      onLoginSuccess();
       onOpenChange(false); // Close modal on success
     }, 1500);
   };
@@ -41,6 +43,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
+      onLoginSuccess();
       onOpenChange(false); // Close modal on success
     }, 1500);
   };

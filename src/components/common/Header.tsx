@@ -28,6 +28,7 @@ const navLinks = [
 export default function Header() {
   const pathname = usePathname();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => (
     <Link href={href} className={cn("transition-colors hover:text-primary", pathname === href ? "text-primary font-semibold" : "")}>
@@ -51,46 +52,50 @@ export default function Header() {
             <Button asChild>
               <Link href="/post-ad">Post Ad</Link>
             </Button>
-            <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
-              Register / Login
-            </Button>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Account</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/account" className="flex items-center gap-2 cursor-pointer">
-                    <Store className="h-4 w-4" />
-                    <span>My Shop</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account" className="flex items-center gap-2 cursor-pointer">
-                    <BarChart2 className="h-4 w-4" />
-                    <span>Performance</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account" className="flex items-center gap-2 cursor-pointer">
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            {isLoggedIn ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Account</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                      <Store className="h-4 w-4" />
+                      <span>My Shop</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                      <BarChart2 className="h-4 w-4" />
+                      <span>Performance</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setIsLoggedIn(false)}
+                    className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" onClick={() => setIsAuthModalOpen(true)}>
+                Register / Login
+              </Button>
+            )}
           </div>
 
           <div className="md:hidden">
@@ -122,12 +127,20 @@ export default function Header() {
                     <Button asChild size="lg">
                       <Link href="/post-ad">Post Ad</Link>
                     </Button>
-                    <Button variant="outline" size="lg" onClick={() => setIsAuthModalOpen(true)}>
-                      Register / Login
-                    </Button>
-                    <Button variant="outline" size="lg" asChild>
-                      <Link href="/account">My Account</Link>
-                    </Button>
+                    {isLoggedIn ? (
+                       <>
+                        <Button variant="outline" size="lg" asChild>
+                            <Link href="/account">My Account</Link>
+                        </Button>
+                        <Button variant="destructive" size="lg" onClick={() => setIsLoggedIn(false)}>
+                            Logout
+                        </Button>
+                       </>
+                    ) : (
+                        <Button variant="outline" size="lg" onClick={() => setIsAuthModalOpen(true)}>
+                            Register / Login
+                        </Button>
+                    )}
                   </div>
                 </div>
               </SheetContent>
@@ -135,7 +148,7 @@ export default function Header() {
           </div>
         </div>
       </header>
-      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} onLoginSuccess={() => setIsLoggedIn(true)} />
     </>
   );
 }
