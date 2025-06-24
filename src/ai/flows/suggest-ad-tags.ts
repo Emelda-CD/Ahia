@@ -24,10 +24,7 @@ const SuggestAdTagsInputSchema = z.object({
 export type SuggestAdTagsInput = z.infer<typeof SuggestAdTagsInputSchema>;
 
 const SuggestAdTagsOutputSchema = z.object({
-  categories: z
-    .array(z.string())
-    .describe('A list of suggested categories for the ad.'),
-  tags: z.array(z.string()).describe('A list of suggested tags for the ad.'),
+  tags: z.array(z.string()).describe('A list of short, relevant keywords for the ad that a user might search for. Example: ["used car", "toyota", "camry 2019", "sedan"]').max(10),
 });
 
 export type SuggestAdTagsOutput = z.infer<typeof SuggestAdTagsOutputSchema>;
@@ -40,15 +37,14 @@ const suggestAdTagsPrompt = ai.definePrompt({
   name: 'suggestAdTagsPrompt',
   input: {schema: SuggestAdTagsInputSchema},
   output: {schema: SuggestAdTagsOutputSchema},
-  prompt: `You are an expert in categorizing online ads. Given the title and description of an ad, suggest relevant categories and tags.
+  prompt: `You are an expert in generating relevant search tags for online classifieds.
+Based on the ad's title and description, generate a list of short, relevant tags that a potential buyer might use to search for this item.
+The tags should be concise and related to the product, its brand, model, condition, or features.
 
 Title: {{{title}}}
 Description: {{{description}}}
 
-Categories: A list of relevant categories.
-Tags: A list of relevant tags.
-
-Return a JSON object with "categories" and "tags" fields.`,
+Return a JSON object with a "tags" field containing an array of strings.`,
 });
 
 const suggestAdTagsFlow = ai.defineFlow(
