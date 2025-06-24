@@ -144,7 +144,7 @@ export default function Home() {
                   <Link href="/listings">View All <ArrowRight className="ml-2 h-4 w-4"/></Link>
                 </Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recentListings.map((ad) => (
                   <AdCard key={ad.id} {...ad} />
                 ))}
