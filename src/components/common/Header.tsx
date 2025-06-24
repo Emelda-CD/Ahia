@@ -36,6 +36,10 @@ export default function Header() {
     </Link>
   );
 
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
@@ -148,7 +152,7 @@ export default function Header() {
           </div>
         </div>
       </header>
-      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} onLoginSuccess={() => setIsLoggedIn(true)} />
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} onLoginSuccess={handleLoginSuccess} />
     </>
   );
 }
