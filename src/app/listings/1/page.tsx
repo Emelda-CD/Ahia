@@ -1,11 +1,17 @@
+
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AdCard from '@/components/AdCard';
 import { MapPin, Phone, MessageSquare, ShieldCheck, Star } from 'lucide-react';
 
@@ -25,6 +31,25 @@ const similarAds = [
 ]
 
 export default function ProductDetailPage() {
+  const [showContact, setShowContact] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [callbackSubmitted, setCallbackSubmitted] = useState(false);
+  const [callbackOpen, setCallbackOpen] = useState(false);
+
+  const handleCallbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCallbackSubmitted(true);
+    // In a real app, you'd submit the form data here.
+    setTimeout(() => {
+        setCallbackOpen(false);
+        // Reset after a delay so user can see the success message
+        setTimeout(() => setCallbackSubmitted(false), 500); 
+    }, 2000);
+  };
+  
+  const quickMessages = ['Is this still available?', 'What’s your last price?', 'Can I come inspect it today?'];
+
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="grid md:grid-cols-3 gap-8">
@@ -87,13 +112,48 @@ export default function ProductDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button size="lg" className="w-full">
-                <Phone className="w-5 h-5 mr-2" /> Show Contact
-              </Button>
-              <Button variant="outline" size="lg" className="w-full">
-                <MessageSquare className="w-5 h-5 mr-2" /> Chat with Seller
-              </Button>
-               <Dialog>
+              {showContact ? (
+                <div className="flex items-center justify-center text-center font-bold text-lg p-3 bg-green-100 text-green-800 rounded-md">
+                  <Phone className="w-5 h-5 mr-2" /> +234 801 234 5678
+                </div>
+              ) : (
+                <Button size="lg" className="w-full" onClick={() => setShowContact(true)}>
+                  <Phone className="w-5 h-5 mr-2" /> Show Contact
+                </Button>
+              )}
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="lg" className="w-full">
+                    <MessageSquare className="w-5 h-5 mr-2" /> Chat with Seller
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">Chat with Seller</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Ask a question or use a quick message.
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                        {quickMessages.map(msg => (
+                            <Button key={msg} variant="outline" size="sm" onClick={() => setChatMessage(msg)}>
+                                {msg}
+                            </Button>
+                        ))}
+                    </div>
+                    <Textarea 
+                      placeholder="Type your message..." 
+                      value={chatMessage} 
+                      onChange={(e) => setChatMessage(e.target.value)} 
+                    />
+                    <Button>Send</Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+               <Dialog open={callbackOpen} onOpenChange={setCallbackOpen}>
                 <DialogTrigger asChild>
                     <Button variant="secondary" size="lg" className="w-full">Request a Callback</Button>
                 </DialogTrigger>
@@ -101,14 +161,25 @@ export default function ProductDetailPage() {
                     <DialogHeader>
                         <DialogTitle>Request a Callback</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                        <p>Enter your phone number and the seller will call you back.</p>
-                        <div className="space-y-1">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" placeholder="+234..." />
+                    {callbackSubmitted ? (
+                        <div className="text-center py-8">
+                          <p className="text-lg font-semibold text-green-600">✅ Request Submitted!</p>
+                          <p className="text-muted-foreground">The seller will call you shortly.</p>
                         </div>
-                        <Button className="w-full">Submit Request</Button>
-                    </div>
+                    ) : (
+                        <form className="space-y-4" onSubmit={handleCallbackSubmit}>
+                            <p className="text-sm text-muted-foreground">Enter your details and the seller will call you back.</p>
+                            <div className="space-y-1">
+                                <Label htmlFor="name">Your Name</Label>
+                                <Input id="name" placeholder="John Doe" required />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input id="phone" type="tel" placeholder="+234..." required />
+                            </div>
+                            <Button type="submit" className="w-full">Submit Request</Button>
+                        </form>
+                    )}
                 </DialogContent>
                </Dialog>
             </CardContent>
