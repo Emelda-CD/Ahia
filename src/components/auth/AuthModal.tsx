@@ -14,36 +14,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLoginSuccess: () => void;
 }
 
-export function AuthModal({ open, onOpenChange, onLoginSuccess }: AuthModalProps) {
+export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuthAction = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log('Logging in...');
+    const form = e.target as HTMLFormElement;
+    const nameInput = form.elements.namedItem('register-name') as HTMLInputElement;
+    const name = nameInput ? nameInput.value : 'User Akpan';
+
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      onLoginSuccess();
-      onOpenChange(false); // Close modal on success
-    }, 1500);
-  };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    console.log('Registering...');
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      onLoginSuccess();
+      login({ name: name, profileImage: 'https://placehold.co/100x100.png' });
       onOpenChange(false); // Close modal on success
     }, 1500);
   };
@@ -63,7 +55,7 @@ export function AuthModal({ open, onOpenChange, onLoginSuccess }: AuthModalProps
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
           <TabsContent value="login" className="pt-4">
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleAuthAction} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
                 <Input id="login-email" type="email" placeholder="you@example.com" required />
@@ -79,7 +71,7 @@ export function AuthModal({ open, onOpenChange, onLoginSuccess }: AuthModalProps
             </form>
           </TabsContent>
           <TabsContent value="register" className="pt-4">
-            <form onSubmit={handleRegister} className="space-y-6">
+            <form onSubmit={handleAuthAction} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="register-name">Full Name</Label>
                 <Input id="register-name" placeholder="John Doe" required />

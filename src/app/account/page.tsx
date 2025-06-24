@@ -2,8 +2,10 @@
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { locations } from '@/lib/locations';
+import { useAuth } from '@/context/AuthContext';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -54,12 +56,14 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function AccountPage() {
+    const { user, isLoggedIn, updateUser } = useAuth();
+    const router = useRouter();
+
     const [birthYear, setBirthYear] = useState<string>();
     const [birthMonth, setBirthMonth] = useState<string>();
     const [birthDay, setBirthDay] = useState<string>();
     const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
-    const [profileImage, setProfileImage] = useState("https://placehold.co/100x100.png");
 
     const idFileInputRef = useRef<HTMLInputElement>(null);
     const businessFileInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +93,12 @@ export default function AccountPage() {
     }, [daysInMonth]);
 
     useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/');
+        }
+    }, [isLoggedIn, router]);
+
+    useEffect(() => {
         if (birthDay && parseInt(birthDay) > daysInMonth) {
             setBirthDay(daysInMonth.toString());
         }
@@ -100,7 +110,7 @@ export default function AccountPage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setProfileImage(reader.result as string);
+                updateUser({ profileImage: reader.result as string });
             };
             reader.readAsDataURL(file);
         }
@@ -109,17 +119,13 @@ export default function AccountPage() {
     const handleIdUpload = () => {
         setIdStatus('pending');
         setTimeout(() => {
-            // In a real app, this would be based on an API response.
-            // We'll simulate a successful verification.
             setIdStatus('verified');
-        }, 3000); // 3-second delay to simulate review
+        }, 3000);
     };
     
     const handleIdFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            console.log("ID document selected:", file.name);
-            // In a real app, you would upload the file here.
             handleIdUpload();
         }
     };
@@ -127,7 +133,6 @@ export default function AccountPage() {
     const handleBusinessDocUpload = () => {
         setBusinessStatus('pending');
         setTimeout(() => {
-            // Simulate a rejection for demonstration
             setBusinessStatus('rejected');
         }, 3000);
     };
@@ -135,8 +140,6 @@ export default function AccountPage() {
     const handleBusinessFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            console.log("Business document selected:", file.name);
-            // In a real app, you would upload the file here.
             handleBusinessDocUpload();
         }
     };
@@ -149,16 +152,24 @@ export default function AccountPage() {
         setBusinessStatus('unverified');
     };
 
+    if (!isLoggedIn || !user) {
+        return (
+            <div className="container mx-auto px-4 py-12 md:py-20 flex justify-center items-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
       <div className="flex items-center gap-6 mb-12">
         <Avatar className="w-24 h-24 border-4 border-primary/50">
-          <AvatarImage src={profileImage} alt="User Name" data-ai-hint="man portrait"/>
-          <AvatarFallback>UA</AvatarFallback>
+          <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="man portrait"/>
+          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-3xl font-bold">User Akpan</h1>
+          <h1 className="text-3xl font-bold">{user.name}</h1>
           <p className="text-muted-foreground">Joined March 2024</p>
         </div>
       </div>
@@ -192,8 +203,8 @@ export default function AccountPage() {
                              <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="w-20 h-20">
-                                        <AvatarImage src={profileImage} data-ai-hint="man portrait"/>
-                                        <AvatarFallback>UA</AvatarFallback>
+                                        <AvatarImage src={user.profileImage} data-ai-hint="man portrait"/>
+                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 bg-background" onClick={() => profileImageInputRef.current?.click()}>
                                         <Camera className="h-4 w-4"/>
@@ -215,11 +226,11 @@ export default function AccountPage() {
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="first-name">First Name</Label>
-                                    <Input id="first-name" defaultValue="User" />
+                                    <Input id="first-name" defaultValue={user.name.split(' ')[0]} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="last-name">Last Name</Label>
-                                    <Input id="last-name" defaultValue="Akpan" />
+                                    <Input id="last-name" defaultValue={user.name.split(' ').slice(1).join(' ')} />
                                 </div>
                             </div>
                              <div className="grid md:grid-cols-2 gap-4">

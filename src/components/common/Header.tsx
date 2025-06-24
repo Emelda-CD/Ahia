@@ -4,12 +4,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, User, Info, Phone, Tag, Store, BarChart2, Settings, LogOut } from 'lucide-react';
+import { Menu, Info, Phone, Tag, Store, BarChart2, Settings, LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
 import { useState } from 'react';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { useAuth } from '@/context/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const navLinks = [
   { href: '/post-ad', label: 'Sell', icon: Tag },
@@ -28,17 +31,13 @@ const navLinks = [
 export default function Header() {
   const pathname = usePathname();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, user, logout } = useAuth();
 
   const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => (
     <Link href={href} className={cn("transition-colors hover:text-primary", pathname === href ? "text-primary font-semibold" : "")}>
       {children}
     </Link>
   );
-
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-  };
 
   return (
     <>
@@ -57,12 +56,14 @@ export default function Header() {
               <Link href="/post-ad">Post Ad</Link>
             </Button>
             
-            {isLoggedIn ? (
+            {isLoggedIn && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Account</span>
+                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                     <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="man portrait"/>
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -88,7 +89,7 @@ export default function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={logout}
                     className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                     <LogOut className="h-4 w-4" />
                     <span>Logout</span>
@@ -136,7 +137,7 @@ export default function Header() {
                         <Button variant="outline" size="lg" asChild>
                             <Link href="/account">My Account</Link>
                         </Button>
-                        <Button variant="destructive" size="lg" onClick={() => setIsLoggedIn(false)}>
+                        <Button variant="destructive" size="lg" onClick={logout}>
                             Logout
                         </Button>
                        </>
@@ -152,7 +153,7 @@ export default function Header() {
           </div>
         </div>
       </header>
-      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} onLoginSuccess={handleLoginSuccess} />
+      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </>
   );
 }
