@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,14 +33,14 @@ export default function ProductDetailPage() {
   const [showContact, setShowContact] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [callbackSubmitted, setCallbackSubmitted] = useState(false);
-  const [callbackOpen, setCallbackOpen] = useState(false);
+  const [callbackPopoverOpen, setCallbackPopoverOpen] = useState(false);
 
   const handleCallbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCallbackSubmitted(true);
     // In a real app, you'd submit the form data here.
     setTimeout(() => {
-        setCallbackOpen(false);
+        setCallbackPopoverOpen(false);
         // Reset after a delay so user can see the success message
         setTimeout(() => setCallbackSubmitted(false), 500); 
     }, 2000);
@@ -113,9 +112,9 @@ export default function ProductDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {showContact ? (
-                <div className="flex items-center justify-center text-center font-bold text-lg p-3 bg-green-100 text-green-800 rounded-md">
-                  <Phone className="w-5 h-5 mr-2" /> +234 801 234 5678
-                </div>
+                 <a href="tel:+2348012345678" className="flex items-center justify-center text-center font-bold text-lg p-3 bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition-colors">
+                    <Phone className="w-5 h-5 mr-2" /> +234 801 234 5678
+                </a>
               ) : (
                 <Button size="lg" className="w-full" onClick={() => setShowContact(true)}>
                   <Phone className="w-5 h-5 mr-2" /> Show Contact
@@ -154,25 +153,25 @@ export default function ProductDetailPage() {
                 </PopoverContent>
               </Popover>
 
-               <Dialog open={callbackOpen} onOpenChange={setCallbackOpen}>
-                <DialogTrigger asChild>
+               <Popover open={callbackPopoverOpen} onOpenChange={setCallbackPopoverOpen}>
+                <PopoverTrigger asChild>
                     <Button variant="secondary" size="lg" className="w-full">Request a Callback</Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Request a Callback</DialogTitle>
-                    </DialogHeader>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
                     {callbackSubmitted ? (
-                        <div className="text-center py-10 flex flex-col items-center gap-4">
-                            <div className="bg-green-100 p-3 rounded-full">
-                                <Check className="h-8 w-8 text-green-600" />
+                        <div className="text-center py-4 flex flex-col items-center gap-2">
+                            <div className="bg-green-100 p-2 rounded-full">
+                                <Check className="h-6 w-6 text-green-600" />
                             </div>
-                            <p className="text-xl font-semibold text-foreground">Request Submitted!</p>
-                            <p className="text-muted-foreground max-w-xs text-center">The seller has been notified and should call you back shortly.</p>
+                            <p className="font-semibold text-foreground">Request Submitted!</p>
+                            <p className="text-muted-foreground text-sm text-center">The seller will call you back shortly.</p>
                         </div>
                     ) : (
                         <form className="space-y-4" onSubmit={handleCallbackSubmit}>
-                            <p className="text-sm text-muted-foreground">Enter your details and the seller will call you back.</p>
+                            <div className="space-y-2">
+                                <h4 className="font-medium leading-none">Request a Callback</h4>
+                                <p className="text-sm text-muted-foreground">Enter your details and the seller will call you back.</p>
+                            </div>
                             <div className="space-y-1">
                                 <Label htmlFor="name">Your Name</Label>
                                 <Input id="name" placeholder="John Doe" required />
@@ -184,8 +183,8 @@ export default function ProductDetailPage() {
                             <Button type="submit" className="w-full">Submit Request</Button>
                         </form>
                     )}
-                </DialogContent>
-               </Dialog>
+                </PopoverContent>
+               </Popover>
             </CardContent>
           </Card>
 
