@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { locations } from '@/lib/locations';
@@ -54,6 +54,9 @@ export default function AccountPage() {
     const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
     const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
 
+    const idFileInputRef = useRef<HTMLInputElement>(null);
+    const businessFileInputRef = useRef<HTMLInputElement>(null);
+
     const handleIdUpload = () => {
         setIdStatus('pending');
         setTimeout(() => {
@@ -63,12 +66,30 @@ export default function AccountPage() {
         }, 3000); // 3-second delay to simulate review
     };
     
+    const handleIdFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            console.log("ID document selected:", file.name);
+            // In a real app, you would upload the file here.
+            handleIdUpload();
+        }
+    };
+    
     const handleBusinessDocUpload = () => {
         setBusinessStatus('pending');
         setTimeout(() => {
             // Simulate a rejection for demonstration
             setBusinessStatus('rejected');
         }, 3000);
+    };
+
+    const handleBusinessFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            console.log("Business document selected:", file.name);
+            // In a real app, you would upload the file here.
+            handleBusinessDocUpload();
+        }
     };
 
     const resetIdVerification = () => {
@@ -256,11 +277,18 @@ export default function AccountPage() {
                                                 <p className="text-sm text-muted-foreground">Verify using your Gov-issued ID.</p>
                                             </div>
                                         </div>
-                                        {idStatus === 'unverified' && <Button onClick={handleIdUpload}><Upload className="mr-2 h-4 w-4"/> Upload ID</Button>}
+                                        {idStatus === 'unverified' && <Button onClick={() => idFileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/> Upload ID</Button>}
                                         {idStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
                                         {idStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
                                         {idStatus === 'rejected' && <Button variant="destructive" onClick={resetIdVerification}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
                                     </div>
+                                    <input
+                                        type="file"
+                                        ref={idFileInputRef}
+                                        onChange={handleIdFileSelect}
+                                        className="hidden"
+                                        accept="image/jpeg,image/png,application/pdf"
+                                    />
                                     {idStatus === 'rejected' && <Alert variant="destructive" className="mt-3"><AlertCircle className="h-4 w-4"/><AlertTitle>Verification Rejected</AlertTitle><AlertDescription>Your ID was not clear. Please upload again.</AlertDescription></Alert>}
                                 </div>
 
@@ -273,11 +301,18 @@ export default function AccountPage() {
                                                 <p className="text-sm text-muted-foreground">Verify your business with CAC documents.</p>
                                             </div>
                                         </div>
-                                        {businessStatus === 'unverified' && <Button onClick={handleBusinessDocUpload}><Upload className="mr-2 h-4 w-4"/> Upload Docs</Button>}
+                                        {businessStatus === 'unverified' && <Button onClick={() => businessFileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/> Upload Docs</Button>}
                                         {businessStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
                                         {businessStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
                                         {businessStatus === 'rejected' && <Button variant="destructive" onClick={resetBusinessVerification}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
                                     </div>
+                                    <input
+                                        type="file"
+                                        ref={businessFileInputRef}
+                                        onChange={handleBusinessFileSelect}
+                                        className="hidden"
+                                        accept="image/jpeg,image/png,application/pdf"
+                                    />
                                      {businessStatus === 'rejected' && <Alert variant="destructive" className="mt-3"><AlertCircle className="h-4 w-4"/><AlertTitle>Verification Rejected</AlertTitle><AlertDescription>Your documents could not be verified.</AlertDescription></Alert>}
                                 </div>
                         </AccordionContent>
