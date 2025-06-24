@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdCard from '@/components/AdCard';
-import { MapPin, Phone, MessageSquare, ShieldCheck, Star } from 'lucide-react';
+import { MapPin, Phone, MessageSquare, ShieldCheck, Star, Check } from 'lucide-react';
 
 const mainImage = 'https://placehold.co/800x600.png';
 const thumbnails = [
@@ -133,12 +133,12 @@ export default function ProductDetailPage() {
                     <div className="space-y-2">
                       <h4 className="font-medium leading-none">Chat with Seller</h4>
                       <p className="text-sm text-muted-foreground">
-                        Ask a question or use a quick message.
+                        Use a quick message or type your own.
                       </p>
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         {quickMessages.map(msg => (
-                            <Button key={msg} variant="outline" size="sm" onClick={() => setChatMessage(msg)}>
+                            <Button key={msg} variant="outline" size="sm" className="text-xs p-1 h-auto" onClick={() => setChatMessage(msg)}>
                                 {msg}
                             </Button>
                         ))}
@@ -146,9 +146,10 @@ export default function ProductDetailPage() {
                     <Textarea 
                       placeholder="Type your message..." 
                       value={chatMessage} 
-                      onChange={(e) => setChatMessage(e.target.value)} 
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      rows={3}
                     />
-                    <Button>Send</Button>
+                    <Button>Send Message</Button>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -162,9 +163,12 @@ export default function ProductDetailPage() {
                         <DialogTitle>Request a Callback</DialogTitle>
                     </DialogHeader>
                     {callbackSubmitted ? (
-                        <div className="text-center py-8">
-                          <p className="text-lg font-semibold text-green-600">✅ Request Submitted!</p>
-                          <p className="text-muted-foreground">The seller will call you shortly.</p>
+                        <div className="text-center py-10 flex flex-col items-center gap-4">
+                            <div className="bg-green-100 p-3 rounded-full">
+                                <Check className="h-8 w-8 text-green-600" />
+                            </div>
+                            <p className="text-xl font-semibold text-foreground">Request Submitted!</p>
+                            <p className="text-muted-foreground max-w-xs text-center">The seller has been notified and should call you back shortly.</p>
                         </div>
                     ) : (
                         <form className="space-y-4" onSubmit={handleCallbackSubmit}>
