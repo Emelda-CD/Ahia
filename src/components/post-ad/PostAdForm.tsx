@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +22,7 @@ import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { boostPlans } from '@/lib/boost-plans-data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -47,6 +49,11 @@ export default function PostAdForm() {
   const [tags, setTags] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<string[]>([]);
 
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
   const form = useForm<AdFormValues>({
     resolver: zodResolver(adSchema),
@@ -67,7 +74,6 @@ export default function PostAdForm() {
   const locationValue = watch('location');
   const selectedPromotion = watch('promotion');
   
-  // This is a mock balance. In a real app, you would fetch this from your backend.
   const walletBalance = 550; 
   
   const selectedPlan = boostPlans.find(p => p.id === selectedPromotion);
@@ -82,6 +88,15 @@ export default function PostAdForm() {
       setSubcategories([]);
     }
   }, [selectedCategory, setValue]);
+  
+  useEffect(() => {
+    const newImageUrls = images.map(file => URL.createObjectURL(file));
+    setImagePreviews(newImageUrls);
+
+    return () => {
+      newImageUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const nextStep = async () => {
     let isValid = false;
@@ -107,7 +122,7 @@ export default function PostAdForm() {
             return;
         }
     }
-    console.log({...data, tags});
+    console.log({...data, tags, images});
     toast({
       title: 'Ad Submitted!',
       description: 'Your ad has been successfully submitted for review.',
@@ -150,6 +165,38 @@ export default function PostAdForm() {
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   }
+  
+  const handleFiles = (files: FileList | null) => {
+    if (files) {
+      const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      setImages(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleFiles(event.target.files);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    handleFiles(event.dataTransfer.files);
+  };
+  
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
+  };
+
 
   return (
     <Card>
@@ -290,21 +337,58 @@ export default function PostAdForm() {
                   )}
                 />
               </div>
-               <div>
-                <Label>Upload Images</Label>
-                <div className="mt-2 flex justify-center rounded-lg border border-dashed border-input px-6 py-10">
-                    <div className="text-center">
-                    <FileImage className="mx-auto h-12 w-12 text-gray-300" />
-                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                        <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-dark">
-                        <span>Upload files</span>
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple/>
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
+                <div>
+                    <Label>Upload Images</Label>
+                    <div className="mt-2 space-y-4">
+                        <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={cn(
+                            "flex justify-center rounded-lg border border-dashed border-input px-6 py-10 text-center cursor-pointer transition-colors",
+                            isDragging ? "border-primary bg-primary/10" : "hover:border-primary/70"
+                        )}
+                        >
+                        <div>
+                            <FileImage className="mx-auto h-12 w-12 text-gray-400" />
+                            <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
+                                <p className="relative font-semibold text-primary cursor-pointer">
+                                    <span>Upload files</span>
+                                    <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/gif"/>
+                                </p>
+                                <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                        </div>
+                        
+                        {imagePreviews.length > 0 && (
+                        <div>
+                            <Label>Image Previews</Label>
+                            <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {imagePreviews.map((src, index) => (
+                                <div key={src} className="relative group aspect-square">
+                                <Image
+                                    src={src}
+                                    alt={`preview ${index}`}
+                                    fill
+                                    className="rounded-md object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(index)}
+                                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove image"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                        )}
                     </div>
-                    <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
-                    </div>
-                </div>
                 </div>
             </div>
           )}
