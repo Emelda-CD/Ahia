@@ -23,6 +23,7 @@ import { LocationModal } from '@/components/common/LocationModal';
 import { boostPlans } from '@/lib/boost-plans-data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -35,6 +36,9 @@ const adSchema = z.object({
   condition: z.enum(['new', 'used']),
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
+  images: z.array(z.instanceof(File))
+    .min(2, 'Add at least 2 photos for this category.')
+    .max(20, 'Advert should contain from 2 to 20 images.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
@@ -49,9 +53,8 @@ export default function PostAdForm() {
   const [tags, setTags] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<string[]>([]);
 
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
@@ -64,15 +67,19 @@ export default function PostAdForm() {
         category: '',
         subcategory: '',
         location: '',
-        promotion: 'none'
+        promotion: 'none',
+        images: []
     }
   });
 
-  const { register, handleSubmit, control, trigger, getValues, setValue, watch } = form;
+  const { register, handleSubmit, control, trigger, getValues, setValue, watch, formState: { errors } } = form;
 
   const selectedCategory = watch('category');
   const locationValue = watch('location');
   const selectedPromotion = watch('promotion');
+  const images = watch('images') || [];
+  
+  const imagePreviews = images.map(file => URL.createObjectURL(file));
   
   const walletBalance = 550; 
   
@@ -90,12 +97,10 @@ export default function PostAdForm() {
   }, [selectedCategory, setValue]);
   
   useEffect(() => {
-    const newImageUrls = images.map(file => URL.createObjectURL(file));
-    setImagePreviews(newImageUrls);
-
     return () => {
-      newImageUrls.forEach(url => URL.revokeObjectURL(url));
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images]);
 
   const nextStep = async () => {
@@ -103,7 +108,7 @@ export default function PostAdForm() {
     if (step === 1) {
       isValid = await trigger(['category', 'subcategory', 'location', 'socialLink']);
     } else if (step === 2) {
-      isValid = await trigger(['title', 'description', 'price', 'phone', 'condition']);
+      isValid = await trigger(['title', 'description', 'price', 'phone', 'condition', 'images']);
     }
     if (isValid) setStep((s) => s + 1);
   };
@@ -122,7 +127,7 @@ export default function PostAdForm() {
             return;
         }
     }
-    console.log({...data, tags, images});
+    console.log({...data, tags});
     toast({
       title: 'Ad Submitted!',
       description: 'Your ad has been successfully submitted for review.',
@@ -169,12 +174,17 @@ export default function PostAdForm() {
   const handleFiles = (files: FileList | null) => {
     if (files) {
       const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-      setImages(prev => [...prev, ...newFiles]);
+      const currentImages = getValues('images') || [];
+      const updatedImages = [...currentImages, ...newFiles].slice(0, 20);
+      setValue('images', updatedImages, { shouldValidate: true });
     }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(event.target.files);
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -194,7 +204,28 @@ export default function PostAdForm() {
   };
   
   const handleRemoveImage = (indexToRemove: number) => {
-    setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
+    const currentImages = getValues('images') || [];
+    const updatedImages = currentImages.filter((_, index) => index !== indexToRemove);
+    setValue('images', updatedImages, { shouldValidate: true });
+  };
+
+  const handleImageDragStart = (index: number) => {
+    setDraggedImageIndex(index);
+  };
+
+  const handleImageDrop = (targetIndex: number) => {
+    if (draggedImageIndex === null || draggedImageIndex === targetIndex) {
+        setDraggedImageIndex(null);
+        return;
+    };
+
+    const currentImages = getValues('images') || [];
+    const newImages = [...currentImages];
+    const [draggedItem] = newImages.splice(draggedImageIndex, 1);
+    newImages.splice(targetIndex, 0, draggedItem);
+    
+    setValue('images', newImages, { shouldValidate: false });
+    setDraggedImageIndex(null);
   };
 
 
@@ -225,7 +256,7 @@ export default function PostAdForm() {
                     </Select>
                   )}
                 />
-                {form.formState.errors.category && <p className="text-red-500 text-sm">{form.formState.errors.category.message}</p>}
+                {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
               </div>
                <div>
                 <Label htmlFor="subcategory">Subcategory</Label>
@@ -241,26 +272,32 @@ export default function PostAdForm() {
                     </Select>
                   )}
                 />
-                {form.formState.errors.subcategory && <p className="text-red-500 text-sm">{form.formState.errors.subcategory.message}</p>}
+                {errors.subcategory && <p className="text-red-500 text-sm">{errors.subcategory.message}</p>}
               </div>
               <div>
                 <Label>Location</Label>
-                <LocationModal onSelect={(town) => setValue('location', town, { shouldValidate: true })}>
-                  <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                    <span>{locationValue || "Select a location"}</span>
-                    {locationValue ? (
-                      <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
-                    ) : (
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                 <Controller
+                    name="location"
+                    control={control}
+                    render={({ field }) => (
+                        <LocationModal onSelect={(town) => setValue('location', town, { shouldValidate: true })}>
+                            <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                                <span>{field.value || "Select a location"}</span>
+                                {field.value ? (
+                                <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
+                                ) : (
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </Button>
+                        </LocationModal>
                     )}
-                  </Button>
-                </LocationModal>
-                {form.formState.errors.location && <p className="text-red-500 text-sm">{form.formState.errors.location.message}</p>}
+                 />
+                {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
               </div>
               <div>
                 <Label htmlFor="socialLink">Social Link (Optional)</Label>
                 <Input id="socialLink" placeholder="https://instagram.com/your-brand" {...register('socialLink')} />
-                 {form.formState.errors.socialLink && <p className="text-red-500 text-sm">{form.formState.errors.socialLink.message}</p>}
+                 {errors.socialLink && <p className="text-red-500 text-sm">{errors.socialLink.message}</p>}
               </div>
             </div>
           )}
@@ -270,12 +307,12 @@ export default function PostAdForm() {
               <div>
                 <Label htmlFor="title">Ad Title</Label>
                 <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
-                 {form.formState.errors.title && <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>}
+                 {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
               </div>
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
-                 {form.formState.errors.description && <p className="text-red-500 text-sm">{form.formState.errors.description.message}</p>}
+                 {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
               </div>
                <div>
                 <Label>Tags</Label>
@@ -306,12 +343,12 @@ export default function PostAdForm() {
                 <div>
                   <Label htmlFor="price">Price (&#8358;)</Label>
                   <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
-                   {form.formState.errors.price && <p className="text-red-500 text-sm">{form.formState.errors.price.message}</p>}
+                   {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
                 </div>
                 <div>
                    <Label htmlFor="phone">Phone Number</Label>
                    <Input id="phone" placeholder="e.g., 08012345678" {...register('phone')} />
-                    {form.formState.errors.phone && <p className="text-red-500 text-sm">{form.formState.errors.phone.message}</p>}
+                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-8">
@@ -337,59 +374,73 @@ export default function PostAdForm() {
                   )}
                 />
               </div>
-                <div>
-                    <Label>Upload Images</Label>
-                    <div className="mt-2 space-y-4">
-                        <div
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={cn(
-                            "flex justify-center rounded-lg border border-dashed border-input px-6 py-10 text-center cursor-pointer transition-colors",
-                            isDragging ? "border-primary bg-primary/10" : "hover:border-primary/70"
-                        )}
+              <div>
+                <Label htmlFor="file-upload">Add Photos</Label>
+                <p className="text-sm text-muted-foreground">First picture is the title picture. You can change the order of photos: just grab and drag.</p>
+                
+                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                    {imagePreviews.map((src, index) => (
+                        <div 
+                            key={src} 
+                            className={cn(
+                                "relative group aspect-square cursor-grab rounded-md",
+                                draggedImageIndex === index && "opacity-50"
+                            )}
+                            draggable
+                            onDragStart={() => handleImageDragStart(index)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => handleImageDrop(index)}
+                            onDragEnd={() => setDraggedImageIndex(null)}
                         >
-                        <div>
-                            <FileImage className="mx-auto h-12 w-12 text-gray-400" />
-                            <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
-                                <p className="relative font-semibold text-primary cursor-pointer">
-                                    <span>Upload files</span>
-                                    <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/gif"/>
-                                </p>
-                                <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                            <Image
+                                src={src}
+                                alt={`preview ${index}`}
+                                fill
+                                className="rounded-md object-cover border-2"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove image"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                            {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
                         </div>
+                    ))}
+                    
+                    {images.length < 20 && (
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            className={cn(
+                                "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors",
+                                isDragging ? "border-primary bg-primary/10" : "hover:border-primary/70"
+                            )}
+                        >
+                            <FileImage className="h-8 w-8 text-gray-400" />
+                            <span className="mt-2 text-sm text-muted-foreground">Add photo</span>
                         </div>
-                        
-                        {imagePreviews.length > 0 && (
-                        <div>
-                            <Label>Image Previews</Label>
-                            <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            {imagePreviews.map((src, index) => (
-                                <div key={src} className="relative group aspect-square">
-                                <Image
-                                    src={src}
-                                    alt={`preview ${index}`}
-                                    fill
-                                    className="rounded-md object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveImage(index)}
-                                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    aria-label="Remove image"
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                        )}
-                    </div>
+                    )}
                 </div>
+                
+                {images.length === 0 && (
+                    <div className="text-center text-muted-foreground mt-4">
+                        No file chosen
+                    </div>
+                )}
+
+                {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
+
+                <div className="text-xs text-muted-foreground mt-4 space-y-1">
+                    <p>Advert should contain from 2 to 20 images.</p>
+                    <p>Supported formats are *.jpg and *.png.</p>
+                </div>
+                <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
+              </div>
             </div>
           )}
 
@@ -462,7 +513,7 @@ export default function PostAdForm() {
                         <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
                         <div>
                             <Label htmlFor="terms">I agree to the <a href="#" className="text-primary hover:underline">Terms and Conditions</a></Label>
-                            {form.formState.errors.terms && <p className="text-red-500 text-sm">{form.formState.errors.terms.message}</p>}
+                            {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
                         </div>
                      </div>
                   )}
