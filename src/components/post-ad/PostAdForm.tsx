@@ -37,7 +37,7 @@ const adSchema = z.object({
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(2, 'Please add at least 2 photos for your ad.')
+    .min(2, '📸 Add at least 2 photos. Drag to reorder. The first photo is your main image.')
     .max(20, 'Advert should contain from 2 to 20 images.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
@@ -173,7 +173,18 @@ export default function PostAdForm() {
   
   const handleFiles = (files: FileList | null) => {
     if (files) {
-      const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      const allowedTypes = ['image/jpeg', 'image/png'];
+      const newFiles = Array.from(files)
+        .filter(file => allowedTypes.includes(file.type));
+
+      if (newFiles.length !== files.length) {
+          toast({
+              variant: 'destructive',
+              title: 'Invalid File Type',
+              description: 'Please upload only .jpg or .png files.'
+          })
+      }
+        
       const currentImages = getValues('images') || [];
       const updatedImages = [...currentImages, ...newFiles].slice(0, 20);
       setValue('images', updatedImages, { shouldValidate: true });
@@ -386,43 +397,39 @@ export default function PostAdForm() {
                 />
               </div>
               <div>
-                <Label htmlFor="file-upload">Add Photos</Label>
-                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                    {imagePreviews.map((src, index) => {
-                        const file = images[index];
-                        const key = `${file.name}-${file.size}-${file.lastModified}`;
-                        return (
-                            <div 
-                                key={key} 
-                                className={cn(
-                                    "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
-                                    draggedIndex === index && "opacity-50 scale-95"
-                                )}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, index)}
-                                onDragEnd={handleDragEnd}
+                <Label htmlFor="file-upload">📸 Add at least 2 photos. Drag to reorder. The first photo is your main image.</Label>
+                <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                    {imagePreviews.map((src, index) => (
+                        <div 
+                            key={src} 
+                            className={cn(
+                                "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
+                                draggedIndex === index && "opacity-50 scale-95"
+                            )}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, index)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, index)}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <Image
+                                src={src}
+                                alt={`preview ${index}`}
+                                fill
+                                className="rounded-md object-cover"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove image"
                             >
-                                <Image
-                                    src={src}
-                                    alt={`preview ${index}`}
-                                    fill
-                                    className="rounded-md object-cover"
-                                    style={{ pointerEvents: 'none' }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveImage(index)}
-                                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    aria-label="Remove image"
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                                {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
-                            </div>
-                        )
-                    })}
+                                <X className="h-3 w-3" />
+                            </button>
+                            {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
+                        </div>
+                    ))}
                     
                     {images.length < 20 && (
                         <div
@@ -561,5 +568,3 @@ export default function PostAdForm() {
     </Card>
   );
 }
-
-    
