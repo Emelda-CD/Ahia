@@ -53,8 +53,10 @@ export default function PostAdForm() {
   const [tags, setTags] = useState<string[]>([]);
   const [subcategories, setSubcategories] = useState<string[]>([]);
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
@@ -97,8 +99,6 @@ export default function PostAdForm() {
   }, [selectedCategory, setValue]);
   
   useEffect(() => {
-    // This will run on unmount or when imagePreviews array is recreated.
-    // It's important for cleaning up the object URLs to avoid memory leaks.
     return () => {
       imagePreviews.forEach(url => URL.revokeObjectURL(url));
     };
@@ -188,19 +188,19 @@ export default function PostAdForm() {
     }
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOverUpload = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setIsDragging(true);
+    setIsUploading(true);
   };
 
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeaveUpload = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setIsDragging(false);
+    setIsUploading(false);
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDropUpload = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setIsDragging(false);
+    setIsUploading(false);
     handleFiles(event.dataTransfer.files);
   };
   
@@ -210,23 +210,37 @@ export default function PostAdForm() {
     setValue('images', updatedImages, { shouldValidate: true });
   };
 
-  const handleImageDragStart = (index: number) => {
-    setDraggedImageIndex(index);
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
   };
 
-  const handleImageDrop = (targetIndex: number) => {
-    if (draggedImageIndex === null || draggedImageIndex === targetIndex) return;
-    const currentImages = getValues('images') || [];
+  const handleDragEnter = (index: number) => {
+    if (draggedIndex !== null && index !== draggedIndex) {
+        setDropTargetIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetIndex(null);
+  };
+
+  const handleDrop = () => {
+    if (draggedIndex === null || dropTargetIndex === null || draggedIndex === dropTargetIndex) {
+      return;
+    }
+
+    const currentImages = getValues('images');
     const newImages = [...currentImages];
-    const [draggedItem] = newImages.splice(draggedImageIndex, 1);
-    newImages.splice(targetIndex, 0, draggedItem);
-    setValue('images', newImages, { shouldValidate: false });
+    const [draggedItem] = newImages.splice(draggedIndex, 1);
+    newImages.splice(dropTargetIndex, 0, draggedItem);
+    
+    setValue('images', newImages, { shouldValidate: true });
   };
-
+  
   const handleDragEnd = () => {
-    setDraggedImageIndex(null);
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
   };
-
 
   return (
     <Card>
@@ -385,13 +399,16 @@ export default function PostAdForm() {
                             <div 
                                 key={key} 
                                 className={cn(
-                                    "relative group aspect-square cursor-grab rounded-md",
-                                    draggedImageIndex === index && "opacity-50"
+                                    "relative group aspect-square cursor-grab rounded-md transition-all",
+                                    draggedIndex === index && "opacity-50 scale-105 shadow-lg",
+                                    dropTargetIndex === index && "ring-2 ring-primary ring-offset-2"
                                 )}
                                 draggable
-                                onDragStart={() => handleImageDragStart(index)}
+                                onDragStart={() => handleDragStart(index)}
+                                onDragEnter={() => handleDragEnter(index)}
+                                onDragLeave={handleDragLeave}
                                 onDragOver={(e) => e.preventDefault()}
-                                onDrop={() => handleImageDrop(index)}
+                                onDrop={handleDrop}
                                 onDragEnd={handleDragEnd}
                             >
                                 <Image
@@ -415,13 +432,13 @@ export default function PostAdForm() {
                     
                     {images.length < 20 && (
                         <div
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
+                            onDragOver={handleDragOverUpload}
+                            onDragLeave={handleDragLeaveUpload}
+                            onDrop={handleDropUpload}
                             onClick={() => fileInputRef.current?.click()}
                             className={cn(
                                 "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors",
-                                isDragging ? "border-primary bg-primary/10" : "hover:border-primary/70"
+                                isUploading ? "border-primary bg-primary/10" : "hover:border-primary/70"
                             )}
                         >
                             <FileImage className="h-8 w-8 text-gray-400" />
@@ -439,8 +456,8 @@ export default function PostAdForm() {
                 {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
 
                 <div className="text-xs text-muted-foreground mt-4 space-y-1">
-                    <p>Advert should contain from 2 to 20 images.</p>
                     <p>Supported formats are *.jpg and *.png.</p>
+                    <p>Advert should contain from 2 to 20 images.</p>
                 </div>
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
