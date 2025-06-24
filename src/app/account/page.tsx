@@ -19,7 +19,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import AdCard from "@/components/AdCard";
-import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Calendar as CalendarIcon, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Calendar as CalendarIcon, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck } from 'lucide-react';
 
 const myAds = [
   {
@@ -49,6 +51,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function AccountPage() {
     const [date, setDate] = useState<Date>();
+    const [idStatus, setIdStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
+    const [businessStatus, setBusinessStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
+
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
@@ -84,7 +89,7 @@ export default function AccountPage() {
                 <CardDescription>Manage your profile, preferences, and account security.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Accordion type="multiple" defaultValue={['personal-details']} className="w-full">
+                <Accordion type="multiple" defaultValue={['personal-details', 'identity-verification']} className="w-full">
                     
                     <AccordionItem value="personal-details">
                         <AccordionTrigger className="text-lg font-semibold">Personal Details</AccordionTrigger>
@@ -196,29 +201,59 @@ export default function AccountPage() {
 
                     <AccordionItem value="identity-verification">
                         <AccordionTrigger className="text-lg font-semibold">Identity & Verification</AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4">
-                           <Card className="flex items-center justify-between p-4 bg-secondary/50">
-                             <div>
-                                <h4 className="font-semibold flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600"/> Verified ID</h4>
-                                <p className="text-sm text-muted-foreground">Your government ID has been verified.</p>
-                             </div>
-                             <Button variant="link" size="sm" className="gap-1">What is it? <CircleHelp className="h-4 w-4"/></Button>
-                           </Card>
-                           <div className="space-y-2">
-                               <Label>Phone Number</Label>
-                               <div className="flex items-center justify-between p-3 border rounded-md">
-                                 <p className="font-mono">+234 801 234 5678 <span className="ml-2 text-xs text-green-600 font-semibold">(Verified)</span></p>
-                                 <Button variant="outline" size="sm">Change</Button>
-                               </div>
-                           </div>
-                           <div className="space-y-2">
-                               <Label>Email</Label>
-                               <div className="flex items-center justify-between p-3 border rounded-md">
-                                 <p>user.a@example.com</p>
-                                 <Button variant="outline" size="sm" disabled>Change</Button>
-                               </div>
-                           </div>
-                           <Button variant="secondary">Request Verification</Button>
+                        <AccordionContent className="space-y-4 pt-4">
+                                <div className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Phone className="h-6 w-6 text-muted-foreground"/>
+                                        <div>
+                                            <h4 className="font-semibold">Phone Number</h4>
+                                            <p className="text-sm font-mono">+234 801 234 5678</p>
+                                        </div>
+                                    </div>
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="h-4 w-4 mr-1"/> Verified</Badge>
+                                </div>
+                                <div className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Mail className="h-6 w-6 text-muted-foreground"/>
+                                        <div>
+                                            <h4 className="font-semibold">Email Address</h4>
+                                            <p className="text-sm">user.a@example.com</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="outline" size="sm">Verify Now</Button>
+                                </div>
+                                <div className="p-3 border rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <UserCheck className="h-6 w-6 text-muted-foreground"/>
+                                            <div>
+                                                <h4 className="font-semibold">ID Verification</h4>
+                                                <p className="text-sm text-muted-foreground">Verify using your Gov-issued ID.</p>
+                                            </div>
+                                        </div>
+                                        {idStatus === 'unverified' && <Button onClick={() => setIdStatus('pending')}><Upload className="mr-2 h-4 w-4"/> Upload ID</Button>}
+                                        {idStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
+                                        {idStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
+                                        {idStatus === 'rejected' && <Button variant="destructive" onClick={() => setIdStatus('unverified')}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
+                                    </div>
+                                    {idStatus === 'rejected' && <Alert variant="destructive" className="mt-3"><AlertCircle className="h-4 w-4"/><AlertTitle>Verification Rejected</AlertTitle><AlertDescription>Your ID was not clear. Please upload again.</AlertDescription></Alert>}
+                                </div>
+
+                                <div className="p-3 border rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Building className="h-6 w-6 text-muted-foreground"/>
+                                            <div>
+                                                <h4 className="font-semibold">Business Verification</h4>
+                                                <p className="text-sm text-muted-foreground">Verify your business with CAC documents.</p>
+                                            </div>
+                                        </div>
+                                        {businessStatus === 'unverified' && <Button onClick={() => setBusinessStatus('pending')}><Upload className="mr-2 h-4 w-4"/> Upload Docs</Button>}
+                                        {businessStatus === 'pending' && <Badge variant="outline" className="text-amber-600 border-amber-500"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Pending</Badge>}
+                                        {businessStatus === 'verified' && <Badge variant="secondary" className="bg-green-100 text-green-800"><BadgeCheck className="mr-2 h-4 w-4"/> Verified</Badge>}
+                                        {businessStatus === 'rejected' && <Button variant="destructive" onClick={() => setBusinessStatus('unverified')}><AlertCircle className="mr-2 h-4 w-4"/> Re-upload</Button>}
+                                    </div>
+                                </div>
                         </AccordionContent>
                     </AccordionItem>
 
@@ -246,9 +281,15 @@ export default function AccountPage() {
                             <Button variant="outline" className="w-full justify-start gap-4">
                                 <GoogleIcon className="h-5 w-5"/> Connect with Google
                             </Button>
-                            <Button disabled variant="outline" className="w-full justify-start gap-4">
-                                <Facebook className="h-5 w-5 text-blue-600"/> Connected with Facebook
-                                <CheckCircle className="h-5 w-5 ml-auto text-green-600"/>
+                            <Button disabled variant="outline" className="w-full justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Facebook className="h-5 w-5 text-blue-600"/>
+                                    <span>Connected with Facebook</span>
+                                </div>
+                                <CheckCircle className="h-5 w-5 text-green-600"/>
+                            </Button>
+                            <Button variant="outline" className="w-full justify-start gap-4">
+                                <PhoneCall className="h-5 w-5 text-blue-500"/> Connect with Truecaller
                             </Button>
                         </AccordionContent>
                     </AccordionItem>
@@ -324,5 +365,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-    
