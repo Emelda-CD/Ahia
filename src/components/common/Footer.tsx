@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import Logo from './Logo';
 
 const socialLinks = [
   { name: 'Facebook', icon: Facebook, href: '#' },
@@ -28,7 +29,9 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <h3 className="text-xl font-bold text-white mb-4">Ahia</h3>
+            <Link href="/" className="inline-block mb-4">
+              <Logo variant="dark" />
+            </Link>
             <p className="text-gray-200">Your trusted online marketplace in Nigeria.</p>
             <div className="flex space-x-4 mt-4">
               {socialLinks.map((social) => (

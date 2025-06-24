@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, User, Briefcase, Home, Info, Phone } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import Logo from './Logo';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -27,7 +28,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-primary">Ahia</span>
+          <Logo />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
@@ -57,7 +58,7 @@ export default function Header() {
             <SheetContent side="left" className="w-full max-w-xs">
               <div className="p-4">
                 <Link href="/" className="mb-8 flex items-center">
-                  <span className="text-2xl font-bold text-primary">Ahia</span>
+                  <Logo />
                 </Link>
                 <nav className="flex flex-col gap-6">
                   {navLinks.map((link) => (
