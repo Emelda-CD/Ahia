@@ -55,7 +55,6 @@ export default function PostAdForm() {
 
   const [isUploading, setIsUploading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -209,53 +208,37 @@ export default function PostAdForm() {
     const updatedImages = currentImages.filter((_, index) => index !== indexToRemove);
     setValue('images', updatedImages, { shouldValidate: true });
   };
-
+  
+  // Drag and Drop reordering logic
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
-    e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDropTargetIndex(index);
-    }
-  };
-  
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDropTargetIndex(null);
-  }
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is necessary to allow dropping
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
     e.preventDefault();
-    
-    if (draggedIndex === null || dropTargetIndex === null || draggedIndex === dropTargetIndex) {
+    if (draggedIndex === null || draggedIndex === targetIndex) {
       setDraggedIndex(null);
-      setDropTargetIndex(null);
       return;
     }
 
     const currentImages = getValues('images');
     const newImages = [...currentImages];
-    
     const [draggedItem] = newImages.splice(draggedIndex, 1);
-    newImages.splice(dropTargetIndex, 0, draggedItem);
+    newImages.splice(targetIndex, 0, draggedItem);
     
     setValue('images', newImages, { shouldValidate: true });
-    
     setDraggedIndex(null);
-    setDropTargetIndex(null);
   };
   
-  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragEnd = () => {
     setDraggedIndex(null);
-    setDropTargetIndex(null);
   };
+
 
   return (
     <Card>
@@ -412,24 +395,20 @@ export default function PostAdForm() {
                             <div 
                                 key={key} 
                                 className={cn(
-                                    "relative group aspect-square rounded-md transition-all",
-                                    draggedIndex === null ? "cursor-grab" : "cursor-grabbing",
-                                    draggedIndex === index && "opacity-50 scale-95",
-                                    dropTargetIndex === index && "ring-4 ring-primary ring-offset-2 scale-105"
+                                    "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
+                                    draggedIndex === index && "opacity-50 scale-95"
                                 )}
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, index)}
-                                onDragEnter={(e) => handleDragEnter(e, index)}
-                                onDragLeave={handleDragLeave}
                                 onDragOver={handleDragOver}
-                                onDrop={handleDrop}
+                                onDrop={(e) => handleDrop(e, index)}
                                 onDragEnd={handleDragEnd}
                             >
                                 <Image
                                     src={src}
                                     alt={`preview ${index}`}
                                     fill
-                                    className="rounded-md object-cover border-2"
+                                    className="rounded-md object-cover"
                                     style={{ pointerEvents: 'none' }}
                                 />
                                 <button
@@ -463,12 +442,6 @@ export default function PostAdForm() {
                 </div>
 
                 {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
-
-                {images.length === 0 && (
-                    <div className="text-center text-muted-foreground mt-4 border-2 border-dashed rounded-lg p-8">
-                        📂 No file selected yet.
-                    </div>
-                )}
                 
                 <div className="text-sm text-muted-foreground mt-4 space-y-3 bg-secondary/50 p-4 rounded-md">
                     <h4 className="font-bold text-base text-foreground">📸 Image Upload Guide:</h4>
@@ -588,3 +561,5 @@ export default function PostAdForm() {
     </Card>
   );
 }
+
+    
