@@ -16,8 +16,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { handleSuggestTags } from '@/app/post-ad/actions';
-import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
+import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
+import { LocationModal } from '@/components/common/LocationModal';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -52,13 +53,15 @@ export default function PostAdForm() {
         condition: 'used',
         terms: false,
         category: '',
-        subcategory: ''
+        subcategory: '',
+        location: ''
     }
   });
 
   const { register, handleSubmit, control, trigger, getValues, setValue, watch } = form;
 
   const selectedCategory = watch('category');
+  const locationValue = watch('location');
 
   useEffect(() => {
     if (selectedCategory) {
@@ -173,9 +176,18 @@ export default function PostAdForm() {
                 {form.formState.errors.subcategory && <p className="text-red-500 text-sm">{form.formState.errors.subcategory.message}</p>}
               </div>
               <div>
-                <Label htmlFor="location">Location</Label>
-                <Input id="location" placeholder="e.g., Ikeja, Lagos" {...register('location')} />
-                 {form.formState.errors.location && <p className="text-red-500 text-sm">{form.formState.errors.location.message}</p>}
+                <Label>Location</Label>
+                <LocationModal onSelect={(town) => setValue('location', town, { shouldValidate: true })}>
+                  <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                    <span>{locationValue || "Select a location"}</span>
+                    {locationValue ? (
+                      <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
+                    ) : (
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </LocationModal>
+                {form.formState.errors.location && <p className="text-red-500 text-sm">{form.formState.errors.location.message}</p>}
               </div>
               <div>
                 <Label htmlFor="socialLink">Social Link (Optional)</Label>
