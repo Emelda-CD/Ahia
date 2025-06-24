@@ -210,34 +210,49 @@ export default function PostAdForm() {
     setValue('images', updatedImages, { shouldValidate: true });
   };
 
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragEnter = (index: number) => {
-    if (draggedIndex !== null && index !== draggedIndex) {
-        setDropTargetIndex(index);
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDropTargetIndex(index);
     }
   };
-
-  const handleDragLeave = () => {
+  
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
     setDropTargetIndex(null);
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
   };
 
-  const handleDrop = () => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    
     if (draggedIndex === null || dropTargetIndex === null || draggedIndex === dropTargetIndex) {
+      setDraggedIndex(null);
+      setDropTargetIndex(null);
       return;
     }
 
     const currentImages = getValues('images');
     const newImages = [...currentImages];
+    
     const [draggedItem] = newImages.splice(draggedIndex, 1);
     newImages.splice(dropTargetIndex, 0, draggedItem);
     
     setValue('images', newImages, { shouldValidate: true });
+    
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
   };
   
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     setDraggedIndex(null);
     setDropTargetIndex(null);
   };
@@ -389,7 +404,7 @@ export default function PostAdForm() {
               </div>
               <div>
                 <Label htmlFor="file-upload">Add Photos</Label>
-                <p className="text-sm text-muted-foreground">First picture is the title picture. You can change the order of photos: just grab and drag.</p>
+                <p className="text-sm text-muted-foreground">First picture is the title picture. You can change the order of photos: just grab your photos and drag.</p>
                 
                 <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {imagePreviews.map((src, index) => {
@@ -399,15 +414,16 @@ export default function PostAdForm() {
                             <div 
                                 key={key} 
                                 className={cn(
-                                    "relative group aspect-square cursor-grab rounded-md transition-all",
-                                    draggedIndex === index && "opacity-50 scale-105 shadow-lg",
-                                    dropTargetIndex === index && "ring-2 ring-primary ring-offset-2"
+                                    "relative group aspect-square rounded-md transition-all",
+                                    draggedIndex === null ? "cursor-grab" : "cursor-grabbing",
+                                    draggedIndex === index && "opacity-50 scale-95",
+                                    dropTargetIndex === index && "ring-4 ring-primary ring-offset-2 scale-105"
                                 )}
                                 draggable
-                                onDragStart={() => handleDragStart(index)}
-                                onDragEnter={() => handleDragEnter(index)}
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragEnter={(e) => handleDragEnter(e, index)}
                                 onDragLeave={handleDragLeave}
-                                onDragOver={(e) => e.preventDefault()}
+                                onDragOver={handleDragOver}
                                 onDrop={handleDrop}
                                 onDragEnd={handleDragEnd}
                             >
@@ -416,6 +432,7 @@ export default function PostAdForm() {
                                     alt={`preview ${index}`}
                                     fill
                                     className="rounded-md object-cover border-2"
+                                    style={{ pointerEvents: 'none' }}
                                 />
                                 <button
                                     type="button"
