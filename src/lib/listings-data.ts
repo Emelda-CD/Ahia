@@ -12,12 +12,15 @@ export type Listing = {
     lga: string;
     town: string;
   };
+  sellerId?: string;
   verifiedSeller?: boolean;
   propertyVerified?: boolean;
   verifiedID?: boolean;
   rating?: number;
   views?: number;
   contacts?: number;
+  favorites?: number;
+  promoted?: boolean;
   specifics?: {
     // Vehicles
     brand?: string;
@@ -56,10 +59,13 @@ export const allListings: Listing[] = [
     image: 'https://placehold.co/600x400.png',
     data_ai_hint: 'toyota camry',
     location: { lga: 'Enugu North', town: 'GRA' },
+    sellerId: 'user123',
     verifiedSeller: true,
     rating: 4.8,
     views: 890,
     contacts: 45,
+    favorites: 12,
+    promoted: true,
     specifics: { brand: 'Toyota', model: 'Camry', year: 2019, transmission: 'automatic' },
   },
   {
@@ -77,6 +83,7 @@ export const allListings: Listing[] = [
     rating: 4.9,
     views: 1200,
     contacts: 80,
+    favorites: 25,
     specifics: { propertyType: 'apartment', listingType: 'rent' },
   },
   {
@@ -89,10 +96,12 @@ export const allListings: Listing[] = [
     image: 'https://placehold.co/600x400.png',
     data_ai_hint: 'iphone pro',
     location: { lga: 'Enugu South', town: 'Uwani' },
+    sellerId: 'user123',
     verifiedID: true,
     rating: 4.5,
     views: 650,
     contacts: 30,
+    favorites: 8,
     specifics: { brand: 'Apple', storage: '256gb', condition: 'used' },
   },
   {
@@ -105,8 +114,12 @@ export const allListings: Listing[] = [
     image: 'https://placehold.co/600x400.png',
     data_ai_hint: 'office desk',
     location: { lga: 'Enugu North', town: 'Ogui' },
+    sellerId: 'user123',
     verifiedSeller: true,
     rating: 5.0,
+    views: 300,
+    contacts: 10,
+    favorites: 5,
     specifics: { jobType: 'remote', experienceLevel: 'Mid-Senior' },
   },
   {
@@ -122,6 +135,7 @@ export const allListings: Listing[] = [
     verifiedSeller: true,
     views: 250,
     contacts: 15,
+    favorites: 20,
     specifics: { breed: 'German Shepherd', gender: 'male', age: '8 weeks' },
   },
    {
@@ -136,6 +150,9 @@ export const allListings: Listing[] = [
     location: { lga: 'Nsukka', town: 'Obukpa' },
     verifiedID: true,
     rating: 4.2,
+    views: 150,
+    contacts: 5,
+    favorites: 3,
     specifics: { brand: 'HP', storage: '512gb', condition: 'used' },
   },
   {
@@ -148,9 +165,14 @@ export const allListings: Listing[] = [
     image: 'https://placehold.co/600x400.png',
     data_ai_hint: 'land plot',
     location: { lga: 'Enugu South', town: 'Awkunanaw' },
+    sellerId: 'user123',
     propertyVerified: true,
     verifiedSeller: true,
     rating: 4.9,
+    views: 550,
+    contacts: 22,
+    favorites: 18,
+    promoted: true,
     specifics: { propertyType: 'land', size: '1 plot', propertyTitle: 'cofo', listingType: 'sale', landUse: 'residential' },
   },
   {
@@ -167,6 +189,7 @@ export const allListings: Listing[] = [
     rating: 4.6,
     views: 950,
     contacts: 55,
+    favorites: 30,
     specifics: { brand: 'Honda', model: 'CR-V', year: 2018, transmission: 'automatic' },
   },
    {
@@ -183,6 +206,7 @@ export const allListings: Listing[] = [
     rating: 3.8,
     views: 180,
     contacts: 10,
+    favorites: 4,
     specifics: { breed: 'Boerboel', gender: 'male', age: '1 year' },
   },
   {
@@ -200,6 +224,8 @@ export const allListings: Listing[] = [
     rating: 4.9,
     views: 720,
     contacts: 60,
+    favorites: 40,
+    promoted: true,
     specifics: { brand: 'Samsung', storage: '128gb', condition: 'used' },
   },
   {
@@ -214,6 +240,9 @@ export const allListings: Listing[] = [
     location: { lga: 'Enugu North', town: 'GRA' },
     verifiedSeller: true,
     rating: 4.8,
+    views: 90,
+    contacts: 8,
+    favorites: 11,
     specifics: { condition: 'new', brand: 'Designer Brand' },
   },
   {
@@ -228,6 +257,9 @@ export const allListings: Listing[] = [
     location: { lga: 'Enugu South', town: 'Uwani' },
     verifiedID: true,
     rating: 4.6,
+    views: 120,
+    contacts: 12,
+    favorites: 7,
     specifics: { condition: 'new', brand: 'Fashion Co' },
   },
   {
@@ -243,6 +275,9 @@ export const allListings: Listing[] = [
     propertyVerified: false,
     verifiedSeller: true,
     rating: 4.2,
+    views: 80,
+    contacts: 3,
+    favorites: 2,
     specifics: { propertyType: 'land', size: '5 Hectares', propertyTitle: 'deed', listingType: 'rent', landUse: 'agricultural' },
   },
   {
@@ -258,6 +293,9 @@ export const allListings: Listing[] = [
     propertyVerified: true,
     verifiedSeller: true,
     rating: 4.9,
+    views: 400,
+    contacts: 15,
+    favorites: 10,
     specifics: { propertyType: 'land', size: '2 plots', propertyTitle: 'cofo', listingType: 'sale', landUse: 'commercial' },
   },
   {
@@ -273,6 +311,9 @@ export const allListings: Listing[] = [
     propertyVerified: false,
     verifiedSeller: false,
     rating: 4.0,
+    views: 220,
+    contacts: 11,
+    favorites: 9,
     specifics: { propertyType: 'land', size: '0.5 plot', propertyTitle: 'allocation', listingType: 'sale', landUse: 'residential' },
   },
   {
@@ -287,6 +328,9 @@ export const allListings: Listing[] = [
     location: { lga: 'Enugu East', town: 'Abakpa' },
     verifiedSeller: true,
     rating: 4.7,
+    views: 310,
+    contacts: 18,
+    favorites: 6,
     specifics: { propertyType: 'shop', listingType: 'rent' },
   },
   {
@@ -302,6 +346,9 @@ export const allListings: Listing[] = [
     propertyVerified: true,
     verifiedSeller: true,
     rating: 5.0,
+    views: 750,
+    contacts: 35,
+    favorites: 15,
     specifics: { propertyType: 'shop', listingType: 'sale' },
   },
   {
@@ -316,6 +363,9 @@ export const allListings: Listing[] = [
     location: { lga: 'Enugu North', town: 'China Town' },
     verifiedSeller: false,
     rating: 4.1,
+    views: 280,
+    contacts: 20,
+    favorites: 13,
     specifics: { propertyType: 'apartment', listingType: 'rent' },
   }
 ];

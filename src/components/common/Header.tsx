@@ -70,19 +70,19 @@ export default function Header() {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                    <Link href="/account?tab=my-ads" className="flex items-center gap-2 cursor-pointer">
                       <Store className="h-4 w-4" />
-                      <span>My Shop</span>
+                      <span>My Ads</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                    <Link href="/account?tab=performance" className="flex items-center gap-2 cursor-pointer">
                       <BarChart2 className="h-4 w-4" />
                       <span>Performance</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/account" className="flex items-center gap-2 cursor-pointer">
+                    <Link href="/account?tab=account-settings" className="flex items-center gap-2 cursor-pointer">
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
                     </Link>

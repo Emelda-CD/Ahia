@@ -35,7 +35,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      login({ name: name, profileImage: 'https://placehold.co/100x100.png' });
+      login({ uid: 'user123', name: name, profileImage: 'https://placehold.co/100x100.png' });
       onOpenChange(false); // Close modal on success
     }, 1500);
   };

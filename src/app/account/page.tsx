@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { locations } from '@/lib/locations';
 import { useAuth } from '@/context/AuthContext';
@@ -20,7 +20,8 @@ import { Switch } from '@/components/ui/switch';
 import AdCard from "@/components/AdCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck } from 'lucide-react';
+import PerformanceDashboard from '@/components/account/PerformanceDashboard';
+import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
 
 const myAds = [
   {
@@ -33,6 +34,7 @@ const myAds = [
     description: '',
     category: 'Vehicles',
     subcategory: 'Cars',
+    sellerId: 'user123'
   },
   {
     id: '3',
@@ -44,6 +46,7 @@ const myAds = [
     description: '',
     category: 'Phones',
     subcategory: 'iPhones',
+    sellerId: 'user123'
   },
 ];
 
@@ -58,6 +61,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function AccountPage() {
     const { user, isLoggedIn, updateUser } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const tab = searchParams.get('tab') || 'account-settings';
 
     const [birthYear, setBirthYear] = useState<string>();
     const [birthMonth, setBirthMonth] = useState<string>();
@@ -174,13 +179,16 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="account-settings" className="flex flex-col md:flex-row gap-8">
+      <Tabs defaultValue={tab} className="flex flex-col md:flex-row gap-8">
         <TabsList className="flex flex-col h-auto p-2 bg-card border rounded-lg items-start w-full md:w-60">
           <TabsTrigger value="account-settings" className="w-full justify-start gap-3 p-3 text-md">
             <User className="h-5 w-5"/> Account Settings
           </TabsTrigger>
           <TabsTrigger value="my-ads" className="w-full justify-start gap-3 p-3 text-md">
             <Package className="h-5 w-5"/> My Ads
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="w-full justify-start gap-3 p-3 text-md">
+            <BarChart2 className="h-5 w-5"/> Performance
           </TabsTrigger>
           <TabsTrigger value="saved-listings" className="w-full justify-start gap-3 p-3 text-md">
             <Heart className="h-5 w-5"/> Saved Listings
@@ -482,6 +490,9 @@ export default function AccountPage() {
                 {myAds.length === 0 && <p className="text-center text-muted-foreground py-8">You have not posted any ads yet.</p>}
               </CardContent>
             </Card>
+          </TabsContent>
+           <TabsContent value="performance">
+            <PerformanceDashboard />
           </TabsContent>
           <TabsContent value="saved-listings">
              <Card>

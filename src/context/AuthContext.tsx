@@ -4,6 +4,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface User {
+  uid: string;
   name: string;
   profileImage: string;
 }
