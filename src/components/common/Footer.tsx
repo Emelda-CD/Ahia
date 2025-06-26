@@ -14,6 +14,7 @@ const quickLinks = [
   { name: 'Contact Us', href: '/contact' },
   { name: 'Terms & Conditions', href: '#' },
   { name: 'Privacy Policy', href: '#' },
+  { name: 'Admin', href: '/admin' },
 ];
 
 const popularCategories = [
