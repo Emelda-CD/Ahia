@@ -70,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // onAuthStateChanged will handle setting the user profile
     } catch (error) {
       console.error("Social login error:", error);
-      // Handle specific errors like popup closed by user, etc.
+      // Re-throw the error so the UI layer can handle it and show a toast
+      throw error;
     }
   }
 
