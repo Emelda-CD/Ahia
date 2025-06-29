@@ -39,8 +39,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { toast } = useToast();
 
   const handleFirebaseAuthError = (error: FirebaseError) => {
+      let title = 'Authentication Failed';
       let message = 'An unknown error occurred.';
+
       switch(error.code) {
+          case 'auth/unauthorized-domain':
+              title = 'Domain Not Authorized';
+              message = "This app's domain is not authorized for OAuth operations. Please add 'localhost' to the list of authorized domains in your Firebase project's Authentication settings.";
+              break;
           case 'auth/user-not-found':
               message = 'No account found with this email.';
               break;
@@ -59,7 +65,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           default:
               message = error.message;
       }
-      toast({ variant: 'destructive', title: 'Authentication Failed', description: message });
+      toast({ variant: 'destructive', title: title, description: message });
   }
 
   const handleLogin = async (e: React.FormEvent) => {

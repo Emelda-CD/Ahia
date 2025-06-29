@@ -12,23 +12,25 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Add a check to ensure Firebase config is loaded
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
-    console.error(`
-    ********************************************************************************
-    *
-    *      FIREBASE CONFIGURATION ERROR
-    *
-    *      Firebase configuration is missing, incomplete, or uses placeholder
-    *      values. Please check your .env file and ensure that all variables
-    *      starting with NEXT_PUBLIC_FIREBASE_ are set correctly.
-    *
-    *      You can find these keys in your Firebase project settings.
-    *
-    *      After updating your .env file, you MUST RESTART your dev server.
-    *
-    ********************************************************************************
-    `);
+// Add a check to ensure Firebase config is loaded and log project info for debugging
+if (typeof window !== 'undefined') { // Run only on the client
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
+        console.error(`
+        ********************************************************************************
+        *
+        *      FIREBASE CONFIGURATION ERROR
+        *
+        *      Firebase configuration is missing or uses placeholder values.
+        *      Please update your .env file with your project's credentials.
+        *
+        ********************************************************************************
+        `);
+    } else {
+        console.log('%cFirebase Auth Debug Info', 'color: #FFA500; font-weight: bold;');
+        console.log(`%cProject ID: %c${firebaseConfig.projectId}`, 'font-weight: bold;', 'color: #4CAF50;');
+        console.log(`%cCurrent Hostname: %c${window.location.hostname}`, 'font-weight: bold;', 'color: #4CAF50;');
+        console.log('Please ensure the hostname above is listed in your Firebase project\'s "Authorized domains".');
+    }
 }
 
 
