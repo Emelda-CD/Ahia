@@ -53,6 +53,9 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           case 'auth/weak-password':
               message = 'Password is too weak. It should be at least 6 characters.';
               break;
+          case 'auth/configuration-not-found':
+              message = 'A sign-in provider is not configured correctly. For Facebook login, ensure you have added your App ID and App Secret in the Firebase console.';
+              break;
           default:
               message = error.message;
       }
