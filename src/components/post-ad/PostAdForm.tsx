@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +25,9 @@ import { boostPlans } from '@/lib/boost-plans-data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/AuthContext';
+import { uploadFile } from '@/lib/firebase/storage';
+import { createListing } from '@/lib/firebase/actions';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -37,7 +41,7 @@ const adSchema = z.object({
   phone: z.string().min(10, 'A valid phone number is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(2, 'Please upload between 2 and 20 photos.')
+    .min(1, 'Please upload between 1 and 20 photos.')
     .max(20, 'You can upload a maximum of 20 photos.'),
   socialLink: z.string().url().optional().or(z.literal('')),
   promotion: z.string().optional(),
@@ -54,10 +58,12 @@ export default function PostAdForm() {
   const [subcategories, setSubcategories] = useState<string[]>([]);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const router = useRouter();
+  const { user, isLoggedIn } = useAuth();
   const { toast } = useToast();
   const form = useForm<AdFormValues>({
     resolver: zodResolver(adSchema),
@@ -76,7 +82,6 @@ export default function PostAdForm() {
   const { register, handleSubmit, control, trigger, getValues, setValue, watch, formState: { errors } } = form;
 
   const selectedCategory = watch('category');
-  const locationValue = watch('location');
   const selectedPromotion = watch('promotion');
   const images = watch('images') || [];
   
@@ -115,24 +120,65 @@ export default function PostAdForm() {
 
   const prevStep = () => setStep((s) => s - 1);
 
-  const onSubmit = (data: AdFormValues) => {
-     if (data.promotion && data.promotion !== 'none') {
-        const plan = boostPlans.find(p => p.id === data.promotion);
-        if (plan && plan.price > walletBalance) {
-            toast({
-                variant: 'destructive',
-                title: 'Cannot Submit Ad',
-                description: 'Please fund your wallet or choose a different boost option.',
-            });
+  const onSubmit = async (data: AdFormValues) => {
+    if (!isLoggedIn || !user) {
+        toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to post an ad.'});
+        return;
+    }
+
+    if (insufficientBalance) {
+        toast({ variant: 'destructive', title: 'Cannot Submit Ad', description: 'Please fund your wallet or choose a different boost option.' });
+        return;
+    }
+    
+    setIsSubmitting(true);
+
+    try {
+        const imageUrls = await Promise.all(
+            data.images.map(imageFile => uploadFile(imageFile, `listings/${user.uid}`))
+        );
+
+        if (imageUrls.length === 0) {
+            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload your images. Please try again.' });
+            setIsSubmitting(false);
             return;
         }
+        
+        const locationParts = data.location.split(', ');
+
+        const listingData = {
+            title: data.title,
+            description: data.description,
+            category: data.category,
+            subcategory: data.subcategory,
+            price: data.price,
+            negotiable: data.negotiable,
+            condition: data.condition,
+            phone: data.phone,
+            tags: tags,
+            image: imageUrls[0],
+            images: imageUrls,
+            location: { town: locationParts[0] || '', lga: locationParts[1] || '' },
+            sellerId: user.uid,
+            data_ai_hint: '', // Can be generated or left empty
+        };
+
+        await createListing(listingData);
+
+        toast({
+          title: 'Ad Submitted!',
+          description: 'Your ad has been successfully submitted for review.',
+          className: 'bg-green-100 border-green-300 text-green-800'
+        });
+
+        router.push('/account?tab=my-ads');
+
+    } catch (error) {
+        console.error("Error creating ad:", error);
+        toast({ variant: 'destructive', title: 'Submission Failed', description: 'An unexpected error occurred. Please try again.' });
+    } finally {
+        setIsSubmitting(false);
     }
-    console.log({...data, tags});
-    toast({
-      title: 'Ad Submitted!',
-      description: 'Your ad has been successfully submitted for review.',
-      className: 'bg-green-100 border-green-300 text-green-800'
-    });
   };
 
   const onSuggest = async () => {
@@ -302,7 +348,7 @@ export default function PostAdForm() {
                     name="location"
                     control={control}
                     render={({ field }) => (
-                        <LocationModal onSelect={(town) => setValue('location', town, { shouldValidate: true })}>
+                        <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })}>
                             <Button type="button" variant="outline" className="w-full justify-between font-normal">
                                 <span>{field.value || "Select a location"}</span>
                                 {field.value ? (
@@ -397,7 +443,7 @@ export default function PostAdForm() {
                 />
               </div>
               <div>
-                <Label htmlFor="file-upload">📸 Add at least 2 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
+                <Label htmlFor="file-upload">📸 Add 1 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
                 <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {imagePreviews.map((src, index) => (
                         <div 
@@ -535,16 +581,19 @@ export default function PostAdForm() {
 
           <div className="flex justify-between mt-8">
             {step > 1 ? (
-              <Button type="button" variant="outline" onClick={prevStep}>
+              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             ) : <div />}
             {step < 3 ? (
-              <Button type="button" onClick={nextStep}>
+              <Button type="button" onClick={nextStep} disabled={isSubmitting}>
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={insufficientBalance}>Submit Ad</Button>
+              <Button type="submit" disabled={insufficientBalance || isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Ad
+              </Button>
             )}
           </div>
         </form>

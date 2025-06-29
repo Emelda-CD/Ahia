@@ -5,7 +5,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { locations } from '@/lib/locations';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, UserProfile } from '@/context/AuthContext';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,34 +22,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PerformanceDashboard from '@/components/account/PerformanceDashboard';
 import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
-
-const myAds = [
-  {
-    id: '1',
-    title: 'Clean Toyota Camry 2019',
-    price: 12500000,
-    location: { lga: 'Enugu North', town: 'GRA' },
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'toyota camry',
-    description: '',
-    category: 'Vehicles',
-    subcategory: 'Cars',
-    sellerId: 'user123'
-  },
-  {
-    id: '3',
-    title: 'Brand New iPhone 14 Pro Max',
-    price: 950000,
-    location: { lga: 'Enugu South', town: 'Uwani' },
-    image: 'https://placehold.co/600x400.png',
-    data_ai_hint: 'iphone pro',
-    description: '',
-    category: 'Phones',
-    subcategory: 'iPhones',
-    sellerId: 'user123'
-  },
-];
-
+import { Listing } from '@/lib/listings-data';
+import { getUserListings } from '@/lib/firebase/actions';
+import { uploadFile } from '@/lib/firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { useToast } from '@/hooks/use-toast';
 
 const lgas = Object.keys(locations);
 
@@ -59,10 +37,14 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function AccountPage() {
-    const { user, isLoggedIn, updateUser } = useAuth();
+    const { user, isLoggedIn, updateUser, loading } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const tab = searchParams.get('tab') || 'account-settings';
+    const { toast } = useToast();
+    
+    const [myAds, setMyAds] = useState<Listing[]>([]);
+    const [isLoadingAds, setIsLoadingAds] = useState(true);
 
     const [birthYear, setBirthYear] = useState<string>();
     const [birthMonth, setBirthMonth] = useState<string>();
@@ -74,6 +56,24 @@ export default function AccountPage() {
     const businessFileInputRef = useRef<HTMLInputElement>(null);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     
+    useEffect(() => {
+        if (!loading && !isLoggedIn) {
+            router.push('/');
+        }
+    }, [isLoggedIn, loading, router]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            const fetchUserAds = async () => {
+                setIsLoadingAds(true);
+                const ads = await getUserListings(user.uid);
+                setMyAds(ads);
+                setIsLoadingAds(false);
+            };
+            fetchUserAds();
+        }
+    }, [user?.uid]);
+
     const years = useMemo(() => {
         const currentYear = new Date().getFullYear();
         return Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
@@ -98,26 +98,22 @@ export default function AccountPage() {
     }, [daysInMonth]);
 
     useEffect(() => {
-        if (!isLoggedIn) {
-            router.push('/');
-        }
-    }, [isLoggedIn, router]);
-
-    useEffect(() => {
         if (birthDay && parseInt(birthDay) > daysInMonth) {
             setBirthDay(daysInMonth.toString());
         }
     }, [daysInMonth, birthDay, setBirthDay]);
 
 
-    const handleProfileImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProfileImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                updateUser({ profileImage: reader.result as string });
-            };
-            reader.readAsDataURL(file);
+        if (file && user) {
+            try {
+                const photoURL = await uploadFile(file, `profile-images/${user.uid}`);
+                updateUser({ profileImage: photoURL });
+                toast({ title: "Success", description: "Profile picture updated!" });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Upload Failed", description: "Could not upload new profile picture." });
+            }
         }
     };
 
@@ -157,7 +153,7 @@ export default function AccountPage() {
         setBusinessStatus('unverified');
     };
 
-    if (!isLoggedIn || !user) {
+    if (loading || !isLoggedIn || !user) {
         return (
             <div className="container mx-auto px-4 py-12 md:py-20 flex justify-center items-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -169,10 +165,22 @@ export default function AccountPage() {
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
       <div className="flex items-center gap-6 mb-12">
-        <Avatar className="w-24 h-24 border-4 border-primary/50">
-          <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="man portrait"/>
-          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+            <Avatar className="w-24 h-24 border-4 border-primary/50">
+              <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="man portrait"/>
+              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 bg-background" onClick={() => profileImageInputRef.current?.click()}>
+                <Camera className="h-4 w-4"/>
+            </Button>
+            <input
+                type="file"
+                ref={profileImageInputRef}
+                onChange={handleProfileImageSelect}
+                className="hidden"
+                accept="image/jpeg,image/png"
+            />
+        </div>
         <div>
           <h1 className="text-3xl font-bold">{user.name}</h1>
           <p className="text-muted-foreground">Joined March 2024</p>
@@ -217,13 +225,6 @@ export default function AccountPage() {
                                     <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 bg-background" onClick={() => profileImageInputRef.current?.click()}>
                                         <Camera className="h-4 w-4"/>
                                     </Button>
-                                    <input
-                                        type="file"
-                                        ref={profileImageInputRef}
-                                        onChange={handleProfileImageSelect}
-                                        className="hidden"
-                                        accept="image/jpeg,image/png"
-                                    />
                                 </div>
                                 <div>
                                     <h4 className="font-semibold">Profile Photo</h4>
@@ -344,10 +345,10 @@ export default function AccountPage() {
                                         <Mail className="h-6 w-6 text-muted-foreground"/>
                                         <div>
                                             <h4 className="font-semibold">Email Address</h4>
-                                            <p className="text-sm">user.a@example.com</p>
+                                            <p className="text-sm">{user.email}</p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" size="sm">Verify Now</Button>
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="h-4 w-4 mr-1"/> Verified</Badge>
                                 </div>
                                 <div className="p-3 border rounded-lg">
                                     <div className="flex items-center justify-between">
@@ -470,24 +471,33 @@ export default function AccountPage() {
                 <CardDescription>Manage your active and inactive listings.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {myAds.map(ad => (
-                  <Card key={ad.id} className="flex flex-col md:flex-row items-center gap-4 p-4">
-                    <div className="w-full md:w-48">
-                       <AdCard {...ad} />
+                {isLoadingAds ? (
+                    <div className="flex justify-center items-center py-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="font-bold text-lg">{ad.title}</h3>
-                        <p className="text-primary font-semibold">&#8358;{(ad.price as number).toLocaleString()}</p>
-                        <p className="text-muted-foreground text-sm">{ad.location.town}, {ad.location.lga}</p>
-                    </div>
-                    <div className="flex gap-2 self-start md:self-center">
-                        <Button variant="outline" size="icon" aria-label="View Ad"><Eye className="h-4 w-4"/></Button>
-                        <Button variant="outline" size="icon" aria-label="Edit Ad"><Edit className="h-4 w-4"/></Button>
-                        <Button variant="destructive" size="icon" aria-label="Delete Ad"><Trash2 className="h-4 w-4"/></Button>
-                    </div>
-                  </Card>
-                ))}
-                {myAds.length === 0 && <p className="text-center text-muted-foreground py-8">You have not posted any ads yet.</p>}
+                ) : myAds.length > 0 ? (
+                    myAds.map(ad => (
+                      <Card key={ad.id} className="flex flex-col md:flex-row items-center gap-4 p-4">
+                        <div className="w-full md:w-48">
+                           <AdCard {...ad} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-lg">{ad.title}</h3>
+                            <p className="text-primary font-semibold">
+                                {typeof ad.price === 'number' ? `₦${ad.price.toLocaleString()}` : ad.price}
+                            </p>
+                            <p className="text-muted-foreground text-sm">{ad.location.town}, {ad.location.lga}</p>
+                        </div>
+                        <div className="flex gap-2 self-start md:self-center">
+                            <Button variant="outline" size="icon" aria-label="View Ad"><Eye className="h-4 w-4"/></Button>
+                            <Button variant="outline" size="icon" aria-label="Edit Ad"><Edit className="h-4 w-4"/></Button>
+                            <Button variant="destructive" size="icon" aria-label="Delete Ad"><Trash2 className="h-4 w-4"/></Button>
+                        </div>
+                      </Card>
+                    ))
+                ) : (
+                    <p className="text-center text-muted-foreground py-8">You have not posted any ads yet.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

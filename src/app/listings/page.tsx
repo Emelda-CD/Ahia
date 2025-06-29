@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { allListings, Listing } from '@/lib/listings-data';
+import { Listing } from '@/lib/listings-data';
 import { locations } from '@/lib/locations';
 import { cn } from '@/lib/utils';
 import { categoriesData } from '@/lib/categories-data';
@@ -15,9 +15,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home } from 'lucide-react';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 import { LocationModal } from '@/components/common/LocationModal';
+import { getListings } from '@/lib/firebase/actions';
+import { Card } from '@/components/ui/card';
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   Property: Home,
@@ -231,18 +233,32 @@ export default function ListingsPage() {
     const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+    const [allListings, setAllListings] = useState<Listing[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     
     const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
     const [filters, setFilters] = useState<any>(initialFilters);
 
+    useEffect(() => {
+        const fetchListings = async () => {
+            setIsLoading(true);
+            try {
+                const listingsFromDb = await getListings();
+                setAllListings(listingsFromDb);
+            } catch (error) {
+                console.error("Failed to fetch listings:", error);
+            }
+            setIsLoading(false);
+        };
+        fetchListings();
+    }, []);
+
     const handleCategoryClick = (categoryName: string) => {
         setFilters((prev: any) => {
-            // if clicking the same category, do nothing
             if(prev.category === categoryName) return prev;
-            // otherwise, set new category and clear subcategory
             return {
                 ...prev,
-                q: '', // Clear search query when changing category
+                q: '', 
                 category: categoryName,
                 subcategory: null
             };
@@ -250,7 +266,6 @@ export default function ListingsPage() {
     };
     
     const handleCategoryValueChange = (value: string) => {
-        // If 'all', clear category filters
         if (value === 'all') {
             setFilters(prev => {
                 const newFilters: any = { ...prev };
@@ -261,18 +276,16 @@ export default function ListingsPage() {
             return;
         }
 
-        // Check if it's a main category
         const mainCategory = categoriesData.find(c => c.name === value);
         if (mainCategory) {
             setFilters(prev => ({
                 ...prev,
                 category: value,
-                subcategory: null, // Reset subcategory when main category is selected
+                subcategory: null,
             }));
             return;
         }
         
-        // It must be a subcategory
         const parentCategory = categoriesData.find(c => c.subcategories.includes(value));
         if (parentCategory) {
             setFilters(prev => ({
@@ -304,7 +317,7 @@ export default function ListingsPage() {
 
         const query = searchQuery.toLowerCase();
         if (query) {
-            listings = listings.filter(l => l.title.toLowerCase().includes(query) || l.description.toLowerCase().includes(query));
+            listings = listings.filter(l => l.title.toLowerCase().includes(query) || (l.description && l.description.toLowerCase().includes(query)));
         }
 
         if (filters.location) {
@@ -343,7 +356,7 @@ export default function ListingsPage() {
         }
         
         setFilteredListings(listings);
-    }, [filters, searchQuery]);
+    }, [filters, searchQuery, allListings]);
     
     useEffect(() => {
         applyFilters();
@@ -391,7 +404,6 @@ export default function ListingsPage() {
             </section>
             
             <div className="grid lg:grid-cols-4 gap-8">
-                {/* Filters Sidebar */}
                 <aside className="lg:col-span-1">
                     <div className="p-4 rounded-lg border bg-card space-y-6 sticky top-20">
                         <h3 className="text-xl font-bold">Filters</h3>
@@ -502,17 +514,27 @@ export default function ListingsPage() {
                     </div>
                 </aside>
 
-                {/* Listings Grid */}
                 <main className="lg:col-span-3">
-                     {filteredListings.length > 0 ? (
+                    {isLoading ? (
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array.from({ length: 9 }).map((_, i) => (
+                                <Card key={i} className="h-full">
+                                    <div className="animate-pulse">
+                                        <div className="bg-muted aspect-[4/3] w-full"></div>
+                                        <div className="p-4 space-y-3">
+                                            <div className="h-4 bg-muted rounded w-3/4"></div>
+                                            <div className="h-4 bg-muted rounded w-1/2"></div>
+                                            <div className="h-6 bg-muted rounded w-1/3"></div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : filteredListings.length > 0 ? (
                         <>
                             <div className="mb-4">
                                 <p className="text-muted-foreground">
-                                    {filters.location ? (
-                                        <>Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}</>
-                                    ) : (
-                                        <>Showing {filteredListings.length} ad{filteredListings.length === 1 ? '' : 's'} found in Enugu</>
-                                    )}
+                                    Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
                                     {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
                                 </p>
                             </div>
@@ -533,5 +555,3 @@ export default function ListingsPage() {
         </div>
     );
 }
-
-    

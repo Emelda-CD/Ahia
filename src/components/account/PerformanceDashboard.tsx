@@ -1,14 +1,15 @@
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { allListings, type Listing } from '@/lib/listings-data';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { getUserListings } from '@/lib/firebase/actions';
+import type { Listing } from '@/lib/listings-data';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Eye, MessageSquare, PhoneCall, Star, TrendingUp, Flame } from 'lucide-react';
+import { Eye, MessageSquare, PhoneCall, Star, TrendingUp, Flame, Loader2 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -33,42 +34,58 @@ interface PerformanceStats {
 export default function PerformanceDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<PerformanceStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      const userListings = allListings.filter(listing => listing.sellerId === user.uid);
-      
-      const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
-      const totalChats = userListings.reduce((sum, l) => sum + (l.contacts || 0), 0);
-      const totalCallbacks = userListings.reduce((sum, l) => sum + (l.favorites || 0), 0); // Using favorites as a stand-in for callbacks
-      
-      const ratedListings = userListings.filter(l => l.rating);
-      const averageRating = ratedListings.length > 0
-        ? ratedListings.reduce((sum, l) => sum + l.rating!, 0) / ratedListings.length
-        : 0;
+      const fetchPerformanceData = async () => {
+        setIsLoading(true);
+        const userListings = await getUserListings(user.uid);
+        
+        const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
+        const totalChats = userListings.reduce((sum, l) => sum + (l.contacts || 0), 0);
+        const totalCallbacks = userListings.reduce((sum, l) => sum + (l.favorites || 0), 0); // Using favorites as a stand-in for callbacks
+        
+        const ratedListings = userListings.filter(l => l.rating);
+        const averageRating = ratedListings.length > 0
+          ? ratedListings.reduce((sum, l) => sum + l.rating!, 0) / ratedListings.length
+          : 0;
 
-      // Generate mock chart data for the last 7 days
-      const chartData = Array.from({ length: 7 }).map((_, i) => {
-        const date = subDays(new Date(), i);
-        return {
-          date: format(date, 'MMM d'),
-          views: Math.floor(Math.random() * (totalViews / 7) + (totalViews / 14)),
-        };
-      }).reverse();
+        // Generate mock chart data for the last 7 days
+        const chartData = Array.from({ length: 7 }).map((_, i) => {
+          const date = subDays(new Date(), i);
+          // This is still mock data, a real implementation would use historical data from Firestore
+          const dailyViews = userListings.reduce((sum, l) => sum + Math.floor(Math.random() * ((l.views || 0) / 7)), 0);
+          return {
+            date: format(date, 'MMM d'),
+            views: dailyViews,
+          };
+        }).reverse();
 
-      setStats({
-        totalViews,
-        totalChats,
-        totalCallbacks,
-        averageRating,
-        listings: userListings,
-        chartData
-      });
+        setStats({
+          totalViews,
+          totalChats,
+          totalCallbacks,
+          averageRating,
+          listings: userListings,
+          chartData
+        });
+        setIsLoading(false);
+      }
+      fetchPerformanceData();
     }
   }, [user]);
 
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   if (!stats) {
-    return <p>Loading performance data...</p>;
+    return <p>Could not load performance data.</p>;
   }
   
   const StatCard = ({ icon: Icon, title, value, change }: { icon: React.ElementType, title: string, value: string | number, change?: string }) => (
@@ -150,6 +167,7 @@ export default function PerformanceDashboard() {
                   <TableCell className="text-center">{listing.favorites || 0}</TableCell>
                   <TableCell className="text-center">
                     {listing.promoted && <Badge variant="destructive"><Flame className="w-3 h-3 mr-1" /> Promoted</Badge>}
+                    {!listing.promoted && <Badge variant="outline">Standard</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">

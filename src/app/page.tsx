@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import AdCard from '@/components/AdCard';
-import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X } from 'lucide-react';
+import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2 } from 'lucide-react';
 import type { Listing } from '@/lib/listings-data';
 import { categoriesData } from '@/lib/categories-data';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { LocationModal } from '@/components/common/LocationModal';
+import { getRecentListings } from '@/lib/firebase/actions';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -28,21 +29,28 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   'Furniture & Home': HomeIcon,
 };
 
-const recentListings: Listing[] = [
-    { id: '1', title: 'Clean Toyota Camry 2019', description: 'Foreign used, accident-free with original duty.', price: 12500000, category: 'Vehicles', subcategory: 'Cars', location: { lga: 'Enugu North', town: 'GRA' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'toyota camry' },
-    { id: '2', title: 'Luxury 3-Bedroom Flat for Rent', description: 'A spacious and modern 3-bedroom flat with all amenities in a serene environment.', price: 3500000, category: 'Property', subcategory: 'Houses & Apartments for Rent', location: { lga: 'Enugu East', town: 'Trans-Ekulu' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'modern apartment' },
-    { id: '3', title: 'Brand New iPhone 14 Pro Max', description: 'Slightly used iPhone 14 Pro Max, 256GB, in perfect condition.', price: 950000, category: 'Phones', subcategory: 'iPhones', location: { lga: 'Enugu South', town: 'Uwani' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'iphone pro' },
-    { id: '4', title: 'Digital Marketing Expert', description: 'We are looking for an experienced digital marketer to join our team.', price: 'Negotiable', category: 'Jobs', subcategory: 'IT Jobs', location: { lga: 'Enugu North', town: 'Ogui' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'office desk' },
-    { id: '5', title: 'HP Spectre x360 Laptop', description: 'Core i7, 16GB RAM, 512GB SSD. Barely used.', price: 750000, category: 'Electronics', subcategory: 'Laptops', location: { lga: 'Nsukka', town: 'Obukpa' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
-    { id: '6', title: '1 Plot of Land in Awkunanaw', description: 'Fenced plot of land with C of O. Good for residential building.', price: 8000000, category: 'Land', subcategory: 'Land for Sale', location: { lga: 'Enugu South', town: 'Awkunanaw' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'land plot' },
-    { id: '7', title: 'Honda CR-V 2018', description: 'Tokunbo Honda CR-V 2018 model. Excellent condition.', price: 15000000, category: 'Vehicles', subcategory: 'Cars', location: { lga: 'Igbo Eze North', town: 'Enugu-Ezike' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
-    { id: '8', title: 'German Shepherd Puppy', description: '8 weeks old purebred German Shepherd puppy. Vaccinated and dewormed.', price: 150000, category: 'Animals & Pets', subcategory: 'Dogs', location: { lga: 'Udi', town: 'Udi Urban' }, image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
-];
 
 export default function Home() {
+    const [recentListings, setRecentListings] = useState<Listing[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [location, setLocation] = useState<string | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchListings = async () => {
+            setIsLoading(true);
+            try {
+                const listings = await getRecentListings(8);
+                setRecentListings(listings);
+            } catch (error) {
+                console.error("Failed to fetch recent listings:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchListings();
+    }, []);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
@@ -144,11 +152,30 @@ export default function Home() {
                   <Link href="/listings">View All <ArrowRight className="ml-2 h-4 w-4"/></Link>
                 </Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recentListings.map((ad) => (
-                  <AdCard key={ad.id} {...ad} />
-                ))}
-            </div>
+            {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <Card key={i} className="h-full">
+                            <div className="animate-pulse">
+                                <div className="bg-muted aspect-[4/3] w-full"></div>
+                                <div className="p-4 space-y-3">
+                                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                                    <div className="h-6 bg-muted rounded w-1/3"></div>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            ) : recentListings.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {recentListings.map((ad) => (
+                      <AdCard key={ad.id} {...ad} />
+                    ))}
+                </div>
+            ) : (
+                <p>No recent listings found.</p>
+            )}
           </section>
         </main>
       </div>

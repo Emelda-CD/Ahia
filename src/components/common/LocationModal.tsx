@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { locations } from '@/lib/locations';
 import { ArrowLeft } from 'lucide-react';
 
-export const LocationModal = ({ onSelect, children }: { onSelect: (town: string) => void, children: React.ReactNode }) => {
+export const LocationModal = ({ onSelect, children }: { onSelect: (town: string, lga: string) => void, children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<'lga' | 'town'>('lga');
   const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
@@ -21,7 +21,9 @@ export const LocationModal = ({ onSelect, children }: { onSelect: (town: string)
   };
 
   const handleTownSelect = (town: string) => {
-    onSelect(town);
+    if (selectedLGA) {
+      onSelect(town, selectedLGA);
+    }
     setIsOpen(false);
     reset();
   };
