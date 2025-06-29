@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser, signOut, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 export interface UserProfile {
