@@ -65,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const socialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
     try {
+      console.log(`[Auth] Attempting sign-in from domain: ${window.location.hostname}. If this domain is not authorized in your Firebase project, you will get an 'auth/unauthorized-domain' error.`);
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle setting the user profile
     } catch (error) {
