@@ -45,7 +45,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       switch(error.code) {
           case 'auth/unauthorized-domain':
               title = 'Domain Not Authorized';
-              message = "This app's domain is not authorized for OAuth operations. Please add 'localhost' to the list of authorized domains in your Firebase project's Authentication settings.";
+              message = "This app's domain is not authorized for OAuth operations. Please ensure the current hostname is added to the list of authorized domains in your Firebase project's Authentication settings.";
               break;
           case 'auth/user-not-found':
               message = 'No account found with this email.';
@@ -63,7 +63,13 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               message = 'A sign-in provider is not configured correctly. For Facebook login, ensure you have added your App ID and App Secret in the Firebase console.';
               break;
           default:
-              message = error.message;
+              // Handle more specific errors based on their message content
+              if (error.message.includes('Invalid Scopes: email')) {
+                  title = 'Facebook Login Error';
+                  message = "Your Facebook App is not configured to request the 'email' permission. On your Facebook Developer dashboard, go to App Review > Permissions and Features, and ensure 'email' has Advanced Access.";
+              } else {
+                  message = error.message;
+              }
       }
       toast({ variant: 'destructive', title: title, description: message });
   }
