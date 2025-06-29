@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Info, Phone, Tag, Store, BarChart2, Settings, LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -111,8 +111,12 @@ export default function Header() {
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-full max-w-xs">
-                <div className="p-4">
+              <SheetContent side="left" className="w-full max-w-xs p-0">
+                <div className="flex h-full flex-col p-6">
+                    <SheetHeader>
+                        <SheetTitle className="sr-only">Menu</SheetTitle>
+                        <SheetDescription className="sr-only">Main navigation menu</SheetDescription>
+                    </SheetHeader>
                   <Link href="/" className="mb-8 flex items-center">
                     <Logo />
                   </Link>
@@ -128,7 +132,7 @@ export default function Header() {
                       </Link>
                     ))}
                   </nav>
-                  <div className="mt-8 flex flex-col gap-4">
+                  <div className="mt-auto flex flex-col gap-4">
                     <Button asChild size="lg">
                       <Link href="/post-ad">Post Ad</Link>
                     </Button>
