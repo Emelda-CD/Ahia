@@ -43,6 +43,9 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       let message = 'An unknown error occurred.';
 
       switch(error.code) {
+          case 'auth/popup-closed-by-user':
+              // This is not an error to display. It happens when the user closes the login popup.
+              return;
           case 'auth/unauthorized-domain':
               title = 'Domain Not Authorized';
               message = "This app's domain is not authorized for OAuth operations. Please ensure the current hostname is added to the list of authorized domains in your Firebase project's Authentication settings.";
