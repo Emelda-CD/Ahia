@@ -14,7 +14,7 @@ const quickLinks = [
   { name: 'About Us', href: '/about' },
   { name: 'Contact Us', href: '/contact' },
   { name: 'Terms & Conditions', href: '/terms' },
-  { name: 'Privacy Policy', href: '#' },
+  { name: 'Privacy Policy', href: '/privacy' },
   { name: 'Admin', href: '/admin' },
 ];
 
