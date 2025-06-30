@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -99,7 +100,11 @@ export default function PostAdForm() {
   }, [imagePreviews]);
 
   const nextStep = async () => {
-    const isValid = await trigger(['category', 'subcategory', 'location', 'socialLink']);
+    const fieldsToValidate: (keyof AdFormValues)[] = ['category', 'subcategory', 'location', 'socialLink'];
+    if (step === 2) {
+       fieldsToValidate.push('title', 'description', 'price', 'phone', 'condition', 'images', 'terms');
+    }
+    const isValid = await trigger(fieldsToValidate);
     if (isValid) setStep((s) => s + 1);
   };
 
@@ -277,6 +282,215 @@ export default function PostAdForm() {
   };
 
 
+  const Step1 = (
+    <div className="space-y-4">
+        <div>
+        <Label htmlFor="category">Category</Label>
+        <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                <SelectContent>
+                {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
+                </SelectContent>
+            </Select>
+            )}
+        />
+        {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
+        </div>
+        <div>
+        <Label htmlFor="subcategory">Subcategory</Label>
+        <Controller
+            name="subcategory"
+            control={control}
+            render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
+                <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
+                <SelectContent>
+                {subcategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                </SelectContent>
+            </Select>
+            )}
+        />
+        {errors.subcategory && <p className="text-red-500 text-sm">{errors.subcategory.message}</p>}
+        </div>
+        <div>
+        <Label>Location</Label>
+            <Controller
+            name="location"
+            control={control}
+            render={({ field }) => (
+                <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })}>
+                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                        <span>{field.value || "Select a location"}</span>
+                        {field.value ? (
+                        <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
+                        ) : (
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        )}
+                    </Button>
+                </LocationModal>
+            )}
+            />
+        {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
+        </div>
+        <div>
+        <Label htmlFor="socialLink">Social Link (Optional)</Label>
+        <Input id="socialLink" placeholder="https://instagram.com/your-brand" {...register('socialLink')} />
+            {errors.socialLink && <p className="text-red-500 text-sm">{errors.socialLink.message}</p>}
+        </div>
+    </div>
+  );
+  
+  const Step2 = (
+     <div className="space-y-4">
+        <div>
+        <Label htmlFor="title">Ad Title</Label>
+        <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
+            {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+        </div>
+        <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
+            {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
+        </div>
+        <div>
+        <Label>Tags</Label>
+        <div className="flex flex-wrap gap-2 mb-2">
+            {tags.map(tag => (
+                <Badge key={tag} variant="secondary" className="text-sm py-1 pl-3 pr-2">
+                    {tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                        <X className="h-3 w-3"/>
+                    </button>
+                </Badge>
+            ))}
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onSuggest} disabled={isSuggesting}>
+            {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+            Suggest with AI
+        </Button>
+        {suggestedTags.length > 0 && 
+            <div className="mt-2 p-2 bg-secondary/50 rounded-md">
+                <p className="text-sm font-medium mb-2">Suggestions:</p>
+                <div className="flex flex-wrap gap-2">
+                    {suggestedTags.map(tag => <Button type="button" size="sm" variant="outline" key={tag} onClick={() => addTag(tag)}>{tag}</Button>)}
+                </div>
+            </div>
+        }
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+        <div>
+            <Label htmlFor="price">Price (&#8358;)</Label>
+            <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
+            {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
+        </div>
+        <div>
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" placeholder="e.g., 08012345678" {...register('phone')} />
+            {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
+        </div>
+        </div>
+        <div className="flex items-center gap-8">
+            <Controller
+            name="condition"
+            control={control}
+            render={({ field }) => (
+                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                    <Label>Condition</Label>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="new" id="new" /><Label htmlFor="new">New</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="used" id="used" /><Label htmlFor="used">Used</Label></div>
+                </RadioGroup>
+            )}
+            />
+        <Controller
+            name="negotiable"
+            control={control}
+            render={({ field }) => (
+            <div className="flex items-center space-x-2">
+                <Checkbox id="negotiable" checked={field.value} onCheckedChange={field.onChange} />
+                <Label htmlFor="negotiable">Price is negotiable</Label>
+            </div>
+            )}
+        />
+        </div>
+        <div>
+        <Label htmlFor="file-upload">📸 Add 1 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
+        <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            {imagePreviews.map((src, index) => (
+                <div 
+                    key={src} 
+                    className={cn(
+                        "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
+                        draggedIndex === index && "opacity-50"
+                    )}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                >
+                    <Image
+                        src={src}
+                        alt={`preview ${index}`}
+                        fill
+                        className="rounded-md object-cover"
+                        style={{ pointerEvents: 'none' }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Remove image"
+                    >
+                        <X className="h-3 w-3" />
+                    </button>
+                    {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
+                </div>
+            ))}
+            
+            {images.length < 20 && (
+                <div
+                    onDragOver={handleDragOverUpload}
+                    onDragLeave={handleDragLeaveUpload}
+                    onDrop={handleDropUpload}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                        "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors",
+                        isUploading ? "border-primary bg-primary/10" : "hover:border-primary/70"
+                    )}
+                >
+                    <FileImage className="h-8 w-8 text-gray-400" />
+                    <span className="mt-2 text-sm text-muted-foreground">Add photo</span>
+                </div>
+            )}
+        </div>
+
+        {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
+
+        <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
+        </div>
+
+        <div>
+        <Controller
+            name="terms"
+            control={control}
+            render={({ field }) => (
+                <div className="flex items-start space-x-3">
+                <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
+                <div>
+                    <Label htmlFor="terms">I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link></Label>
+                    {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
+                </div>
+                </div>
+            )}
+        />
+        </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -288,214 +502,8 @@ export default function PostAdForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {step === 1 && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Controller
-                  name="category"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                      <SelectContent>
-                        {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
-              </div>
-               <div>
-                <Label htmlFor="subcategory">Subcategory</Label>
-                <Controller
-                  name="subcategory"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
-                      <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
-                      <SelectContent>
-                        {subcategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.subcategory && <p className="text-red-500 text-sm">{errors.subcategory.message}</p>}
-              </div>
-              <div>
-                <Label>Location</Label>
-                 <Controller
-                    name="location"
-                    control={control}
-                    render={({ field }) => (
-                        <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })}>
-                            <Button type="button" variant="outline" className="w-full justify-between font-normal">
-                                <span>{field.value || "Select a location"}</span>
-                                {field.value ? (
-                                <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
-                                ) : (
-                                <MapPin className="h-4 w-4 text-muted-foreground" />
-                                )}
-                            </Button>
-                        </LocationModal>
-                    )}
-                 />
-                {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
-              </div>
-              <div>
-                <Label htmlFor="socialLink">Social Link (Optional)</Label>
-                <Input id="socialLink" placeholder="https://instagram.com/your-brand" {...register('socialLink')} />
-                 {errors.socialLink && <p className="text-red-500 text-sm">{errors.socialLink.message}</p>}
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Ad Title</Label>
-                <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
-                 {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
-                 {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-              </div>
-               <div>
-                <Label>Tags</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                    {tags.map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-sm py-1 pl-3 pr-2">
-                            {tag}
-                            <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
-                                <X className="h-3 w-3"/>
-                            </button>
-                        </Badge>
-                    ))}
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={onSuggest} disabled={isSuggesting}>
-                    {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Suggest with AI
-                </Button>
-                {suggestedTags.length > 0 && 
-                    <div className="mt-2 p-2 bg-secondary/50 rounded-md">
-                        <p className="text-sm font-medium mb-2">Suggestions:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {suggestedTags.map(tag => <Button type="button" size="sm" variant="outline" key={tag} onClick={() => addTag(tag)}>{tag}</Button>)}
-                        </div>
-                    </div>
-                }
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price">Price (&#8358;)</Label>
-                  <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
-                   {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
-                </div>
-                <div>
-                   <Label htmlFor="phone">Phone Number</Label>
-                   <Input id="phone" placeholder="e.g., 08012345678" {...register('phone')} />
-                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-8">
-                 <Controller
-                    name="condition"
-                    control={control}
-                    render={({ field }) => (
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                            <Label>Condition</Label>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="new" id="new" /><Label htmlFor="new">New</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="used" id="used" /><Label htmlFor="used">Used</Label></div>
-                        </RadioGroup>
-                    )}
-                    />
-                <Controller
-                  name="negotiable"
-                  control={control}
-                  render={({ field }) => (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="negotiable" checked={field.value} onCheckedChange={field.onChange} />
-                      <Label htmlFor="negotiable">Price is negotiable</Label>
-                    </div>
-                  )}
-                />
-              </div>
-              <div>
-                <Label htmlFor="file-upload">📸 Add 1 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
-                <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                    {imagePreviews.map((src, index) => (
-                        <div 
-                            key={src} 
-                            className={cn(
-                                "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
-                                draggedIndex === index && "opacity-50"
-                            )}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, index)}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, index)}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <Image
-                                src={src}
-                                alt={`preview ${index}`}
-                                fill
-                                className="rounded-md object-cover"
-                                style={{ pointerEvents: 'none' }}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveImage(index)}
-                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                aria-label="Remove image"
-                            >
-                                <X className="h-3 w-3" />
-                            </button>
-                            {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
-                        </div>
-                    ))}
-                    
-                    {images.length < 20 && (
-                        <div
-                            onDragOver={handleDragOverUpload}
-                            onDragLeave={handleDragLeaveUpload}
-                            onDrop={handleDropUpload}
-                            onClick={() => fileInputRef.current?.click()}
-                            className={cn(
-                                "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors",
-                                isUploading ? "border-primary bg-primary/10" : "hover:border-primary/70"
-                            )}
-                        >
-                            <FileImage className="h-8 w-8 text-gray-400" />
-                            <span className="mt-2 text-sm text-muted-foreground">Add photo</span>
-                        </div>
-                    )}
-                </div>
-
-                {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
-
-                <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
-              </div>
-
-               <div>
-                <Controller
-                  name="terms"
-                  control={control}
-                  render={({ field }) => (
-                     <div className="flex items-start space-x-3">
-                        <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
-                        <div>
-                            <Label htmlFor="terms">I agree to the <a href="#" className="text-primary hover:underline">Terms and Conditions</a></Label>
-                            {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
-                        </div>
-                     </div>
-                  )}
-                />
-              </div>
-            </div>
-          )}
+          {step === 1 && Step1}
+          {step === 2 && Step2}
 
           <div className="flex justify-between mt-8">
             {step > 1 ? (
@@ -508,12 +516,12 @@ export default function PostAdForm() {
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Ad
+              <Button type="submit" disabled={isSubmitting || !isLoggedIn}>
+                 {!isLoggedIn ? 'Login to Submit' : (isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : 'Submit Ad')}
               </Button>
             )}
           </div>
+           {!isLoggedIn && <p className="text-sm text-center text-amber-600 mt-4">You must be logged in to submit an ad.</p>}
         </form>
       </CardContent>
     </Card>
