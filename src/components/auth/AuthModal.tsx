@@ -39,7 +39,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { toast } = useToast();
 
   const handleFirebaseAuthError = (error: FirebaseError) => {
-      // This is not an error to display. It happens when the user closes the login popup.
       if (error.code === 'auth/popup-closed-by-user') {
           return;
       }
@@ -65,13 +64,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               message = 'Password is too weak. It should be at least 6 characters.';
               break;
           case 'auth/configuration-not-found':
-              message = 'A sign-in provider is not configured correctly. For Facebook login, ensure you have added your App ID and App Secret in the Firebase console.';
+          case 'auth/invalid-credential': // This can also indicate a Facebook config issue
+              title = 'Facebook Login Error';
+              message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, navigate to 'Use cases' > 'Customize' on the 'Authentication and account creation' card. Under 'Permissions', click 'Add' next to 'email'.";
               break;
           default:
-              // Handle more specific errors based on their message content
               if (error.message.includes('Invalid Scopes: email')) {
                   title = 'Facebook Login Error';
-                  message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, click 'Use cases' (left menu) > 'Customize' on the 'Authentication and account creation' card. Under 'Permissions', click 'Add' next to 'email'.";
+                  message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, navigate to 'Use cases' > 'Customize' on the 'Authentication and account creation' card (NOT the Threads API). Under 'Permissions', click 'Add' next to 'email'.";
               } else {
                   message = error.message;
               }
