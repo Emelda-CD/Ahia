@@ -64,14 +64,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               message = 'Password is too weak. It should be at least 6 characters.';
               break;
           case 'auth/configuration-not-found':
-          case 'auth/invalid-credential': // This can also indicate a Facebook config issue
+          case 'auth/invalid-credential':
               title = 'Facebook Login Error';
-              message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, navigate to 'Use cases' > 'Customize' on the 'Authentication and account creation' card. Under 'Permissions', click 'Add' next to 'email'.";
+              message = "Your Facebook App is missing the 'email' permission. 1. Go to your Facebook App Dashboard and select 'Use cases'. 2. If 'Authentication and account creation' is missing, click 'Add use cases' to add it. 3. Click 'Customize' on the 'Authentication and account creation' card. 4. Under 'Permissions', click 'Add' next to 'email'.";
               break;
           default:
               if (error.message.includes('Invalid Scopes: email')) {
                   title = 'Facebook Login Error';
-                  message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, navigate to 'Use cases' > 'Customize' on the 'Authentication and account creation' card (NOT the Threads API). Under 'Permissions', click 'Add' next to 'email'.";
+                  message = "Your Facebook App is missing the 'email' permission. 1. Go to your Facebook App Dashboard and select 'Use cases'. 2. If 'Authentication and account creation' is missing, click 'Add use cases' to add it. 3. Click 'Customize' on the 'Authentication and account creation' card. 4. Under 'Permissions', click 'Add' next to 'email'.";
               } else {
                   message = error.message;
               }
