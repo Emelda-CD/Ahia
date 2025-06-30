@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import Logo from './Logo';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const socialLinks = [
   { name: 'Facebook', icon: Facebook, href: '#' },
@@ -72,7 +74,17 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-4">Stay updated</h4>
             <p className="text-gray-200 mb-2">Subscribe to our newsletter for the latest deals.</p>
-            {/* Newsletter form can be added here */}
+            <form className="flex gap-2 mt-4">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                className="bg-white/90 text-gray-900 border-none placeholder:text-gray-500"
+                aria-label="Email for newsletter"
+              />
+              <Button type="submit" variant="secondary">
+                Subscribe
+              </Button>
+            </form>
           </div>
         </div>
       </div>
