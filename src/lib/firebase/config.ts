@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -12,8 +12,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Add a check to ensure Firebase config is loaded and log project info for debugging
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+
 if (typeof window !== 'undefined') { // Run only on the client
+  // Add a check to ensure Firebase config is loaded and log project info for debugging
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
         console.error(`
         ********************************************************************************
@@ -31,13 +38,21 @@ if (typeof window !== 'undefined') { // Run only on the client
         console.log(`%cCurrent Hostname: %c${window.location.hostname}`, 'font-weight: bold;', 'color: #4CAF50;');
         console.log('Please ensure the hostname above is listed in your Firebase project\'s "Authorized domains".');
     }
+  
+  // Enable Firestore offline persistence
+  try {
+    enableIndexedDbPersistence(db)
+      .catch((err) => {
+          if (err.code == 'failed-precondition') {
+              console.warn("Firestore offline persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.");
+          } else if (err.code == 'unimplemented') {
+              console.warn("Firestore offline persistence failed: The current browser does not support all of the features required to enable persistence.");
+          }
+      });
+  } catch (error) {
+      console.error("Error enabling Firestore offline persistence: ", error);
+  }
 }
 
-
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
 
 export { app, auth, db, storage };
