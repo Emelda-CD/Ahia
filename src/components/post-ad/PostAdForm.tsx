@@ -18,11 +18,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { handleSuggestTags } from '@/app/post-ad/actions';
-import { Sparkles, Tag, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin, Wallet } from 'lucide-react';
+import { Sparkles, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
-import { boostPlans } from '@/lib/boost-plans-data';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
@@ -44,7 +42,6 @@ const adSchema = z.object({
     .min(1, 'Please upload between 1 and 20 photos.')
     .max(20, 'You can upload a maximum of 20 photos.'),
   socialLink: z.string().url().optional().or(z.literal('')),
-  promotion: z.string().optional(),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
 });
 
@@ -74,7 +71,6 @@ export default function PostAdForm() {
         category: '',
         subcategory: '',
         location: '',
-        promotion: 'none',
         images: []
     }
   });
@@ -82,16 +78,10 @@ export default function PostAdForm() {
   const { register, handleSubmit, control, trigger, getValues, setValue, watch, formState: { errors } } = form;
 
   const selectedCategory = watch('category');
-  const selectedPromotion = watch('promotion');
   const images = watch('images') || [];
   
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
   
-  const walletBalance = 550; 
-  
-  const selectedPlan = boostPlans.find(p => p.id === selectedPromotion);
-  const insufficientBalance = selectedPlan && selectedPlan.price > walletBalance;
-
   useEffect(() => {
     if (selectedCategory) {
       const category = categoriesData.find(c => c.name === selectedCategory);
@@ -109,12 +99,7 @@ export default function PostAdForm() {
   }, [imagePreviews]);
 
   const nextStep = async () => {
-    let isValid = false;
-    if (step === 1) {
-      isValid = await trigger(['category', 'subcategory', 'location', 'socialLink']);
-    } else if (step === 2) {
-      isValid = await trigger(['title', 'description', 'price', 'phone', 'condition', 'images']);
-    }
+    const isValid = await trigger(['category', 'subcategory', 'location', 'socialLink']);
     if (isValid) setStep((s) => s + 1);
   };
 
@@ -123,11 +108,6 @@ export default function PostAdForm() {
   const onSubmit = async (data: AdFormValues) => {
     if (!isLoggedIn || !user) {
         toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to post an ad.'});
-        return;
-    }
-
-    if (insufficientBalance) {
-        toast({ variant: 'destructive', title: 'Cannot Submit Ad', description: 'Please fund your wallet or choose a different boost option.' });
         return;
     }
     
@@ -300,10 +280,10 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={(step / 3) * 100} className="mb-4" />
-        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : step === 2 ? 'Product Details' : 'Boost Your Ad'}</CardTitle>
+        <Progress value={(step / 2) * 100} className="mb-4" />
+        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Submission'}</CardTitle>
         <CardDescription>
-          {step === 1 ? 'Tell us what you are selling and where.' : step === 2 ? 'Provide details about your item.' : 'Get up to 10x more views by boosting your ad.'}
+          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details about your item and post your ad for free.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -498,70 +478,8 @@ export default function PostAdForm() {
 
                 <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
               </div>
-            </div>
-          )}
 
-          {step === 3 && (
-            <div className="space-y-6">
-                 <div className="space-y-2">
-                    <Label>Wallet Balance</Label>
-                    <div className="flex items-center gap-2 text-2xl font-bold text-green-600">
-                        <Wallet className="h-7 w-7"/>
-                        <span>₦{walletBalance.toLocaleString()}</span>
-                    </div>
-                </div>
-              
-                <Controller
-                    name="promotion"
-                    control={control}
-                    render={({ field }) => (
-                    <RadioGroup 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        className="space-y-4"
-                    >
-                        <Label className="text-base font-semibold">Boost Your Ad (Optional)</Label>
-                        
-                        {boostPlans.map((plan) => (
-                        <Label 
-                            key={plan.id}
-                            htmlFor={plan.id}
-                            className="flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary"
-                        >
-                            <RadioGroupItem value={plan.id} id={plan.id} />
-                            <div className="flex-1">
-                                <p className="font-bold">{plan.name}</p>
-                                <p className="text-sm text-muted-foreground">Get more visibility for {plan.duration_days} days.</p>
-                            </div>
-                            <p className="text-lg font-semibold">₦{plan.price.toLocaleString()}</p>
-                        </Label>
-                        ))}
-
-                        <Label 
-                            htmlFor="none"
-                            className="flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary"
-                        >
-                            <RadioGroupItem value="none" id="none" />
-                            <div className="flex-1">
-                                <p className="font-bold">No Boost</p>
-                                <p className="text-sm text-muted-foreground">I'll post my ad without any promotion for now.</p>
-                            </div>
-                        </Label>
-                    </RadioGroup>
-                    )}
-                />
-
-                {insufficientBalance && (
-                    <Alert variant="destructive">
-                    <AlertTitle>Insufficient Funds</AlertTitle>
-                    <AlertDescription className="flex justify-between items-center">
-                        <span>You do not have enough balance to purchase this boost.</span>
-                        <Button size="sm" variant="secondary">Fund Wallet</Button>
-                    </AlertDescription>
-                    </Alert>
-                )}
-              
-              <div>
+               <div>
                 <Controller
                   name="terms"
                   control={control}
@@ -585,12 +503,12 @@ export default function PostAdForm() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             ) : <div />}
-            {step < 3 ? (
+            {step < 2 ? (
               <Button type="button" onClick={nextStep} disabled={isSubmitting}>
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={insufficientBalance || isSubmitting}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Ad
               </Button>
