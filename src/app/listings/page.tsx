@@ -9,13 +9,14 @@ import { cn } from '@/lib/utils';
 import { categoriesData } from '@/lib/categories-data';
 
 import AdCard from '@/components/AdCard';
+import AdCardListItem from '@/components/AdCardListItem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2 } from 'lucide-react';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2, LayoutGrid, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getListings } from '@/lib/firebase/actions';
@@ -235,6 +236,7 @@ export default function ListingsPage() {
     const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
     const [allListings, setAllListings] = useState<Listing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [view, setView] = useState<'grid' | 'list'>('grid');
     
     const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
     const [filters, setFilters] = useState<any>(initialFilters);
@@ -532,17 +534,34 @@ export default function ListingsPage() {
                         </div>
                     ) : filteredListings.length > 0 ? (
                         <>
-                            <div className="mb-4">
+                            <div className="flex justify-between items-center mb-4">
                                 <p className="text-muted-foreground">
                                     Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
                                     {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
                                 </p>
+                                <div className="flex items-center gap-1">
+                                    <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view">
+                                        <LayoutGrid className="h-5 w-5" />
+                                    </Button>
+                                    <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view">
+                                        <List className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredListings.map(ad => (
-                                    <AdCard key={ad.id} {...ad} />
-                                ))}
-                            </div>
+                            
+                            {view === 'grid' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filteredListings.map(ad => (
+                                        <AdCard key={ad.id} {...ad} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {filteredListings.map(ad => (
+                                        <AdCardListItem key={ad.id} {...ad} />
+                                    ))}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="text-center py-16 border rounded-lg bg-card">
