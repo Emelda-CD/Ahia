@@ -71,7 +71,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               // Handle more specific errors based on their message content
               if (error.message.includes('Invalid Scopes: email')) {
                   title = 'Facebook Login Error';
-                  message = "Your Facebook App is missing the 'email' permission. In your Facebook App Dashboard, click 'Facebook Login for Business' in the left menu, then find 'Settings' to add the 'email' permission.";
+                  message = "Your Facebook App is missing the 'email' permission. In the Facebook App Dashboard, click 'Use cases' (left menu) > 'Customize' on the 'Authentication and account creation' card. Under 'Permissions', click 'Add' next to 'email'.";
               } else {
                   message = error.message;
               }
