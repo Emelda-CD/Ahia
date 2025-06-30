@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -66,12 +65,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           case 'auth/configuration-not-found':
           case 'auth/invalid-credential':
               title = 'Facebook Login Error';
-              message = "Your Facebook App is missing the 'email' permission. 1. Go to your Facebook App Dashboard and select 'Use cases'. 2. If 'Authentication and account creation' is missing, click 'Add use cases' to add it. 3. Click 'Customize' on the 'Authentication and account creation' card. 4. Under 'Permissions', click 'Add' next to 'email'.";
+              message = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page (you are likely here already). 2. The 'Authentication and account creation' card is missing. Click the '+ Add use cases' button at the top right. 3. Find and add 'Authentication and account creation' from the list. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
               break;
           default:
               if (error.message.includes('Invalid Scopes: email')) {
                   title = 'Facebook Login Error';
-                  message = "Your Facebook App is missing the 'email' permission. 1. Go to your Facebook App Dashboard and select 'Use cases'. 2. If 'Authentication and account creation' is missing, click 'Add use cases' to add it. 3. Click 'Customize' on the 'Authentication and account creation' card. 4. Under 'Permissions', click 'Add' next to 'email'.";
+                  message = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page (you are likely here already). 2. The 'Authentication and account creation' card is missing. Click the '+ Add use cases' button at the top right. 3. Find and add 'Authentication and account creation' from the list. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
               } else {
                   message = error.message;
               }
