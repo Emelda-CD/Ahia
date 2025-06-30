@@ -45,7 +45,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       
       let title = 'Authentication Failed';
       let message = 'An unknown error occurred.';
-      const detailedFacebookInstructions = "Your Facebook App might be a 'Business' type, which handles permissions differently. Here's how to fix it: 1. In your Facebook App Dashboard, find the 'Products' section in the left sidebar. 2. Click '+ Add product'. 3. Find 'Facebook Login' and click 'Set up'. 4. Once added, a new 'Facebook Login' menu will appear in your sidebar. Click on its 'Settings' submenu. 5. On the 'Facebook Login Settings' page, ensure the `email` permission is included in your requested data.";
+      const detailedFacebookInstructions = "Your Facebook App is a 'Business' type, which handles permissions differently. To fix this, you must add the 'Facebook Login' product to your app. Here's how: 1. In your Facebook App Dashboard, find the 'Products' section in the left sidebar. 2. Click '+ Add product'. 3. Find 'Facebook Login' and click 'Set up'. 4. Once added, a new 'Facebook Login' menu will appear in your sidebar. Click on its 'Settings' submenu. 5. On the 'Facebook Login Settings' page, ensure the `email` permission is included in your requested data.";
 
       switch(error.code) {
           case 'auth/unauthorized-domain':
