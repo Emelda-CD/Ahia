@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2, LayoutGrid, List } from 'lucide-react';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getListings } from '@/lib/firebase/actions';
@@ -33,6 +33,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   Services: Wrench,
   Fashion: Shirt,
   Phones: Sparkles,
+  'Food, Agriculture & Farming': Leaf,
 };
 
 
@@ -386,7 +387,7 @@ export default function ListingsPage() {
                      <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-4 text-center">
                     {categoriesData.map(cat => {
                         const Icon = categoryIcons[cat.name] || Home;
                         return (

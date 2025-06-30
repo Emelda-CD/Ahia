@@ -132,5 +132,18 @@ export const categoriesData: Category[] = [
       icon: '🔧',
       subcategories: ['Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Events & Catering', 'Cleaning Services'],
       sort_order: 10
+  },
+  {
+    name: "Food, Agriculture & Farming",
+    slug: "food-agriculture-farming",
+    icon: "🌱",
+    subcategories: [
+      "Fresh Produce",
+      "Livestock & Poultry",
+      "Farm Machinery & Equipment",
+      "Fertilizers & Agro-chemicals",
+      "Seeds & Seedlings",
+    ],
+    sort_order: 11
   }
 ].sort((a, b) => a.sort_order - b.sort_order);

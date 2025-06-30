@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import AdCard from '@/components/AdCard';
 import AdCardListItem from '@/components/AdCardListItem';
-import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2, LayoutGrid, List } from 'lucide-react';
+import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
 import type { Listing } from '@/lib/listings-data';
 import { categoriesData } from '@/lib/categories-data';
 import { useState, useEffect } from 'react';
@@ -28,6 +28,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   Phones: Sparkles,
   'Animals & Pets': PawPrint,
   'Furniture & Home': HomeIcon,
+  'Food, Agriculture & Farming': Leaf,
 };
 
 
