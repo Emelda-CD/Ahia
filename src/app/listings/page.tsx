@@ -517,6 +517,25 @@ export default function ListingsPage() {
                 </aside>
 
                 <main className="lg:col-span-3">
+                    <div className="flex justify-between items-center mb-4">
+                         {isLoading ? (
+                            <div className="h-5 bg-muted rounded w-48 animate-pulse"></div>
+                        ) : (
+                            <p className="text-muted-foreground">
+                                Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
+                                {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
+                            </p>
+                        )}
+                        <div className="flex items-center gap-1">
+                            <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || filteredListings.length === 0}>
+                                <LayoutGrid className="h-5 w-5" />
+                            </Button>
+                            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || filteredListings.length === 0}>
+                                <List className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+
                     {isLoading ? (
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {Array.from({ length: 9 }).map((_, i) => (
@@ -534,21 +553,6 @@ export default function ListingsPage() {
                         </div>
                     ) : filteredListings.length > 0 ? (
                         <>
-                            <div className="flex justify-between items-center mb-4">
-                                <p className="text-muted-foreground">
-                                    Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
-                                    {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
-                                </p>
-                                <div className="flex items-center gap-1">
-                                    <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view">
-                                        <LayoutGrid className="h-5 w-5" />
-                                    </Button>
-                                    <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view">
-                                        <List className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            
                             {view === 'grid' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {filteredListings.map(ad => (
