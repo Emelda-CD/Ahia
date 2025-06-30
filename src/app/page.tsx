@@ -73,7 +73,7 @@ export default function Home() {
               Welcome to Ahia
             </h1>
             <p className="mt-4 text-lg leading-8 text-gray-200">
-              Your trusted online marketplace in Nigeria. Find or sell anything, anytime!
+              Your trusted online marketplace in Enugu. Find or sell anything.
             </p>
             <div className="mt-8 max-w-3xl mx-auto bg-white rounded-full p-2 flex items-center shadow-lg flex-col sm:flex-row gap-2 sm:gap-0">
                 <div className="relative flex-grow w-full">
@@ -88,7 +88,7 @@ export default function Home() {
                 </div>
                 <div className="border-l border-gray-200 h-8 mx-2 hidden sm:block"></div>
                 <LocationModal onSelect={(town) => setLocation(town)}>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto">
+                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border border-gray-300 rounded-full">
                         <MapPin className="h-5 w-5" />
                         <span>{location || 'All Enugu'}</span>
                         {location && <X className="h-4 w-4 ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setLocation(null);}} />}
