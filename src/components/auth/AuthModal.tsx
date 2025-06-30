@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,6 +45,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       
       let title = 'Authentication Failed';
       let message = 'An unknown error occurred.';
+      const detailedFacebookInstructions = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page. 2. Click the '+ Add use cases' button. 3. A modal will appear. You may need to scroll down to find 'Authentication and account creation'. Select it and add it. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
 
       switch(error.code) {
           case 'auth/unauthorized-domain':
@@ -65,12 +67,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
           case 'auth/configuration-not-found':
           case 'auth/invalid-credential':
               title = 'Facebook Login Error';
-              message = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page (you are likely here already). 2. The 'Authentication and account creation' card is missing. Click the '+ Add use cases' button at the top right. 3. Find and add 'Authentication and account creation' from the list. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
+              message = detailedFacebookInstructions;
               break;
           default:
               if (error.message.includes('Invalid Scopes: email')) {
                   title = 'Facebook Login Error';
-                  message = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page (you are likely here already). 2. The 'Authentication and account creation' card is missing. Click the '+ Add use cases' button at the top right. 3. Find and add 'Authentication and account creation' from the list. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
+                  message = detailedFacebookInstructions;
               } else {
                   message = error.message;
               }
