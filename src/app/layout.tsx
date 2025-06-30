@@ -7,8 +7,8 @@ import Footer from '@/components/common/Footer';
 import { Providers } from '@/components/common/Providers';
 
 export const metadata: Metadata = {
-  title: 'Ahia - Nigerian Classified Ads',
-  description: 'Buy and sell anything in Nigeria. Post free ads for cars, jobs, real estate, and more.',
+  title: 'Ahia - Enugu Classified Ads',
+  description: 'Buy and sell anything in Enugu. Post free ads for cars, jobs, real estate, and more.',
 };
 
 export default function RootLayout({

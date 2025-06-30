@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import Logo from './Logo';
@@ -33,7 +34,7 @@ export default function Footer() {
             <Link href="/" className="inline-block mb-4">
               <Logo variant="dark" />
             </Link>
-            <p className="text-gray-200">Your trusted online marketplace in Nigeria.</p>
+            <p className="text-gray-200">Your trusted online marketplace in Enugu.</p>
             <div className="flex space-x-4 mt-4">
               {socialLinks.map((social) => (
                 <Link key={social.name} href={social.href} className="text-gray-200 hover:text-white">
@@ -76,7 +77,7 @@ export default function Footer() {
       </div>
       <div className="bg-black/20 py-4">
         <div className="container mx-auto px-4 text-center text-gray-300 text-sm">
-          &copy; {new Date().getFullYear()} Ahia. All rights reserved. | Nigeria | English
+          &copy; {new Date().getFullYear()} Ahia. All rights reserved. | Enugu, Nigeria | English
         </div>
       </div>
     </footer>

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 
 const contactInfo = [
-  { icon: MapPin, title: 'Our Office', value: '123 Market Road, Lagos, Nigeria' },
+  { icon: MapPin, title: 'Our Office', value: '123 Market Road, Enugu, Nigeria' },
   { icon: Phone, title: 'Support Call', value: '+234 800 123 4567' },
   { icon: Mail, title: 'Email Us', value: 'support@ahia.com' },
   { icon: Clock, title: 'Business Hours', value: 'Mon - Fri: 9am - 6pm' },

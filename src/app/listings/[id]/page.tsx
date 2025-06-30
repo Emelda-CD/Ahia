@@ -18,10 +18,10 @@ import type { Listing } from '@/lib/listings-data';
 import { getListingById, trackListingView } from '@/lib/firebase/actions';
 
 const similarAds = [
-    { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Port Harcourt, Rivers', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
-    { id: '6', title: 'Office Space for Lease', price: '800,000', location: 'Victoria Island, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
-    { id: '7', title: 'Honda CR-V 2018', price: '15,000,000', location: 'Maitama, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
-    { id: '8', title: 'Cute Puppy for a new home', price: '150,000', location: 'Surulere, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+    { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
+    { id: '6', title: 'Office Space for Lease', price: '800,000', location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
+    { id: '7', title: 'Honda CR-V 2018', price: '15,000,000', location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
+    { id: '8', title: 'Cute Puppy for a new home', price: '150,000', location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
 ]
 
 export default function ProductDetailPage() {

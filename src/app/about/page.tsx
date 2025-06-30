@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckCircle, Users, BarChart } from 'lucide-react';
@@ -12,7 +13,7 @@ const features = [
   {
     icon: Users,
     title: 'Vibrant Community',
-    description: 'Join millions of buyers and sellers across Nigeria connecting every day.',
+    description: 'Join thousands of buyers and sellers across Enugu connecting every day.',
   },
   {
     icon: BarChart,
@@ -29,8 +30,8 @@ const teamMembers = [
 ];
 
 const testimonials = [
-    { name: 'Tunde from Lagos', text: '"Ahia made selling my old car so easy! I got a buyer within 3 days. Highly recommended!"', data_ai_hint: 'man face' },
-    { name: 'Aisha from Abuja', text: '"I found the perfect apartment for my family on Ahia. The platform is user-friendly and has so many options."', data_ai_hint: 'woman face' },
+    { name: 'Chinedu from Enugu', text: '"Ahia made selling my old car so easy! I got a buyer within 3 days. Highly recommended!"', data_ai_hint: 'man face' },
+    { name: 'Nkechi from Nsukka', text: '"I found the perfect apartment for my family on Ahia. The platform is user-friendly and has so many options."', data_ai_hint: 'woman face' },
 ]
 
 export default function AboutPage() {
@@ -39,7 +40,7 @@ export default function AboutPage() {
       <section className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">About Ahia</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          We are on a mission to connect Nigerians to opportunities, making it easier and safer to buy and sell anything online.
+          We are on a mission to connect people in Enugu to opportunities, making it easier and safer to buy and sell anything online.
         </p>
       </section>
 

@@ -23,10 +23,10 @@ const thumbnails = [
 ];
 
 const similarAds = [
-    { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Port Harcourt, Rivers', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
-    { id: '6', title: 'Office Space for Lease', price: '800,000', location: 'Victoria Island, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
-    { id: '7', title: 'Honda CR-V 2018', price: '15,000,000', location: 'Maitama, Abuja', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
-    { id: '8', title: 'Cute Puppy for a new home', price: '150,000', location: 'Surulere, Lagos', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+    { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
+    { id: '6', title: 'Office Space for Lease', price: '800,000', location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
+    { id: '7', title: 'Honda CR-V 2018', price: '15,000,000', location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
+    { id: '8', title: 'Cute Puppy for a new home', price: '150,000', location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
 ]
 
 export default function ProductDetailPage() {
@@ -78,7 +78,7 @@ export default function ProductDetailPage() {
                     <h1 className="text-3xl font-bold mt-2">Clean Toyota Camry 2019</h1>
                     <div className="flex items-center text-muted-foreground mt-2">
                         <MapPin className="w-5 h-5 mr-2" />
-                        <span>Posted in Lekki, Lagos</span>
+                        <span>Posted in GRA, Enugu North</span>
                     </div>
                   </div>
                   <p className="text-3xl font-bold text-primary">&#8358;12,500,000</p>
