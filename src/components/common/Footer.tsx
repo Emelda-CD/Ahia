@@ -13,6 +13,7 @@ const socialLinks = [
 const quickLinks = [
   { name: 'About Us', href: '/about' },
   { name: 'Contact Us', href: '/contact' },
+  { name: 'FAQ', href: '/faq' },
   { name: 'Terms & Conditions', href: '/terms' },
   { name: 'Privacy Policy', href: '/privacy' },
   { name: 'Admin', href: '/admin' },
