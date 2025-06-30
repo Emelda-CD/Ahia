@@ -45,7 +45,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       
       let title = 'Authentication Failed';
       let message = 'An unknown error occurred.';
-      const detailedFacebookInstructions = "Your Facebook App is missing the 'email' permission. Here's how to fix it: 1. In your Facebook App Dashboard, go to the 'Use cases' page. 2. Click the '+ Add use cases' button. 3. A modal will appear. You may need to scroll down to find 'Authentication and account creation'. Select it and add it. 4. Back on the 'Use cases' page, you will now see the correct card. Click 'Customize' on it. 5. Finally, under 'Permissions', click 'Add' next to 'email'.";
+      const detailedFacebookInstructions = "Your Facebook App might be a 'Business' type, which handles permissions differently. Here's how to fix it: 1. In your Facebook App Dashboard, find the 'Products' section in the left sidebar. 2. Click '+ Add product'. 3. Find 'Facebook Login' and click 'Set up'. 4. Once added, a new 'Facebook Login' menu will appear in your sidebar. Click on its 'Settings' submenu. 5. On the 'Facebook Login Settings' page, ensure the `email` permission is included in your requested data.";
 
       switch(error.code) {
           case 'auth/unauthorized-domain':
