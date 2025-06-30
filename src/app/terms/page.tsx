@@ -1,13 +1,22 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function TermsAndConditionsPage() {
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+  
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
       <section className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Terms and Conditions</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          Last updated: {lastUpdated}
         </p>
       </section>
       
