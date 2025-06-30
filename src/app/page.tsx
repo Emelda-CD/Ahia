@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import AdCard from '@/components/AdCard';
-import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2 } from 'lucide-react';
+import AdCardListItem from '@/components/AdCardListItem';
+import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2, LayoutGrid, List } from 'lucide-react';
 import type { Listing } from '@/lib/listings-data';
 import { categoriesData } from '@/lib/categories-data';
 import { useState, useEffect } from 'react';
@@ -35,6 +36,7 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [location, setLocation] = useState<string | null>(null);
+    const [view, setView] = useState<'grid' | 'list'>('grid');
     const router = useRouter();
 
     useEffect(() => {
@@ -148,9 +150,19 @@ export default function Home() {
           <section>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold">Recent Listings</h2>
-                <Button asChild variant="link" className="text-base">
-                  <Link href="/listings">View All <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                </Button>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                        <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || recentListings.length === 0}>
+                            <LayoutGrid className="h-5 w-5" />
+                        </Button>
+                        <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || recentListings.length === 0}>
+                            <List className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    <Button asChild variant="link" className="text-base">
+                      <Link href="/listings">View All <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                    </Button>
+                </div>
             </div>
             {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,11 +180,21 @@ export default function Home() {
                     ))}
                 </div>
             ) : recentListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {recentListings.map((ad) => (
-                      <AdCard key={ad.id} {...ad} />
-                    ))}
-                </div>
+                <>
+                    {view === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {recentListings.map((ad) => (
+                              <AdCard key={ad.id} {...ad} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {recentListings.map(ad => (
+                                <AdCardListItem key={ad.id} {...ad} />
+                            ))}
+                        </div>
+                    )}
+                </>
             ) : (
                 <p>No recent listings found.</p>
             )}
