@@ -37,22 +37,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-          setUser(docSnap.data() as UserProfile);
-        } else {
-          // This case handles new users from social providers
-          const newUserProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || 'New User',
-            email: firebaseUser.email,
-            profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
-            provider: firebaseUser.providerData[0]?.providerId || 'password',
-            createdAt: serverTimestamp()
-          };
-          await setDoc(userRef, newUserProfile);
-          setUser(newUserProfile);
+        try {
+            const userRef = doc(db, 'users', firebaseUser.uid);
+            const docSnap = await getDoc(userRef);
+            if (docSnap.exists()) {
+              setUser(docSnap.data() as UserProfile);
+            } else {
+              // This case handles new users from social providers
+              const newUserProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || 'New User',
+                email: firebaseUser.email,
+                profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
+                provider: firebaseUser.providerData[0]?.providerId || 'password',
+                createdAt: serverTimestamp()
+              };
+              await setDoc(userRef, newUserProfile);
+              setUser(newUserProfile);
+            }
+        } catch (error) {
+            console.error("AuthContext: Error fetching user document:", error);
+            // If we can't get the user profile (e.g., offline), sign them out
+            // to prevent the app from being in a broken state.
+            await signOut(auth);
+            setUser(null);
         }
       } else {
         setUser(null);
