@@ -44,8 +44,20 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       }
       
       let title = 'Authentication Failed';
-      let message = 'An unknown error occurred.';
-      const detailedFacebookInstructions = "Your Facebook App is a 'Business' type, which handles permissions differently. To fix this, you must add the 'Facebook Login' product to your app. Here's how: 1. In your Facebook App Dashboard, find the 'Products' section in the left sidebar. 2. Click '+ Add product'. 3. Find 'Facebook Login' and click 'Set up'. 4. Once added, a new 'Facebook Login' menu will appear in your sidebar. Click on its 'Settings' submenu. 5. On the 'Facebook Login Settings' page, ensure the `email` permission is included in your requested data.";
+      let message: string | React.ReactNode = 'An unknown error occurred.';
+
+      const detailedFacebookInstructions = (
+        <div className="space-y-2 text-sm">
+            <p>To fix this, add the "Facebook Login" product and "email" permission in your Facebook App dashboard:</p>
+            <ol className="list-decimal list-inside space-y-1">
+                <li>Go to <strong>developers.facebook.com/apps</strong> and select your app.</li>
+                <li>In the left menu, click <strong>Products &gt; + Add product</strong>.</li>
+                <li>Find <strong>Facebook Login</strong> and click <strong>Set up</strong>.</li>
+                <li>Go to <strong>App Review &gt; Permissions and Features</strong>.</li>
+                <li>Find <strong>email</strong> and click <strong>Get advanced access</strong>.</li>
+            </ol>
+        </div>
+      );
 
       switch(error.code) {
           case 'auth/unauthorized-domain':
@@ -71,13 +83,18 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               break;
           default:
               if (error.message.includes('Invalid Scopes: email')) {
-                  title = 'Facebook Login Error';
+                  title = 'Facebook Login Error: Missing Permission';
                   message = detailedFacebookInstructions;
               } else {
                   message = error.message;
               }
       }
-      toast({ variant: 'destructive', title: title, description: message });
+      toast({ 
+        variant: 'destructive', 
+        title: title, 
+        description: message,
+        duration: 30000 // Give user time to read instructions
+      });
   }
 
   const handleLogin = async (e: React.FormEvent) => {
