@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <Logo />
             </Link>
         </div>
-        <nav className="flex-1 space-y-2 p-4">
+        <nav className="space-y-2 p-4">
             <AdminNavLink href="/admin" icon={LayoutDashboard}>Dashboard</AdminNavLink>
             <AdminNavLink href="/admin/listings" icon={Package}>Listings</AdminNavLink>
             <AdminNavLink href="/admin/users" icon={Users}>Users</AdminNavLink>
