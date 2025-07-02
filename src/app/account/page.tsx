@@ -21,7 +21,7 @@ import AdCard from "@/components/AdCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PerformanceDashboard from '@/components/account/PerformanceDashboard';
-import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
+import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, KeyRound, Bell, LogOut, Trash, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
 import { Listing } from '@/lib/listings-data';
 import { getUserListings } from '@/lib/firebase/actions';
 import { uploadFile } from '@/lib/firebase/storage';
@@ -66,13 +66,23 @@ export default function AccountPage() {
         if (user?.uid) {
             const fetchUserAds = async () => {
                 setIsLoadingAds(true);
-                const ads = await getUserListings(user.uid);
-                setMyAds(ads);
-                setIsLoadingAds(false);
+                try {
+                    const ads = await getUserListings(user.uid);
+                    setMyAds(ads);
+                } catch (error) {
+                    console.error("Failed to fetch user ads:", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Could not load your ads",
+                        description: "Please check your internet connection and try again.",
+                    });
+                } finally {
+                    setIsLoadingAds(false);
+                }
             };
             fetchUserAds();
         }
-    }, [user?.uid]);
+    }, [user?.uid, toast]);
 
     const years = useMemo(() => {
         const currentYear = new Date().getFullYear();
@@ -342,7 +352,7 @@ export default function AccountPage() {
                                 </div>
                                 <div className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-4">
-                                        <Mail className="h-6 w-6 text-muted-foreground"/>
+                                        <Input className="h-6 w-6 text-muted-foreground"/>
                                         <div>
                                             <h4 className="font-semibold">Email Address</h4>
                                             <p className="text-sm">{user.email}</p>

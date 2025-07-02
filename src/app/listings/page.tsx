@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSe
 import { LocationModal } from '@/components/common/LocationModal';
 import { getListings } from '@/lib/firebase/actions';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   Property: Home,
@@ -241,6 +242,7 @@ export default function ListingsPage() {
     
     const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
     const [filters, setFilters] = useState<any>(initialFilters);
+    const { toast } = useToast();
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -250,11 +252,17 @@ export default function ListingsPage() {
                 setAllListings(listingsFromDb);
             } catch (error) {
                 console.error("Failed to fetch listings:", error);
+                 toast({
+                    variant: "destructive",
+                    title: "Could not load listings",
+                    description: "There was a problem fetching data. Please refresh the page.",
+                });
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
         fetchListings();
-    }, []);
+    }, [toast]);
 
     const handleCategoryClick = (categoryName: string) => {
         setFilters((prev: any) => {

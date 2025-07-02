@@ -14,6 +14,7 @@ import { format, subDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const chartConfig = {
   views: {
@@ -35,46 +36,57 @@ export default function PerformanceDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<PerformanceStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
       const fetchPerformanceData = async () => {
         setIsLoading(true);
-        const userListings = await getUserListings(user.uid);
-        
-        const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
-        const totalChats = userListings.reduce((sum, l) => sum + (l.contacts || 0), 0);
-        const totalCallbacks = userListings.reduce((sum, l) => sum + (l.favorites || 0), 0); // Using favorites as a stand-in for callbacks
-        
-        const ratedListings = userListings.filter(l => l.rating);
-        const averageRating = ratedListings.length > 0
-          ? ratedListings.reduce((sum, l) => sum + l.rating!, 0) / ratedListings.length
-          : 0;
+        try {
+            const userListings = await getUserListings(user.uid);
+            
+            const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
+            const totalChats = userListings.reduce((sum, l) => sum + (l.contacts || 0), 0);
+            const totalCallbacks = userListings.reduce((sum, l) => sum + (l.favorites || 0), 0); // Using favorites as a stand-in for callbacks
+            
+            const ratedListings = userListings.filter(l => l.rating);
+            const averageRating = ratedListings.length > 0
+              ? ratedListings.reduce((sum, l) => sum + l.rating!, 0) / ratedListings.length
+              : 0;
 
-        // Generate mock chart data for the last 7 days
-        const chartData = Array.from({ length: 7 }).map((_, i) => {
-          const date = subDays(new Date(), i);
-          // This is still mock data, a real implementation would use historical data from Firestore
-          const dailyViews = userListings.reduce((sum, l) => sum + Math.floor(Math.random() * ((l.views || 0) / 7)), 0);
-          return {
-            date: format(date, 'MMM d'),
-            views: dailyViews,
-          };
-        }).reverse();
+            // Generate mock chart data for the last 7 days
+            const chartData = Array.from({ length: 7 }).map((_, i) => {
+              const date = subDays(new Date(), i);
+              // This is still mock data, a real implementation would use historical data from Firestore
+              const dailyViews = userListings.reduce((sum, l) => sum + Math.floor(Math.random() * ((l.views || 0) / 7)), 0);
+              return {
+                date: format(date, 'MMM d'),
+                views: dailyViews,
+              };
+            }).reverse();
 
-        setStats({
-          totalViews,
-          totalChats,
-          totalCallbacks,
-          averageRating,
-          listings: userListings,
-          chartData
-        });
-        setIsLoading(false);
+            setStats({
+              totalViews,
+              totalChats,
+              totalCallbacks,
+              averageRating,
+              listings: userListings,
+              chartData
+            });
+        } catch (error) {
+            console.error("Failed to fetch performance data:", error);
+            toast({
+                variant: "destructive",
+                title: "Could not load performance data",
+                description: "Please check your internet connection and try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
       }
       fetchPerformanceData();
     }
-  }, [user]);
+  }, [user, toast]);
 
   if (isLoading) {
     return (

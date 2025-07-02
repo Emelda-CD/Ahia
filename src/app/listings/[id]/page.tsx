@@ -16,6 +16,7 @@ import AdCard from '@/components/AdCard';
 import { MapPin, Phone, MessageSquare, ShieldCheck, Star, Check, Loader2 } from 'lucide-react';
 import type { Listing } from '@/lib/listings-data';
 import { getListingById, trackListingView } from '@/lib/firebase/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const similarAds = [
     { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
@@ -34,21 +35,32 @@ export default function ProductDetailPage() {
   
   const params = useParams();
   const id = params.id as string;
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id) {
         const fetchListing = async () => {
             setIsLoading(true);
-            const ad = await getListingById(id);
-            setListing(ad);
-            if (ad) {
-              await trackListingView(id);
+            try {
+                const ad = await getListingById(id);
+                setListing(ad);
+                if (ad) {
+                  await trackListingView(id);
+                }
+            } catch (error) {
+                console.error("Failed to fetch listing:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Could not load listing",
+                    description: "Please check your internet connection and try again.",
+                });
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
         fetchListing();
     }
-  }, [id]);
+  }, [id, toast]);
 
   const handleCallbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();

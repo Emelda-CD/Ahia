@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getRecentListings } from '@/lib/firebase/actions';
+import { useToast } from '@/hooks/use-toast';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -39,6 +40,7 @@ export default function Home() {
     const [location, setLocation] = useState<string | null>(null);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const router = useRouter();
+    const { toast } = useToast();
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -48,12 +50,17 @@ export default function Home() {
                 setRecentListings(listings);
             } catch (error) {
                 console.error("Failed to fetch recent listings:", error);
+                 toast({
+                    variant: "destructive",
+                    title: "Could not load recent listings",
+                    description: "There was a problem fetching data. Please refresh the page.",
+                });
             } finally {
                 setIsLoading(false);
             }
         };
         fetchListings();
-    }, []);
+    }, [toast]);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
