@@ -21,7 +21,7 @@ import AdCard from "@/components/AdCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PerformanceDashboard from '@/components/account/PerformanceDashboard';
-import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, Facebook, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
+import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, Mail, KeyRound, Bell, LogOut, Trash, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
 import { Listing } from '@/lib/listings-data';
 import { getUserListings } from '@/lib/firebase/actions';
 import { uploadFile } from '@/lib/firebase/storage';
@@ -421,13 +421,10 @@ export default function AccountPage() {
                     <AccordionItem value="connected-accounts">
                         <AccordionTrigger className="text-lg font-semibold">Connected Accounts</AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-4">
-                            <Button variant="outline" className="w-full justify-start gap-4">
-                                <GoogleIcon className="h-5 w-5"/> Connect with Google
-                            </Button>
-                            <Button disabled variant="outline" className="w-full justify-between">
+                            <Button variant="outline" className="w-full justify-between">
                                 <div className="flex items-center gap-4">
-                                    <Facebook className="h-5 w-5 text-blue-600"/>
-                                    <span>Connected with Facebook</span>
+                                    <GoogleIcon className="h-5 w-5"/> 
+                                    <span>Connected with Google</span>
                                 </div>
                                 <CheckCircle className="h-5 w-5 text-green-600"/>
                             </Button>

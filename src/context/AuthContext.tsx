@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { onAuthStateChanged, User as FirebaseUser, signOut, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, FirebaseError } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, signOut, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, FirebaseError } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
@@ -21,7 +21,6 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
-  loginWithFacebook: () => Promise<void>;
   loginWithEmail: (email:string, password:string) => Promise<any>;
   registerWithEmail: (name: string, email:string, password:string) => Promise<any>;
   logout: () => Promise<void>;
@@ -71,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const socialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
+  const socialLogin = async (provider: GoogleAuthProvider) => {
     try {
       console.log(`[Auth] Attempting sign-in from domain: ${window.location.hostname}. If this domain is not authorized in your Firebase project, you will get an 'auth/unauthorized-domain' error.`);
       await signInWithPopup(auth, provider);
@@ -84,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const loginWithGoogle = async () => socialLogin(new GoogleAuthProvider());
-  const loginWithFacebook = async () => socialLogin(new FacebookAuthProvider());
 
   const registerWithEmail = async (name: string, email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -126,7 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoggedIn: !!user,
       loading,
       loginWithGoogle,
-      loginWithFacebook,
       loginWithEmail,
       registerWithEmail,
       logout,
