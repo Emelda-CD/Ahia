@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (docSnap.exists()) {
               setUser(docSnap.data() as UserProfile);
             } else {
-              // This case handles new users from social providers
+              // This case handles new users from social providers or email sign-up
               const newUserProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || 'New User',
@@ -51,15 +51,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 provider: firebaseUser.providerData[0]?.providerId || 'password',
                 createdAt: serverTimestamp()
               };
+              // Try to create the doc, but don't fail the whole login if offline
               await setDoc(userRef, newUserProfile);
               setUser(newUserProfile);
             }
         } catch (error) {
-            console.error("AuthContext: Error fetching user document:", error);
-            // If we can't get the user profile (e.g., offline), sign them out
-            // to prevent the app from being in a broken state.
-            await signOut(auth);
-            setUser(null);
+            console.error("AuthContext: Could not fetch user profile from Firestore, possibly offline. Using fallback data from Auth.", error);
+            // Don't log the user out. Create a fallback profile from the auth object.
+            // This keeps the user logged in with basic info.
+            const fallbackProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || 'User',
+              email: firebaseUser.email,
+              profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
+              provider: firebaseUser.providerData[0]?.providerId || 'password',
+            };
+            setUser(fallbackProfile);
         }
       } else {
         setUser(null);
