@@ -44,25 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (docSnap.exists()) {
               setUser(docSnap.data() as UserProfile);
             } else {
-              // This case handles new users from social providers or email sign-up
+              // This case handles new users from social providers
               const newUserProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || 'New User',
                 email: firebaseUser.email,
                 phone: firebaseUser.phoneNumber,
-                role: 'user',
+                role: 'user', // Default role for new users
                 profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
                 provider: firebaseUser.providerData[0]?.providerId || 'password',
                 createdAt: serverTimestamp()
               };
-              // Try to create the doc, but don't fail the whole login if offline
               await setDoc(userRef, newUserProfile);
               setUser(newUserProfile);
             }
         } catch (error) {
             console.error("AuthContext: Could not fetch user profile from Firestore, possibly offline. Using fallback data from Auth.", error);
-            // Don't log the user out. Create a fallback profile from the auth object.
-            // This keeps the user logged in with basic info.
             const fallbackProfile: UserProfile = {
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || 'User',
@@ -90,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // onAuthStateChanged will handle setting the user profile
     } catch (error) {
       console.error("Social login error:", error);
-      // Re-throw the error so the UI layer can handle it and show a toast
       throw error;
     }
   }
@@ -105,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         name: name,
         email: firebaseUser.email,
-        phone: firebaseUser.phoneNumber,
-        role: 'user',
+        phone: firebaseUser.phoneNumber, // Will be null for email/password
+        role: 'user', // Default role
         profileImage: 'https://placehold.co/100x100.png', // Default image
         provider: 'password',
         createdAt: serverTimestamp()
@@ -128,7 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = (updatedData: Partial<UserProfile>) => {
     if (user) {
       setUser({ ...user, ...updatedData });
-      // Here you would also update the document in Firestore
       const userRef = doc(db, 'users', user.uid);
       updateDoc(userRef, updatedData);
     }
