@@ -1,3 +1,4 @@
+
 import AdminStats from '@/components/admin/AdminStats';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import UsersTable from '@/components/admin/UsersTable';
@@ -26,8 +27,8 @@ export default function AdminDashboardPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>Pending Listings</CardTitle>
-                <CardDescription>Listings waiting for your approval.</CardDescription>
+                <CardTitle>Pending Ads</CardTitle>
+                <CardDescription>Ads waiting for your approval.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ListingsTable limit={5} filter="Pending" />

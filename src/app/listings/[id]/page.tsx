@@ -8,30 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import AdCard from '@/components/AdCard';
-import { MapPin, Phone, MessageSquare, ShieldCheck, Star, Check, Loader2 } from 'lucide-react';
-import type { Listing } from '@/lib/listings-data';
-import { getListingById, trackListingView } from '@/lib/firebase/actions';
+import { MapPin, Phone, MessageSquare, ShieldCheck, Check, Loader2 } from 'lucide-react';
+import type { Ad } from '@/lib/listings-data';
+import { getAdById, trackAdView } from '@/lib/firebase/actions';
 import { useToast } from '@/hooks/use-toast';
 
 const similarAds = [
-    { id: '5', title: 'HP Spectre x360 Laptop', price: '750,000', location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer' },
-    { id: '6', title: 'Office Space for Lease', price: '800,000', location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building' },
-    { id: '7', title: 'Honda CR-V 2018', price: '15,000,000', location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv' },
-    { id: '8', title: 'Cute Puppy for a new home', price: '150,000', location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+    { id: '5', title: 'HP Spectre x360 Laptop', price: 750000, location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer', verified: true, userID: '1', timestamp: '', images: [] },
+    { id: '6', title: 'Office Space for Lease', price: 800000, location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building', verified: false, userID: '1', timestamp: '', images: [] },
+    { id: '7', title: 'Honda CR-V 2018', price: 15000000, location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv', verified: true, userID: '1', timestamp: '', images: [] },
+    { id: '8', title: 'Cute Puppy for a new home', price: 150000, location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute', verified: false, userID: '1', timestamp: '', images: [] },
 ]
 
 export default function ProductDetailPage() {
-  const [listing, setListing] = useState<Listing | null>(null);
+  const [ad, setAd] = useState<Ad | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showContact, setShowContact] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
-  const [callbackSubmitted, setCallbackSubmitted] = useState(false);
-  const [callbackPopoverOpen, setCallbackPopoverOpen] = useState(false);
   
   const params = useParams();
   const id = params.id as string;
@@ -39,40 +32,29 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (id) {
-        const fetchListing = async () => {
+        const fetchAd = async () => {
             setIsLoading(true);
             try {
-                const ad = await getListingById(id);
-                setListing(ad);
-                if (ad) {
-                  await trackListingView(id);
+                const fetchedAd = await getAdById(id);
+                setAd(fetchedAd);
+                if (fetchedAd) {
+                  await trackAdView(id);
                 }
             } catch (error) {
-                console.error("Failed to fetch listing:", error);
+                console.error("Failed to fetch ad:", error);
                 toast({
                     variant: "destructive",
-                    title: "Could not load listing",
+                    title: "Could not load ad",
                     description: "Please check your internet connection and try again.",
                 });
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchListing();
+        fetchAd();
     }
   }, [id, toast]);
 
-  const handleCallbackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCallbackSubmitted(true);
-    // In a real app, you'd trigger a backend action here
-    setTimeout(() => {
-        setCallbackPopoverOpen(false);
-        setTimeout(() => setCallbackSubmitted(false), 500); 
-    }, 2000);
-  };
-  
-  const quickMessages = ['Is this still available?', 'What’s your last price?', 'Can I come inspect it today?'];
 
   if (isLoading) {
     return (
@@ -82,15 +64,14 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!listing) {
+  if (!ad) {
       return (
           <div className="container mx-auto px-4 py-12 text-center">
-              <h1 className="text-2xl font-bold">Listing not found</h1>
-              <p className="text-muted-foreground">This listing may have been removed or the link is incorrect.</p>
+              <h1 className="text-2xl font-bold">Ad not found</h1>
+              <p className="text-muted-foreground">This ad may have been removed or the link is incorrect.</p>
           </div>
       );
   }
-
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -100,10 +81,10 @@ export default function ProductDetailPage() {
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4">
-                <Image src={listing.image} alt="Product Image" fill className="object-cover" data-ai-hint={listing.data_ai_hint} />
+                <Image src={ad.image} alt="Product Image" fill className="object-cover" data-ai-hint={ad.data_ai_hint} />
               </div>
               <div className="flex gap-2">
-                {listing.images?.map((thumb, index) => (
+                {ad.images?.map((thumb, index) => (
                   <div key={index} className={`relative w-1/4 aspect-[4/3] rounded-md overflow-hidden cursor-pointer border-2 ${index === 0 ? 'border-primary' : 'border-transparent'}`}>
                     <Image src={thumb} alt={`Thumbnail ${index + 1}`} fill className="object-cover" data-ai-hint="car interior" />
                   </div>
@@ -117,22 +98,22 @@ export default function ProductDetailPage() {
             <CardHeader>
               <div className="flex justify-between items-start">
                   <div>
-                    {listing.specifics?.condition && <Badge>{listing.specifics.condition}</Badge>}
-                    <h1 className="text-3xl font-bold mt-2">{listing.title}</h1>
+                    {ad.verified && <Badge variant="secondary" className="bg-green-100 text-green-800">Verified</Badge>}
+                    <h1 className="text-3xl font-bold mt-2">{ad.title}</h1>
                     <div className="flex items-center text-muted-foreground mt-2">
                         <MapPin className="w-5 h-5 mr-2" />
-                        <span>Posted in {listing.location.town}, {listing.location.lga}</span>
+                        <span>Posted in {ad.location}</span>
                     </div>
                   </div>
                   <p className="text-3xl font-bold text-primary">
-                    {typeof listing.price === 'number' ? `₦${listing.price.toLocaleString()}` : listing.price}
+                    {`₦${ad.price.toLocaleString()}`}
                   </p>
               </div>
             </CardHeader>
             <CardContent>
               <h3 className="text-xl font-semibold mb-2">Description</h3>
               <p className="text-muted-foreground">
-                {listing.description}
+                {ad.description}
               </p>
             </CardContent>
           </Card>
@@ -149,9 +130,9 @@ export default function ProductDetailPage() {
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-bold">John Motors</h3>
-                  <div className="flex items-center text-sm text-green-600 font-semibold">
+                   {ad.verified && <div className="flex items-center text-sm text-green-600 font-semibold">
                     <ShieldCheck className="w-4 h-4 mr-1" /> Verified Seller
-                  </div>
+                  </div>}
                 </div>
               </div>
             </CardHeader>
@@ -165,71 +146,9 @@ export default function ProductDetailPage() {
                   <Phone className="w-5 h-5 mr-2" /> Show Contact
                 </Button>
               )}
-              
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="lg" className="w-full">
-                    <MessageSquare className="w-5 h-5 mr-2" /> Chat with Seller
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium leading-none">Chat with Seller</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Use a quick message or type your own.
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                        {quickMessages.map(msg => (
-                            <Button key={msg} variant="outline" size="sm" className="text-xs p-1 h-auto" onClick={() => setChatMessage(msg)}>
-                                {msg}
-                            </Button>
-                        ))}
-                    </div>
-                    <Textarea 
-                      placeholder="Type your message..." 
-                      value={chatMessage} 
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      rows={3}
-                    />
-                    <Button>Send Message</Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-               <Popover open={callbackPopoverOpen} onOpenChange={setCallbackPopoverOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="secondary" size="lg" className="w-full">Request a Callback</Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                    {callbackSubmitted ? (
-                        <div className="text-center py-4 flex flex-col items-center gap-2">
-                            <div className="bg-green-100 p-2 rounded-full">
-                                <Check className="h-6 w-6 text-green-600" />
-                            </div>
-                            <p className="font-semibold text-foreground">Request Submitted!</p>
-                            <p className="text-muted-foreground text-sm text-center">The seller will call you back shortly.</p>
-                        </div>
-                    ) : (
-                        <form className="space-y-4" onSubmit={handleCallbackSubmit}>
-                            <div className="space-y-2">
-                                <h4 className="font-medium leading-none">Request a Callback</h4>
-                                <p className="text-sm text-muted-foreground">Enter your details and the seller will call you back.</p>
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="name">Your Name</Label>
-                                <Input id="name" placeholder="John Doe" required />
-                            </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" type="tel" placeholder="+234..." required />
-                            </div>
-                            <Button type="submit" className="w-full">Submit Request</Button>
-                        </form>
-                    )}
-                </PopoverContent>
-               </Popover>
+              <Button variant="outline" size="lg" className="w-full">
+                <MessageSquare className="w-5 h-5 mr-2" /> Chat with Seller
+              </Button>
             </CardContent>
           </Card>
 

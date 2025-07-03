@@ -1,54 +1,61 @@
 
-export type Listing = {
+export type Ad = {
   id: string;
   title: string;
   description: string;
-  price: number | 'Negotiable';
+  price: number;
   category: string;
-  subcategory: string;
-  image: string; // This will be the main image URL
-  images: string[]; // All image URLs
+  location: string;
+  userID: string;
+  timestamp: any;
+  verified: boolean;
+  images: string[];
+  image: string; // main image
   data_ai_hint: string;
-  location: {
-    lga: string;
-    town: string;
-  };
-  sellerId: string;
-  verifiedSeller?: boolean;
-  propertyVerified?: boolean;
-  verifiedID?: boolean;
-  rating?: number;
-  views?: number;
-  contacts?: number;
-  favorites?: number;
-  promoted?: boolean;
-  createdAt?: any;
-  specifics?: {
-    // Vehicles
-    brand?: string;
-    model?: string;
-    year?: number;
-    transmission?: 'automatic' | 'manual';
-    fuelType?: string;
-    // Electronics
-    storage?: string;
-    condition?: 'new' | 'used';
-    // Property
-    propertyType?: 'land' | 'shop' | 'apartment';
-    listingType?: 'sale' | 'rent'; // For property and maybe vehicles
-    landUse?: 'residential' | 'commercial' | 'agricultural'; // for land
-    size?: string;
-    propertyTitle?: 'cofo' | 'deed' | 'allocation';
-    // Animals
-    breed?: string;
-    gender?: 'male' | 'female';
-    age?: string;
-    // Jobs
-    jobType?: 'full-time' | 'part-time' | 'remote';
-    salaryRange?: string;
-    experienceLevel?: string;
-  };
 };
 
-// Mock data is no longer the primary source, but can be kept for reference or testing.
-export const allListings: Listing[] = [];
+// Mock data for admin panel, conforming to the new 'Ad' schema
+export const allAds: Ad[] = [
+  {
+    id: 'ad_1',
+    title: 'Clean Toyota Camry 2019',
+    description: 'Foreign used, accident-free with original duty. Features include a powerful V6 engine, leather seats, panoramic sunroof, and advanced safety features.',
+    price: 12500000,
+    category: 'Vehicles',
+    location: 'GRA, Enugu North',
+    userID: 'user_123',
+    timestamp: new Date(),
+    verified: true,
+    images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png'],
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'toyota camry'
+  },
+  {
+    id: 'ad_2',
+    title: 'iPhone 14 Pro Max',
+    description: 'Slightly used iPhone 14 Pro Max, 256GB, in perfect condition. Comes with the original box and accessories.',
+    price: 950000,
+    category: 'Phones',
+    location: 'Uwani, Enugu South',
+    userID: 'user_456',
+    timestamp: new Date(),
+    verified: false,
+    images: ['https://placehold.co/600x400.png'],
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'iphone pro'
+  },
+   {
+    id: 'ad_3',
+    title: '3 Bedroom Flat for Rent',
+    description: 'A spacious 3 bedroom flat with modern facilities in a serene environment. Constant water and power supply.',
+    price: 1200000,
+    category: 'Property',
+    location: 'Independence Layout, Enugu North',
+    userID: 'user_789',
+    timestamp: new Date(),
+    verified: true,
+    images: ['https://placehold.co/600x400.png'],
+    image: 'https://placehold.co/600x400.png',
+    data_ai_hint: 'modern apartment'
+  }
+];

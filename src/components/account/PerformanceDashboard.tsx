@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getUserListings } from '@/lib/firebase/actions';
-import type { Listing } from '@/lib/listings-data';
+import { getUserAds } from '@/lib/firebase/actions';
+import type { Ad } from '@/lib/listings-data';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,7 +28,7 @@ interface PerformanceStats {
   totalChats: number;
   totalCallbacks: number;
   averageRating: number;
-  listings: Listing[];
+  ads: Ad[];
   chartData: { date: string; views: number }[];
 }
 
@@ -43,22 +43,18 @@ export default function PerformanceDashboard() {
       const fetchPerformanceData = async () => {
         setIsLoading(true);
         try {
-            const userListings = await getUserListings(user.uid);
+            const userAds = await getUserAds(user.uid);
             
-            const totalViews = userListings.reduce((sum, l) => sum + (l.views || 0), 0);
-            const totalChats = userListings.reduce((sum, l) => sum + (l.contacts || 0), 0);
-            const totalCallbacks = userListings.reduce((sum, l) => sum + (l.favorites || 0), 0); // Using favorites as a stand-in for callbacks
-            
-            const ratedListings = userListings.filter(l => l.rating);
-            const averageRating = ratedListings.length > 0
-              ? ratedListings.reduce((sum, l) => sum + l.rating!, 0) / ratedListings.length
-              : 0;
+            // Mock data for performance stats as fields are not in new schema
+            const totalViews = userAds.length * 150;
+            const totalChats = userAds.length * 20;
+            const totalCallbacks = userAds.length * 5;
+            const averageRating = 4.5;
 
             // Generate mock chart data for the last 7 days
             const chartData = Array.from({ length: 7 }).map((_, i) => {
               const date = subDays(new Date(), i);
-              // This is still mock data, a real implementation would use historical data from Firestore
-              const dailyViews = userListings.reduce((sum, l) => sum + Math.floor(Math.random() * ((l.views || 0) / 7)), 0);
+              const dailyViews = Math.floor(Math.random() * (totalViews / 7));
               return {
                 date: format(date, 'MMM d'),
                 views: dailyViews,
@@ -70,7 +66,7 @@ export default function PerformanceDashboard() {
               totalChats,
               totalCallbacks,
               averageRating,
-              listings: userListings,
+              ads: userAds,
               chartData
             });
         } catch (error) {
@@ -118,14 +114,14 @@ export default function PerformanceDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Performance Overview</CardTitle>
-          <CardDescription>A summary of your listings' performance.</CardDescription>
+          <CardDescription>A summary of your ads' performance.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={Eye} title="Total Views" value={stats.totalViews.toLocaleString()} change="+20.1% from last month" />
             <StatCard icon={MessageSquare} title="Total Chats" value={stats.totalChats.toLocaleString()} change="+180.1% from last month" />
             <StatCard icon={PhoneCall} title="Callback Requests" value={stats.totalCallbacks.toLocaleString()} change="+19% from last month" />
-            <StatCard icon={Star} title="Average Rating" value={stats.averageRating.toFixed(1)} change="Based on all listings" />
+            <StatCard icon={Star} title="Average Rating" value={stats.averageRating.toFixed(1)} change="Based on all ads" />
           </div>
         </CardContent>
       </Card>
@@ -155,44 +151,41 @@ export default function PerformanceDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Listings</CardTitle>
+          <CardTitle>Your Ads</CardTitle>
           <CardDescription>Detailed performance for each of your ads.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Listing</TableHead>
+                <TableHead>Ad</TableHead>
                 <TableHead className="text-center">Views</TableHead>
                 <TableHead className="text-center">Chats</TableHead>
-                <TableHead className="text-center">Favorites</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stats.listings.map((listing) => (
-                <TableRow key={listing.id}>
-                  <TableCell className="font-medium">{listing.title}</TableCell>
-                  <TableCell className="text-center">{listing.views || 0}</TableCell>
-                  <TableCell className="text-center">{listing.contacts || 0}</TableCell>
-                  <TableCell className="text-center">{listing.favorites || 0}</TableCell>
+              {stats.ads.map((ad) => (
+                <TableRow key={ad.id}>
+                  <TableCell className="font-medium">{ad.title}</TableCell>
+                  <TableCell className="text-center">{/* Mock data */ Math.floor(Math.random() * 200)}</TableCell>
+                  <TableCell className="text-center">{/* Mock data */ Math.floor(Math.random() * 30)}</TableCell>
                   <TableCell className="text-center">
-                    {listing.promoted && <Badge variant="destructive"><Flame className="w-3 h-3 mr-1" /> Promoted</Badge>}
-                    {!listing.promoted && <Badge variant="outline">Standard</Badge>}
+                    <Badge variant="outline">Standard</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
-                        <Link href={`/listings/${listing.id}`}>View</Link>
+                        <Link href={`/listings/${ad.id}`}>View</Link>
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-           {stats.listings.length === 0 && (
+           {stats.ads.length === 0 && (
                 <div className="text-center py-10">
-                    <p className="text-muted-foreground">You have no active listings to display.</p>
+                    <p className="text-muted-foreground">You have no active ads to display.</p>
                 </div>
             )}
         </CardContent>

@@ -22,8 +22,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PerformanceDashboard from '@/components/account/PerformanceDashboard';
 import { User, Shield, Package, Heart, Edit, Trash2, Eye, Camera, KeyRound, Bell, LogOut, Trash, CheckCircle, CircleHelp, ExternalLink, Phone, UserCheck, Building, AlertCircle, PhoneCall, Upload, Loader2, BadgeCheck, BarChart2 } from 'lucide-react';
-import { Listing } from '@/lib/listings-data';
-import { getUserListings } from '@/lib/firebase/actions';
+import { Ad } from '@/lib/listings-data';
+import { getUserAds } from '@/lib/firebase/actions';
 import { uploadFile } from '@/lib/firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -43,7 +43,7 @@ export default function AccountPage() {
     const tab = searchParams.get('tab') || 'account-settings';
     const { toast } = useToast();
     
-    const [myAds, setMyAds] = useState<Listing[]>([]);
+    const [myAds, setMyAds] = useState<Ad[]>([]);
     const [isLoadingAds, setIsLoadingAds] = useState(true);
 
     const [birthYear, setBirthYear] = useState<string>();
@@ -67,7 +67,7 @@ export default function AccountPage() {
             const fetchUserAds = async () => {
                 setIsLoadingAds(true);
                 try {
-                    const ads = await getUserListings(user.uid);
+                    const ads = await getUserAds(user.uid);
                     setMyAds(ads);
                 } catch (error) {
                     console.error("Failed to fetch user ads:", error);
@@ -209,7 +209,7 @@ export default function AccountPage() {
             <BarChart2 className="h-5 w-5"/> Performance
           </TabsTrigger>
           <TabsTrigger value="saved-listings" className="w-full justify-start gap-3 p-3 text-md">
-            <Heart className="h-5 w-5"/> Saved Listings
+            <Heart className="h-5 w-5"/> Saved Ads
           </TabsTrigger>
         </TabsList>
 
@@ -345,7 +345,7 @@ export default function AccountPage() {
                                         <Phone className="h-6 w-6 text-muted-foreground"/>
                                         <div>
                                             <h4 className="font-semibold">Phone Number</h4>
-                                            <p className="text-sm font-mono">+234 801 234 5678</p>
+                                            <p className="text-sm font-mono">{user.phone || 'Not provided'}</p>
                                         </div>
                                     </div>
                                     <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="h-4 w-4 mr-1"/> Verified</Badge>
@@ -475,7 +475,7 @@ export default function AccountPage() {
              <Card>
               <CardHeader>
                 <CardTitle>My Ads</CardTitle>
-                <CardDescription>Manage your active and inactive listings.</CardDescription>
+                <CardDescription>Manage your active and inactive ads.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {isLoadingAds ? (
@@ -491,9 +491,9 @@ export default function AccountPage() {
                         <div className="flex-1">
                             <h3 className="font-bold text-lg">{ad.title}</h3>
                             <p className="text-primary font-semibold">
-                                {typeof ad.price === 'number' ? `₦${ad.price.toLocaleString()}` : ad.price}
+                                {`₦${ad.price.toLocaleString()}`}
                             </p>
-                            <p className="text-muted-foreground text-sm">{ad.location.town}, {ad.location.lga}</p>
+                            <p className="text-muted-foreground text-sm">{ad.location}</p>
                         </div>
                         <div className="flex gap-2 self-start md:self-center">
                             <Button variant="outline" size="icon" aria-label="View Ad"><Eye className="h-4 w-4"/></Button>
@@ -514,11 +514,11 @@ export default function AccountPage() {
           <TabsContent value="saved-listings">
              <Card>
               <CardHeader>
-                <CardTitle>Saved Listings</CardTitle>
+                <CardTitle>Saved Ads</CardTitle>
                 <CardDescription>Ads you have saved for later.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-center text-muted-foreground py-8">You have no saved listings.</p>
+                <p className="text-center text-muted-foreground py-8">You have no saved ads.</p>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -14,35 +14,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { handleSuggestTags } from '@/app/post-ad/actions';
-import { Sparkles, FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
+import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { uploadFile } from '@/lib/firebase/storage';
-import { createListing } from '@/lib/firebase/actions';
+import { createAd } from '@/lib/firebase/actions';
+import { Badge } from '../ui/badge';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().min(1, 'Subcategory is required'),
   location: z.string().min(1, 'Location is required'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   price: z.preprocess((a) => parseInt(z.string().parse(a), 10), z.number().positive('Price must be a positive number')),
-  negotiable: z.boolean().default(false),
-  condition: z.enum(['new', 'used']),
-  phone: z.string().min(10, 'A valid phone number is required'),
-  tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
-    .min(1, 'Please upload between 1 and 20 photos.')
-    .max(20, 'You can upload a maximum of 20 photos.'),
-  socialLink: z.string().url().optional().or(z.literal('')),
+    .min(1, 'Please upload at least 1 photo.')
+    .max(10, 'You can upload a maximum of 10 photos.'),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
 });
 
@@ -50,12 +42,6 @@ type AdFormValues = z.infer<typeof adSchema>;
 
 export default function PostAdForm() {
   const [step, setStep] = useState(1);
-  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
-  const [subcategories, setSubcategories] = useState<string[]>([]);
-
-  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -66,43 +52,24 @@ export default function PostAdForm() {
   const form = useForm<AdFormValues>({
     resolver: zodResolver(adSchema),
     defaultValues: {
-        negotiable: false,
-        condition: 'used',
-        terms: false,
-        category: '',
-        subcategory: '',
-        location: '',
-        images: []
+      terms: false,
+      category: '',
+      location: '',
+      images: []
     }
   });
 
-  const { register, handleSubmit, control, trigger, getValues, setValue, watch, formState: { errors } } = form;
+  const { register, handleSubmit, control, trigger, setValue, watch, formState: { errors } } = form;
 
-  const selectedCategory = watch('category');
   const images = watch('images') || [];
-  
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
-  
-  useEffect(() => {
-    if (selectedCategory) {
-      const category = categoriesData.find(c => c.name === selectedCategory);
-      setSubcategories(category ? category.subcategories : []);
-      setValue('subcategory', '');
-    } else {
-      setSubcategories([]);
-    }
-  }, [selectedCategory, setValue]);
-  
-  useEffect(() => {
-    return () => {
-      imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [imagePreviews]);
 
   const nextStep = async () => {
-    const fieldsToValidate: (keyof AdFormValues)[] = ['category', 'subcategory', 'location', 'socialLink'];
-    if (step === 2) {
-       fieldsToValidate.push('title', 'description', 'price', 'phone', 'condition', 'images', 'terms');
+    let fieldsToValidate: (keyof AdFormValues)[];
+    if (step === 1) {
+      fieldsToValidate = ['category', 'location'];
+    } else {
+      fieldsToValidate = ['title', 'description', 'price', 'images', 'terms'];
     }
     const isValid = await trigger(fieldsToValidate);
     if (isValid) setStep((s) => s + 1);
@@ -120,7 +87,7 @@ export default function PostAdForm() {
 
     try {
         const imageUrls = await Promise.all(
-            data.images.map(imageFile => uploadFile(imageFile, `listings/${user.uid}`))
+            data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
         );
 
         if (imageUrls.length === 0) {
@@ -129,26 +96,19 @@ export default function PostAdForm() {
             return;
         }
         
-        const locationParts = data.location.split(', ');
-
-        const listingData = {
+        const adData = {
             title: data.title,
             description: data.description,
             category: data.category,
-            subcategory: data.subcategory,
             price: data.price,
-            negotiable: data.negotiable,
-            condition: data.condition,
-            phone: data.phone,
-            tags: tags,
-            image: imageUrls[0],
+            location: data.location,
+            userID: user.uid,
             images: imageUrls,
-            location: { town: locationParts[0] || '', lga: locationParts[1] || '' },
-            sellerId: user.uid,
+            image: imageUrls[0], // Use first image as main
             data_ai_hint: '', // Can be generated or left empty
         };
 
-        await createListing(listingData);
+        await createAd(adData);
 
         toast({
           title: 'Ad Submitted!',
@@ -165,42 +125,6 @@ export default function PostAdForm() {
         setIsSubmitting(false);
     }
   };
-
-  const onSuggest = async () => {
-    const title = getValues('title');
-    const description = getValues('description');
-    if (!title || !description) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Please enter a title and description first.',
-      });
-      return;
-    }
-    setIsSuggesting(true);
-    try {
-      const result = await handleSuggestTags({ title, description });
-      setSuggestedTags(result.tags);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'AI Suggestion Failed',
-        description: 'Could not generate suggestions. Please try again.',
-      });
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-  
-  const addTag = (tag: string) => {
-    if (!tags.includes(tag)) {
-        setTags([...tags, tag]);
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  }
   
   const handleFiles = (files: FileList | null) => {
     if (files) {
@@ -216,38 +140,19 @@ export default function PostAdForm() {
           })
       }
         
-      const currentImages = getValues('images') || [];
-      const updatedImages = [...currentImages, ...newFiles].slice(0, 20);
+      const currentImages = watch('images') || [];
+      const updatedImages = [...currentImages, ...newFiles].slice(0, 10);
       setValue('images', updatedImages, { shouldValidate: true });
     }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(event.target.files);
-    if (event.target) {
-      event.target.value = '';
-    }
-  };
-
-  const handleDragOverUpload = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsUploading(true);
-  };
-
-  const handleDragLeaveUpload = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsUploading(false);
-  };
-
-  const handleDropUpload = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsUploading(false);
-    handleFiles(event.dataTransfer.files);
+    if (event.target) event.target.value = '';
   };
   
   const handleRemoveImage = (indexToRemove: number) => {
-    const currentImages = getValues('images') || [];
-    const updatedImages = currentImages.filter((_, index) => index !== indexToRemove);
+    const updatedImages = (watch('images') || []).filter((_, index) => index !== indexToRemove);
     setValue('images', updatedImages, { shouldValidate: true });
   };
   
@@ -256,9 +161,7 @@ export default function PostAdForm() {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
     e.preventDefault();
@@ -268,8 +171,7 @@ export default function PostAdForm() {
       return;
     }
 
-    const currentImages = getValues('images');
-    const newImages = [...currentImages];
+    const newImages = [...watch('images')];
     const [draggedItem] = newImages.splice(draggedIdx, 1);
     newImages.splice(targetIndex, 0, draggedItem);
     
@@ -277,10 +179,7 @@ export default function PostAdForm() {
     setDraggedIndex(null);
   };
   
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
+  const handleDragEnd = () => setDraggedIndex(null);
 
   const Step1 = (
     <div className="space-y-4">
@@ -299,22 +198,6 @@ export default function PostAdForm() {
             )}
         />
         {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
-        </div>
-        <div>
-        <Label htmlFor="subcategory">Subcategory</Label>
-        <Controller
-            name="subcategory"
-            control={control}
-            render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
-                <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
-                <SelectContent>
-                {subcategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            )}
-        />
-        {errors.subcategory && <p className="text-red-500 text-sm">{errors.subcategory.message}</p>}
         </div>
         <div>
         <Label>Location</Label>
@@ -336,11 +219,6 @@ export default function PostAdForm() {
             />
         {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
         </div>
-        <div>
-        <Label htmlFor="socialLink">Social Link (Optional)</Label>
-        <Input id="socialLink" placeholder="https://instagram.com/your-brand" {...register('socialLink')} />
-            {errors.socialLink && <p className="text-red-500 text-sm">{errors.socialLink.message}</p>}
-        </div>
     </div>
   );
   
@@ -357,67 +235,12 @@ export default function PostAdForm() {
             {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
         </div>
         <div>
-        <Label>Tags</Label>
-        <div className="flex flex-wrap gap-2 mb-2">
-            {tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="text-sm py-1 pl-3 pr-2">
-                    {tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
-                        <X className="h-3 w-3"/>
-                    </button>
-                </Badge>
-            ))}
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={onSuggest} disabled={isSuggesting}>
-            {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-            Suggest with AI
-        </Button>
-        {suggestedTags.length > 0 && 
-            <div className="mt-2 p-2 bg-secondary/50 rounded-md">
-                <p className="text-sm font-medium mb-2">Suggestions:</p>
-                <div className="flex flex-wrap gap-2">
-                    {suggestedTags.map(tag => <Button type="button" size="sm" variant="outline" key={tag} onClick={() => addTag(tag)}>{tag}</Button>)}
-                </div>
-            </div>
-        }
-        </div>
-        <div className="grid md:grid-cols-2 gap-4">
-        <div>
             <Label htmlFor="price">Price (&#8358;)</Label>
             <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
             {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
         </div>
         <div>
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" placeholder="e.g., 08012345678" {...register('phone')} />
-            {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
-        </div>
-        </div>
-        <div className="flex items-center gap-8">
-            <Controller
-            name="condition"
-            control={control}
-            render={({ field }) => (
-                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                    <Label>Condition</Label>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="new" id="new" /><Label htmlFor="new">New</Label></div>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="used" id="used" /><Label htmlFor="used">Used</Label></div>
-                </RadioGroup>
-            )}
-            />
-        <Controller
-            name="negotiable"
-            control={control}
-            render={({ field }) => (
-            <div className="flex items-center space-x-2">
-                <Checkbox id="negotiable" checked={field.value} onCheckedChange={field.onChange} />
-                <Label htmlFor="negotiable">Price is negotiable</Label>
-            </div>
-            )}
-        />
-        </div>
-        <div>
-        <Label htmlFor="file-upload">📸 Add 1 to 20 photos. Drag to reorder. The first photo is your main image.</Label>
+        <Label htmlFor="file-upload">Add photos (1-10). Drag to reorder. First is main.</Label>
         <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
             {imagePreviews.map((src, index) => (
                 <div 
@@ -432,47 +255,23 @@ export default function PostAdForm() {
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
                 >
-                    <Image
-                        src={src}
-                        alt={`preview ${index}`}
-                        fill
-                        className="rounded-md object-cover"
-                        style={{ pointerEvents: 'none' }}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Remove image"
-                    >
+                    <Image src={src} alt={`preview ${index}`} fill className="rounded-md object-cover" />
+                    <button type="button" onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove image">
                         <X className="h-3 w-3" />
                     </button>
-                    {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Title Photo</Badge>}
+                    {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Main</Badge>}
                 </div>
             ))}
-            
-            {images.length < 20 && (
-                <div
-                    onDragOver={handleDragOverUpload}
-                    onDragLeave={handleDragLeaveUpload}
-                    onDrop={handleDropUpload}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                        "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors",
-                        isUploading ? "border-primary bg-primary/10" : "hover:border-primary/70"
-                    )}
-                >
+            {images.length < 10 && (
+                <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors hover:border-primary/70">
                     <FileImage className="h-8 w-8 text-gray-400" />
-                    <span className="mt-2 text-sm text-muted-foreground">Add photo</span>
+                    <span className="mt-2 text-sm text-muted-foreground">Add</span>
                 </div>
             )}
         </div>
-
+        <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
         {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
-
-        <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
         </div>
-
         <div>
         <Controller
             name="terms"
@@ -497,7 +296,7 @@ export default function PostAdForm() {
         <Progress value={(step / 2) * 100} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Submission'}</CardTitle>
         <CardDescription>
-          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details about your item and post your ad for free.'}
+          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details about your item and post your ad.'}
         </CardDescription>
       </CardHeader>
       <CardContent>

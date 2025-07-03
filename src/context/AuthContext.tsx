@@ -11,6 +11,8 @@ export interface UserProfile {
   uid: string;
   name: string;
   email: string | null;
+  phone: string | null;
+  role: 'user' | 'admin';
   profileImage: string;
   provider: string;
   createdAt?: any;
@@ -47,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || 'New User',
                 email: firebaseUser.email,
+                phone: firebaseUser.phoneNumber,
+                role: 'user',
                 profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
                 provider: firebaseUser.providerData[0]?.providerId || 'password',
                 createdAt: serverTimestamp()
@@ -63,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || 'User',
               email: firebaseUser.email,
+              phone: firebaseUser.phoneNumber,
+              role: 'user',
               profileImage: firebaseUser.photoURL || 'https://placehold.co/100x100.png',
               provider: firebaseUser.providerData[0]?.providerId || 'password',
             };
@@ -99,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         name: name,
         email: firebaseUser.email,
+        phone: firebaseUser.phoneNumber,
+        role: 'user',
         profileImage: 'https://placehold.co/100x100.png', // Default image
         provider: 'password',
         createdAt: serverTimestamp()

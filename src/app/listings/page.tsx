@@ -3,8 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Listing } from '@/lib/listings-data';
-import { locations } from '@/lib/locations';
+import { Ad } from '@/lib/listings-data';
 import { cn } from '@/lib/utils';
 import { categoriesData } from '@/lib/categories-data';
 
@@ -13,13 +12,12 @@ import AdCardListItem from '@/components/AdCardListItem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, ArrowLeft, X, Shirt, Home, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
+import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, X, Shirt, Home, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LocationModal } from '@/components/common/LocationModal';
-import { getListings } from '@/lib/firebase/actions';
+import { getAds } from '@/lib/firebase/actions';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,197 +35,15 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   'Food, Agriculture & Farming': Leaf,
 };
 
-
-const DynamicFilters = ({ category, filters, setFilters }: { category: string | null, filters: any, setFilters: any }) => {
-    const handleFilterChange = (key: string, value: any) => {
-        setFilters((prev: any) => ({ ...prev, [key]: value }));
-    };
-
-    if (!category) return null;
-
-    if (category === 'Land') {
-        return (
-            <div className="space-y-4">
-                <Label>Purpose</Label>
-                <Select value={filters.listingType || ''} onValueChange={(val) => handleFilterChange('listingType', val)}>
-                    <SelectTrigger><SelectValue placeholder="For Sale or Rent" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="sale">For Sale</SelectItem>
-                        <SelectItem value="rent">For Rent</SelectItem>
-                    </SelectContent>
-                </Select>
-                
-                <Label>Land Use</Label>
-                <Select value={filters.landUse || ''} onValueChange={(val) => handleFilterChange('landUse', val)}>
-                    <SelectTrigger><SelectValue placeholder="Any Use" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="residential">Residential</SelectItem>
-                        <SelectItem value="commercial">Commercial</SelectItem>
-                        <SelectItem value="agricultural">Agricultural / Farming</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Label>Title</Label>
-                <Select value={filters.propertyTitle || ''} onValueChange={(val) => handleFilterChange('propertyTitle', val)}>
-                    <SelectTrigger><SelectValue placeholder="Any Title" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="cofo">C of O</SelectItem>
-                        <SelectItem value="deed">Deed of Assignment</SelectItem>
-                        <SelectItem value="allocation">Allocation</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        )
-    }
-
-    return (
-        <>
-            {category === 'Animals & Pets' && (
-                <div className="space-y-4">
-                    <Label>Breed</Label>
-                    <Input placeholder="e.g., German Shepherd" value={filters.breed || ''} onChange={(e) => handleFilterChange('breed', e.target.value)} />
-                    <Label>Gender</Label>
-                    <Select value={filters.gender || ''} onValueChange={(val) => handleFilterChange('gender', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Gender" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-            {(category === 'Electronics' || category === 'Phones') && (
-                 <div className="space-y-4">
-                    <Label>Brand</Label>
-                    <Input placeholder="e.g., Apple" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
-                    <Label>Storage</Label>
-                     <Select value={filters.storage || ''} onValueChange={(val) => handleFilterChange('storage', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Storage" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="128gb">128GB</SelectItem>
-                            <SelectItem value="256gb">256GB</SelectItem>
-                            <SelectItem value="512gb">512GB</SelectItem>
-                            <SelectItem value="1tb">1TB</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Label>Condition</Label>
-                     <Select value={filters.condition || ''} onValueChange={(val) => handleFilterChange('condition', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Condition" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="used">Used</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-            {category === 'Jobs' && (
-                 <div className="space-y-4">
-                    <Label>Job Type</Label>
-                     <Select value={filters.jobType || ''} onValueChange={(val) => handleFilterChange('jobType', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Type" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="full-time">Full-time</SelectItem>
-                            <SelectItem value="part-time">Part-time</SelectItem>
-                            <SelectItem value="remote">Remote</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-             {category === 'Vehicles' && (
-                <div className="space-y-4">
-                    <Label>Brand</Label>
-                    <Input placeholder="e.g., Toyota" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
-                    <Label>Model</Label>
-                    <Input placeholder="e.g., Camry" value={filters.model || ''} onChange={(e) => handleFilterChange('model', e.target.value)} />
-                    <Label>Year</Label>
-                    <Input type="number" placeholder="e.g., 2019" value={filters.year || ''} onChange={(e) => handleFilterChange('year', e.target.value)} />
-                    <Label>Transmission</Label>
-                    <Select value={filters.transmission || ''} onValueChange={(val) => handleFilterChange('transmission', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Transmission" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="automatic">Automatic</SelectItem>
-                            <SelectItem value="manual">Manual</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-            {category === 'Fashion' && (
-                <div className="space-y-4">
-                    <Label>Brand</Label>
-                    <Input placeholder="e.g., Gucci" value={filters.brand || ''} onChange={(e) => handleFilterChange('brand', e.target.value)} />
-                    <Label>Condition</Label>
-                    <Select value={filters.condition || ''} onValueChange={(val) => handleFilterChange('condition', val)}>
-                        <SelectTrigger><SelectValue placeholder="Any Condition" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="used">Used</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-        </>
-    )
-};
-
-const categoryKeywords: Record<string, { category: string, subcategory?: string }> = {
-    'land': { category: 'Land' },
-    'plot': { category: 'Land' },
-    'acre': { category: 'Land' },
-    'hectare': { category: 'Land' },
-    'property': { category: 'Property' },
-    'apartment': { category: 'Property', subcategory: 'Houses & Apartments for Rent' },
-    'flat': { category: 'Property', subcategory: 'Houses & Apartments for Rent' },
-    'house': { category: 'Property', subcategory: 'Houses & Apartments for Sale' },
-    'shop': { category: 'Property', subcategory: 'Commercial Property for Sale' },
-    'office': { category: 'Property', subcategory: 'Commercial Property for Sale' },
-    'iphone': { category: 'Phones', subcategory: 'iPhones' },
-    'samsung': { category: 'Phones', subcategory: 'Samsung' },
-    'galaxy': { category: 'Phones', subcategory: 'Samsung' },
-    'tecno': { category: 'Phones', subcategory: 'Tecno' },
-    'infinix': { category: 'Phones', subcategory: 'Infinix' },
-    'phone': { category: 'Phones' },
-    'car': { category: 'Vehicles', subcategory: 'Cars' },
-    'camry': { category: 'Vehicles', subcategory: 'Cars' },
-    'honda': { category: 'Vehicles', subcategory: 'Cars' },
-    'toyota': { category: 'Vehicles', subcategory: 'Cars' },
-    'vehicle': { category: 'Vehicles' },
-    'job': { category: 'Jobs' },
-    'dog': { category: 'Animals & Pets', subcategory: 'Dogs' },
-    'puppy': { category: 'Animals & Pets', subcategory: 'Dogs' },
-    'cat': { category: 'Animals & Pets', subcategory: 'Cats' },
-    'pet': { category: 'Animals & Pets' },
-    'bag': { category: 'Fashion', subcategory: 'Bags' },
-    'shoe': { category: 'Fashion', subcategory: 'Shoes' },
-    'dress': { category: 'Fashion', subcategory: 'Women’s Fashion' },
-    'laptop': { category: 'Electronics', subcategory: 'Laptops' },
-    'tv': { category: 'Electronics', subcategory: 'TVs' },
-};
-
 const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
     const query = (searchParams.get('q') || '').toLowerCase();
     const newFilters: any = {
         location: searchParams.get('location') || null,
         minPrice: '',
         maxPrice: '',
-        sellerVerified: searchParams.get('verified') === 'true' || false,
-        propertyVerified: searchParams.get('property_verified') === 'true' || false,
-        verifiedID: false,
-        minRating: searchParams.get('rating') ? 4 : 0,
-        popularity: '',
+        verified: searchParams.get('verified') === 'true' || false,
         category: searchParams.get('category') || null,
-        subcategory: searchParams.get('subcategory') || null,
     };
-
-    if (!newFilters.category) {
-        for (const keyword in categoryKeywords) {
-            if (query.includes(keyword)) {
-                newFilters.category = categoryKeywords[keyword].category;
-                if (categoryKeywords[keyword].subcategory) {
-                   newFilters.subcategory = categoryKeywords[keyword].subcategory;
-                }
-                break;
-            }
-        }
-    }
     return newFilters;
 };
 
@@ -235,8 +51,8 @@ const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
 export default function ListingsPage() {
     const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-    const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
-    const [allListings, setAllListings] = useState<Listing[]>([]);
+    const [filteredAds, setFilteredAds] = useState<Ad[]>([]);
+    const [allAds, setAllAds] = useState<Ad[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     
@@ -245,68 +61,39 @@ export default function ListingsPage() {
     const { toast } = useToast();
 
     useEffect(() => {
-        const fetchListings = async () => {
+        const fetchAds = async () => {
             setIsLoading(true);
             try {
-                const listingsFromDb = await getListings();
-                setAllListings(listingsFromDb);
+                const adsFromDb = await getAds();
+                setAllAds(adsFromDb);
             } catch (error) {
-                console.error("Failed to fetch listings:", error);
+                console.error("Failed to fetch ads:", error);
                  toast({
                     variant: "destructive",
-                    title: "Could not load listings",
+                    title: "Could not load ads",
                     description: "There was a problem fetching data. Please refresh the page.",
                 });
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchListings();
+        fetchAds();
     }, [toast]);
 
     const handleCategoryClick = (categoryName: string) => {
         setFilters((prev: any) => {
             if(prev.category === categoryName) return prev;
-            return {
-                ...prev,
-                q: '', 
-                category: categoryName,
-                subcategory: null
-            };
+            return { ...prev, q: '', category: categoryName };
         });
     };
     
     const handleCategoryValueChange = (value: string) => {
         if (value === 'all') {
-            setFilters(prev => {
-                const newFilters: any = { ...prev };
-                delete newFilters.category;
-                delete newFilters.subcategory;
-                return newFilters;
-            });
+            setFilters((prev: any) => ({ ...prev, category: null }));
             return;
         }
-
-        const mainCategory = categoriesData.find(c => c.name === value);
-        if (mainCategory) {
-            setFilters(prev => ({
-                ...prev,
-                category: value,
-                subcategory: null,
-            }));
-            return;
-        }
-        
-        const parentCategory = categoriesData.find(c => c.subcategories.includes(value));
-        if (parentCategory) {
-            setFilters(prev => ({
-                ...prev,
-                category: parentCategory.name,
-                subcategory: value,
-            }));
-        }
+        setFilters((prev: any) => ({ ...prev, category: value }));
     };
-
 
     const handleCheckboxChange = (key: string, checked: boolean) => {
         setFilters((prev: any) => ({ ...prev, [key]: checked }));
@@ -317,57 +104,32 @@ export default function ListingsPage() {
     }, []);
 
     const applyFilters = useCallback(() => {
-        let listings = allListings;
+        let ads = allAds;
         
         if (filters.category) {
-            listings = listings.filter(l => l.category === filters.category);
-        }
-        if (filters.subcategory) {
-            listings = listings.filter(l => l.subcategory === filters.subcategory);
+            ads = ads.filter(ad => ad.category === filters.category);
         }
 
         const query = searchQuery.toLowerCase();
         if (query) {
-            listings = listings.filter(l => l.title.toLowerCase().includes(query) || (l.description && l.description.toLowerCase().includes(query)));
+            ads = ads.filter(ad => ad.title.toLowerCase().includes(query) || (ad.description && ad.description.toLowerCase().includes(query)));
         }
 
         if (filters.location) {
-            listings = listings.filter(l => l.location.town === filters.location);
+            ads = ads.filter(ad => ad.location === filters.location);
         }
 
         if (filters.minPrice) {
-            listings = listings.filter(l => typeof l.price === 'number' && l.price >= Number(filters.minPrice));
+            ads = ads.filter(ad => ad.price >= Number(filters.minPrice));
         }
         if (filters.maxPrice) {
-            listings = listings.filter(l =>  typeof l.price === 'number' && l.price <= Number(filters.maxPrice));
+            ads = ads.filter(ad => ad.price <= Number(filters.maxPrice));
         }
         
-        if(filters.sellerVerified) listings = listings.filter(l => l.verifiedSeller);
-        if(filters.propertyVerified) listings = listings.filter(l => l.propertyVerified);
-        if(filters.verifiedID) listings = listings.filter(l => l.verifiedID);
-        if(filters.minRating > 0) listings = listings.filter(l => l.rating && l.rating >= filters.minRating);
-
-        if(filters.popularity === 'most_viewed') listings = listings.sort((a,b) => (b.views || 0) - (a.views || 0));
-        if(filters.popularity === 'most_contacted') listings = listings.sort((a,b) => (b.contacts || 0) - (a.contacts || 0));
+        if(filters.verified) ads = ads.filter(ad => ad.verified);
         
-        if (filters.category) {
-            const dynamicFilters = filters; // simplified for clarity
-            if (dynamicFilters.brand) listings = listings.filter(l => l.specifics?.brand?.toLowerCase().includes(dynamicFilters.brand.toLowerCase()));
-            if (dynamicFilters.model) listings = listings.filter(l => l.specifics?.model?.toLowerCase().includes(dynamicFilters.model.toLowerCase()));
-            if (dynamicFilters.year) listings = listings.filter(l => l.specifics?.year === Number(dynamicFilters.year));
-            if (dynamicFilters.transmission) listings = listings.filter(l => l.specifics?.transmission === dynamicFilters.transmission);
-            if (dynamicFilters.storage) listings = listings.filter(l => l.specifics?.storage === dynamicFilters.storage);
-            if (dynamicFilters.condition) listings = listings.filter(l => l.specifics?.condition === dynamicFilters.condition);
-            if (dynamicFilters.breed) listings = listings.filter(l => l.specifics?.breed?.toLowerCase().includes(dynamicFilters.breed.toLowerCase()));
-            if (dynamicFilters.gender) listings = listings.filter(l => l.specifics?.gender === dynamicFilters.gender);
-            if (dynamicFilters.propertyTitle) listings = listings.filter(l => l.specifics?.propertyTitle === dynamicFilters.propertyTitle);
-            if (dynamicFilters.landUse) listings = listings.filter(l => l.specifics?.landUse === dynamicFilters.landUse);
-            if (dynamicFilters.listingType) listings = listings.filter(l => l.specifics?.listingType === dynamicFilters.listingType);
-            if (dynamicFilters.jobType) listings = listings.filter(l => l.specifics?.jobType === dynamicFilters.jobType);
-        }
-        
-        setFilteredListings(listings);
-    }, [filters, searchQuery, allListings]);
+        setFilteredAds(ads);
+    }, [filters, searchQuery, allAds]);
     
     useEffect(() => {
         applyFilters();
@@ -422,44 +184,28 @@ export default function ListingsPage() {
                         <div>
                             <Label>Category</Label>
                             <Select
-                                value={filters.subcategory || filters.category || 'all'}
+                                value={filters.category || 'all'}
                                 onValueChange={handleCategoryValueChange}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {filters.category && categoriesData.find(c => c.name === filters.category) ? (
-                                        <>
-                                            <SelectItem value={filters.category}>
-                                                All in {filters.category}
-                                            </SelectItem>
-                                            <SelectSeparator />
-                                            {categoriesData.find(c => c.name === filters.category)!.subcategories.map(sub => (
-                                                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                                            ))}
-                                            <SelectSeparator />
-                                            <SelectItem value="all">Back to All Categories</SelectItem>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SelectItem value="all">All Categories</SelectItem>
-                                            {categoriesData.map(cat => (
-                                                <SelectItem key={cat.name} value={cat.name}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))}
-                                        </>
-                                    )}
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    {categoriesData.map(cat => (
+                                        <SelectItem key={cat.name} value={cat.name}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
                         
-                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'dynamic', 'popularity']} className="w-full">
+                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
                             <AccordionItem value="location">
                                 <AccordionTrigger>Location</AccordionTrigger>
                                 <AccordionContent className="space-y-2">
-                                     <LocationModal onSelect={(town) => handleInputChange('location', town)}>
+                                     <LocationModal onSelect={(town, lga) => handleInputChange('location', `${town}, ${lga}`)}>
                                         <Button variant="outline" className="w-full justify-between">
                                             {filters.location || 'Enugu State'}
                                             {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleInputChange('location', null);}} />}
@@ -476,48 +222,13 @@ export default function ListingsPage() {
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
-                             {filters.category && (
-                                <AccordionItem value="dynamic">
-                                    <AccordionTrigger>Details</AccordionTrigger>
-                                    <AccordionContent>
-                                        <DynamicFilters category={filters.category} filters={filters} setFilters={setFilters} />
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )}
                             <AccordionItem value="verification">
                                 <AccordionTrigger>Verification</AccordionTrigger>
                                 <AccordionContent className="space-y-3">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="sellerVerified" checked={filters.sellerVerified} onCheckedChange={(c) => handleCheckboxChange('sellerVerified', !!c)} />
-                                        <Label htmlFor="sellerVerified">Seller Verified</Label>
+                                        <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleCheckboxChange('verified', !!c)} />
+                                        <Label htmlFor="verified">Verified Ad</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="propertyVerified" checked={filters.propertyVerified} onCheckedChange={(c) => handleCheckboxChange('propertyVerified', !!c)} />
-                                        <Label htmlFor="propertyVerified">Property Verified</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="verifiedID" checked={filters.verifiedID} onCheckedChange={(c) => handleCheckboxChange('verifiedID', !!c)}/>
-                                        <Label htmlFor="verifiedID">Verified Government ID</Label>
-                                    </div>
-                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="minRating" checked={filters.minRating > 0} onCheckedChange={(c) => handleInputChange('minRating', c ? 4 : 0)}/>
-                                        <Label htmlFor="minRating">4+ Star Rated Sellers</Label>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                             <AccordionItem value="popularity">
-                                <AccordionTrigger>Popularity</AccordionTrigger>
-                                <AccordionContent>
-                                    <RadioGroup value={filters.popularity} onValueChange={(v) => handleInputChange('popularity', v)}>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="most_viewed" id="most_viewed" />
-                                            <Label htmlFor="most_viewed">Most Viewed</Label>
-                                        </div>
-                                         <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="most_contacted" id="most_contacted" />
-                                            <Label htmlFor="most_contacted">Most Contacted</Label>
-                                        </div>
-                                    </RadioGroup>
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
@@ -531,15 +242,15 @@ export default function ListingsPage() {
                             <div className="h-5 bg-muted rounded w-48 animate-pulse"></div>
                         ) : (
                             <p className="text-muted-foreground">
-                                Showing {filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}
+                                Showing {filteredAds.length} result{filteredAds.length === 1 ? '' : 's'}
                                 {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
                             </p>
                         )}
                         <div className="flex items-center gap-1">
-                            <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || filteredListings.length === 0}>
+                            <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || filteredAds.length === 0}>
                                 <LayoutGrid className="h-5 w-5" />
                             </Button>
-                            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || filteredListings.length === 0}>
+                            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || filteredAds.length === 0}>
                                 <List className="h-5 w-5" />
                             </Button>
                         </div>
@@ -560,17 +271,17 @@ export default function ListingsPage() {
                                 </Card>
                             ))}
                         </div>
-                    ) : filteredListings.length > 0 ? (
+                    ) : filteredAds.length > 0 ? (
                         <>
                             {view === 'grid' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {filteredListings.map(ad => (
+                                    {filteredAds.map(ad => (
                                         <AdCard key={ad.id} {...ad} />
                                     ))}
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {filteredListings.map(ad => (
+                                    {filteredAds.map(ad => (
                                         <AdCardListItem key={ad.id} {...ad} />
                                     ))}
                                 </div>

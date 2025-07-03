@@ -8,13 +8,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import AdCard from '@/components/AdCard';
 import AdCardListItem from '@/components/AdCardListItem';
 import { ArrowRight, Car, Home as HomeIcon, Shirt, Briefcase, Sparkles, Wrench, LandPlot, PawPrint, Search, MapPin, X, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
-import type { Listing } from '@/lib/listings-data';
+import type { Ad } from '@/lib/listings-data';
 import { categoriesData } from '@/lib/categories-data';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { LocationModal } from '@/components/common/LocationModal';
-import { getRecentListings } from '@/lib/firebase/actions';
+import { getRecentAds } from '@/lib/firebase/actions';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -34,7 +34,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
 
 
 export default function Home() {
-    const [recentListings, setRecentListings] = useState<Listing[]>([]);
+    const [recentAds, setRecentAds] = useState<Ad[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [location, setLocation] = useState<string | null>(null);
@@ -43,23 +43,23 @@ export default function Home() {
     const { toast } = useToast();
 
     useEffect(() => {
-        const fetchListings = async () => {
+        const fetchAds = async () => {
             setIsLoading(true);
             try {
-                const listings = await getRecentListings(8);
-                setRecentListings(listings);
+                const ads = await getRecentAds(8);
+                setRecentAds(ads);
             } catch (error) {
-                console.error("Failed to fetch recent listings:", error);
+                console.error("Failed to fetch recent ads:", error);
                  toast({
                     variant: "destructive",
-                    title: "Could not load recent listings",
+                    title: "Could not load recent ads",
                     description: "There was a problem fetching data. Please refresh the page.",
                 });
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchListings();
+        fetchAds();
     }, [toast]);
 
     const handleSearch = () => {
@@ -95,7 +95,7 @@ export default function Home() {
                     />
                 </div>
                 <div className="border-l border-gray-200 h-8 mx-2 hidden sm:block"></div>
-                <LocationModal onSelect={(town) => setLocation(town)}>
+                <LocationModal onSelect={(town, lga) => setLocation(`${town}, ${lga}`)}>
                     <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border border-gray-300 rounded-full">
                         <MapPin className="h-5 w-5" />
                         <span>{location || 'All Enugu'}</span>
@@ -157,13 +157,13 @@ export default function Home() {
         <main className="lg:col-span-3">
           <section>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Recent Listings</h2>
+                <h2 className="text-3xl font-bold">Recent Ads</h2>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
-                        <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || recentListings.length === 0}>
+                        <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || recentAds.length === 0}>
                             <LayoutGrid className="h-5 w-5" />
                         </Button>
-                        <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || recentListings.length === 0}>
+                        <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} aria-label="List view" disabled={isLoading || recentAds.length === 0}>
                             <List className="h-5 w-5" />
                         </Button>
                     </div>
@@ -187,24 +187,24 @@ export default function Home() {
                         </Card>
                     ))}
                 </div>
-            ) : recentListings.length > 0 ? (
+            ) : recentAds.length > 0 ? (
                 <>
                     {view === 'grid' ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {recentListings.map((ad) => (
+                            {recentAds.map((ad) => (
                               <AdCard key={ad.id} {...ad} />
                             ))}
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {recentListings.map(ad => (
+                            {recentAds.map(ad => (
                                 <AdCardListItem key={ad.id} {...ad} />
                             ))}
                         </div>
                     )}
                 </>
             ) : (
-                <p>No recent listings found.</p>
+                <p>No recent ads found.</p>
             )}
           </section>
         </main>
