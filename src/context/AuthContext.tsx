@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(docSnap.data() as UserProfile);
             } else {
               // This case handles new users from social providers
+              console.log(`[Auth] New social user detected (UID: ${firebaseUser.uid}). Creating Firestore profile...`);
               const newUserProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || 'New User',
