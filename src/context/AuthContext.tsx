@@ -6,6 +6,7 @@ import { onAuthStateChanged, User as FirebaseUser, signOut, signInWithPopup, Goo
 import { auth, db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { sendWelcomeEmail as sendEmailAction } from '@/lib/email';
 
 export interface UserProfile {
   uid: string;
@@ -32,21 +33,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
- * Simulates sending a welcome email to a new user.
- * In a real application, this is where you would integrate with an email service.
+ * Sends a welcome email to a new user by calling a server action.
  * @param email The email address of the new user.
+ * @param name The name of the new user.
  */
-const sendWelcomeEmail = (email: string | null) => {
-  if (!email) return;
-  console.log(`
-    ****************************************
-    *
-    *   SENDING WELCOME EMAIL (SIMULATED)
-    *   To: ${email}
-    *   This is where you'd integrate with an email service like SendGrid, Mailgun, or Resend.
-    *
-    ****************************************
-  `);
+const sendWelcomeEmail = (email: string | null, name: string | null) => {
+  if (!email || !name) return;
+
+  console.log(`[AuthContext] Triggering welcome email for ${email}`);
+  
+  // This is a server action, so it's safe to call from the client
+  sendEmailAction(email, name).catch(error => {
+      console.error("Failed to send welcome email:", error);
+  });
 };
 
 
@@ -77,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               };
               await setDoc(userRef, newUserProfile);
               setUser(newUserProfile);
-              sendWelcomeEmail(newUserProfile.email);
+              sendWelcomeEmail(newUserProfile.email, newUserProfile.name);
             }
         } catch (error) {
             console.error("AuthContext: Could not fetch user profile from Firestore, possibly offline. Using fallback data from Auth.", error);
@@ -130,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     await setDoc(userRef, newUserProfile);
     setUser(newUserProfile);
-    sendWelcomeEmail(newUserProfile.email);
+    sendWelcomeEmail(newUserProfile.email, newUserProfile.name);
     return userCredential;
   }
 
