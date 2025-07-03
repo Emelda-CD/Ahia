@@ -1,14 +1,14 @@
+
 'use server';
 
 import { Resend } from 'resend';
 import WelcomeEmail from '@/emails/WelcomeEmail';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmail = 'onboarding@resend.dev';
 
 export const sendWelcomeEmail = async (toEmail: string, name: string) => {
   if (!process.env.RESEND_API_KEY) {
-    console.log("RESEND_API_KEY is not set. Skipping email sending.");
+    console.warn("RESEND_API_KEY is not set. Skipping email sending.");
     // Log the email content for debugging in dev environments without a key
     console.log({
         to: toEmail,
@@ -17,11 +17,14 @@ export const sendWelcomeEmail = async (toEmail: string, name: string) => {
         htmlBody: `<h1>Welcome, ${name}!</h1><p>Thanks for joining Ahia.</p>`
     });
     return {
-        error: "RESEND_API_KEY is not set."
+        error: "RESEND_API_KEY is not set. Please add it to your .env file to enable email sending."
     };
   }
   
   try {
+    // Initialize Resend here, only when we're sure the key exists.
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     const { data, error } = await resend.emails.send({
       from: `Ahia <${fromEmail}>`,
       to: [toEmail],
