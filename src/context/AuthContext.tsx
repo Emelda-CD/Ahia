@@ -31,6 +31,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Simulates sending a welcome email to a new user.
+ * In a real application, this is where you would integrate with an email service.
+ * @param email The email address of the new user.
+ */
+const sendWelcomeEmail = (email: string | null) => {
+  if (!email) return;
+  console.log(`
+    ****************************************
+    *
+    *   SENDING WELCOME EMAIL (SIMULATED)
+    *   To: ${email}
+    *   This is where you'd integrate with an email service like SendGrid, Mailgun, or Resend.
+    *
+    ****************************************
+  `);
+};
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               };
               await setDoc(userRef, newUserProfile);
               setUser(newUserProfile);
+              sendWelcomeEmail(newUserProfile.email);
             }
         } catch (error) {
             console.error("AuthContext: Could not fetch user profile from Firestore, possibly offline. Using fallback data from Auth.", error);
@@ -109,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     await setDoc(userRef, newUserProfile);
     setUser(newUserProfile);
+    sendWelcomeEmail(newUserProfile.email);
     return userCredential;
   }
 
