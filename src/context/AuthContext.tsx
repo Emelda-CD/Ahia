@@ -43,8 +43,17 @@ const sendWelcomeEmail = (email: string | null, name: string | null) => {
   console.log(`[AuthContext] Triggering welcome email for ${email}`);
   
   // This is a server action, so it's safe to call from the client
-  sendEmailAction(email, name).catch(error => {
-      console.error("Failed to send welcome email:", error);
+  sendEmailAction(email, name)
+    .then(response => {
+        // The server action now returns a structured response.
+        // We log any errors as warnings but don't interrupt the user flow.
+        if (response && response.error) {
+            console.warn(`[AuthContext] Welcome email could not be sent to ${email}:`, response.error.message);
+        }
+    })
+    .catch(error => {
+      // This will now only catch unexpected network errors or server action crashes.
+      console.error("[AuthContext] A critical error occurred while trying to send the welcome email:", error);
   });
 };
 
