@@ -22,13 +22,14 @@ const storage = getStorage(app);
 if (typeof window !== 'undefined') { // Run only on the client
   // Add a check to ensure Firebase config is loaded and log project info for debugging
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
-        console.error(`
+        console.warn(`
         ********************************************************************************
         *
-        *      FIREBASE CONFIGURATION ERROR
+        *      FIREBASE CONFIGURATION WARNING
         *
-        *      Firebase configuration is missing or uses placeholder values.
-        *      Please update your .env file with your project's credentials.
+        *      Firebase keys are missing or are placeholders in your .env file.
+        *      The app will not connect to Firebase until you add your credentials.
+        *      Please see the .env.example file for the required variables.
         *
         ********************************************************************************
         `);
