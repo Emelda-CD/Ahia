@@ -35,52 +35,56 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
   const { toast } = useToast();
 
-  const handleFirebaseAuthError = (error: FirebaseError) => {
-    if (error.code === 'auth/popup-closed-by-user') {
-      return;
+  const handleFirebaseAuthError = (error: unknown) => {
+    // Check for common user actions that shouldn't show a big error
+    if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+        console.log("Authentication popup closed by user.");
+        return;
     }
+
+    console.error("Firebase Auth Error:", error);
 
     let title = 'Authentication Failed';
-    let message: string | React.ReactNode =
-      'An unknown error occurred. Please check the console for more details.';
+    let message: string | React.ReactNode = 'An unknown error occurred. Please try again.';
 
-    switch (error.code) {
-      case 'auth/invalid-api-key':
-        title = 'Invalid API Key';
-        message =
-          "Your Firebase API key is not valid. Please check your .env file and make sure it's correct.";
-        break;
-      case 'auth/unauthorized-domain':
-        title = 'Domain Not Authorized';
-        message = (
-          <>
-            This app's domain (<b>{window.location.hostname}</b>) is not
-            authorized. Please add it to the authorized domains in your Firebase
-            project's Authentication settings.
-          </>
-        );
-        break;
-      case 'auth/user-not-found':
-        message = 'No account found with this email.';
-        break;
-      case 'auth/wrong-password':
-        message = 'Incorrect password. Please try again.';
-        break;
-      case 'auth/email-already-in-use':
-        message = 'An account already exists with this email address.';
-        break;
-      case 'auth/weak-password':
-        message = 'Password is too weak. It should be at least 6 characters.';
-        break;
-      default:
-        console.error('Firebase Auth Error:', error);
-        message = error.message;
+    if (error instanceof FirebaseError) {
+        switch (error.code) {
+            case 'auth/invalid-api-key':
+                title = 'Configuration Error';
+                message = "The Firebase API Key is not valid. Please check your .env file and ensure NEXT_PUBLIC_FIREBASE_API_KEY is correct.";
+                break;
+            case 'auth/unauthorized-domain':
+                title = 'Configuration Error';
+                message = (
+                    <>
+                        This app's domain (<b>{window.location.hostname}</b>) is not authorized for Google Sign-In. Please add it to the authorized domains in your Firebase project's Authentication settings.
+                    </>
+                );
+                break;
+            case 'auth/user-not-found':
+                message = 'No account was found with that email address.';
+                break;
+            case 'auth/wrong-password':
+                message = 'Incorrect password. Please try again.';
+                break;
+            case 'auth/email-already-in-use':
+                message = 'An account already exists with this email address. Please log in instead.';
+                break;
+            case 'auth/weak-password':
+                message = 'The password is too weak. It should be at least 6 characters long.';
+                break;
+            default:
+                message = `An unexpected error occurred: ${error.message}`;
+        }
+    } else if (error instanceof Error) {
+        message = `An unexpected error occurred: ${error.message}`;
     }
+    
     toast({
-      variant: 'destructive',
-      title: title,
-      description: message,
-      duration: 15000,
+        variant: 'destructive',
+        title: title,
+        description: message,
+        duration: 15000,
     });
   };
 
@@ -94,8 +98,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     try {
       await loginWithEmail(email, password);
       onOpenChange(false);
-    } catch (error) {
-      handleFirebaseAuthError(error as FirebaseError);
+    } catch (error: unknown) {
+      handleFirebaseAuthError(error);
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +116,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     try {
         await registerWithEmail(name, email, password);
         onOpenChange(false);
-    } catch (error) {
-        handleFirebaseAuthError(error as FirebaseError);
+    } catch (error: unknown) {
+        handleFirebaseAuthError(error);
     } finally {
         setIsLoading(false);
     }
@@ -124,8 +128,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     try {
         await loginWithGoogle();
         onOpenChange(false);
-    } catch (error) {
-        handleFirebaseAuthError(error as FirebaseError);
+    } catch (error: unknown) {
+        handleFirebaseAuthError(error);
     } finally {
         setIsSocialLoading(false);
     }
