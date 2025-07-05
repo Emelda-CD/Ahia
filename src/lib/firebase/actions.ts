@@ -18,6 +18,7 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import type { Ad } from '@/lib/listings-data';
+import type { UserProfile } from '@/context/AuthContext';
 
 /**
  * Creates a new ad in Firestore.
@@ -134,4 +135,39 @@ export async function trackAdView(adId: string) {
     } catch (error) {
         console.error("Error tracking view:", error);
     }
+}
+
+
+/**
+ * Fetches all user profiles from Firestore.
+ */
+export async function getAllUsers(): Promise<UserProfile[]> {
+  const usersCollection = collection(db, 'users');
+  const q = query(usersCollection, orderBy('createdAt', 'desc'));
+
+  try {
+    const querySnapshot = await getDocs(q);
+    const users = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            uid: doc.id,
+            // Convert timestamp to a serializable format if it exists
+            ...data,
+        } as UserProfile;
+    });
+    return users;
+  } catch (error) {
+     if (error instanceof Error && 'code' in error && (error as any).code === 'failed-precondition') {
+        // This happens if the index is not created yet. Firestore provides a link to create it in the console.
+        console.error("Firestore error: The required index for ordering users by 'createdAt' is missing. You can create it in your Firebase console.", error);
+        // Fallback to fetching without ordering
+        const fallbackQuery = query(usersCollection);
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const users = fallbackSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+        return users;
+    } else {
+        console.error("Error fetching all users:", error);
+        throw error; // Re-throw other errors
+    }
+  }
 }
