@@ -36,40 +36,53 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { toast } = useToast();
 
   const handleFirebaseAuthError = (error: FirebaseError) => {
-      if (error.code === 'auth/popup-closed-by-user') {
-          return;
-      }
-      
-      let title = 'Authentication Failed';
-      let message: string | React.ReactNode = 'An unknown error occurred.';
+    if (error.code === 'auth/popup-closed-by-user') {
+      return;
+    }
 
-      switch(error.code) {
-          case 'auth/unauthorized-domain':
-              title = 'Domain Not Authorized';
-              message = "This app's domain is not authorized for OAuth operations. Please ensure the current hostname is added to the list of authorized domains in your Firebase project's Authentication settings.";
-              break;
-          case 'auth/user-not-found':
-              message = 'No account found with this email.';
-              break;
-          case 'auth/wrong-password':
-              message = 'Incorrect password. Please try again.';
-              break;
-          case 'auth/email-already-in-use':
-              message = 'An account already exists with this email address.';
-              break;
-          case 'auth/weak-password':
-              message = 'Password is too weak. It should be at least 6 characters.';
-              break;
-          default:
-              message = error.message;
-      }
-      toast({ 
-        variant: 'destructive', 
-        title: title, 
-        description: message,
-        duration: 10000 
-      });
-  }
+    let title = 'Authentication Failed';
+    let message: string | React.ReactNode =
+      'An unknown error occurred. Please check the console for more details.';
+
+    switch (error.code) {
+      case 'auth/invalid-api-key':
+        title = 'Invalid API Key';
+        message =
+          "Your Firebase API key is not valid. Please check your .env file and make sure it's correct.";
+        break;
+      case 'auth/unauthorized-domain':
+        title = 'Domain Not Authorized';
+        message = (
+          <>
+            This app's domain (<b>{window.location.hostname}</b>) is not
+            authorized. Please add it to the authorized domains in your Firebase
+            project's Authentication settings.
+          </>
+        );
+        break;
+      case 'auth/user-not-found':
+        message = 'No account found with this email.';
+        break;
+      case 'auth/wrong-password':
+        message = 'Incorrect password. Please try again.';
+        break;
+      case 'auth/email-already-in-use':
+        message = 'An account already exists with this email address.';
+        break;
+      case 'auth/weak-password':
+        message = 'Password is too weak. It should be at least 6 characters.';
+        break;
+      default:
+        console.error('Firebase Auth Error:', error);
+        message = error.message;
+    }
+    toast({
+      variant: 'destructive',
+      title: title,
+      description: message,
+      duration: 15000,
+    });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
