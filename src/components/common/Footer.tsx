@@ -18,7 +18,6 @@ const quickLinks = [
   { name: 'FAQ', href: '/faq' },
   { name: 'Terms & Conditions', href: '/terms' },
   { name: 'Privacy Policy', href: '/privacy' },
-  { name: 'Admin', href: '/admin' },
 ];
 
 const popularCategories = [
@@ -57,6 +56,11 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+               <li>
+                  <Link href="/admin" className="text-gray-200 hover:text-white transition-colors">
+                    Admin
+                  </Link>
+                </li>
             </ul>
           </div>
           <div>

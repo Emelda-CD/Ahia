@@ -57,5 +57,10 @@ export const allAds: Ad[] = [
     images: ['https://placehold.co/600x400.png'],
     image: 'https://placehold.co/600x400.png',
     data_ai_hint: 'modern apartment'
-  }
+  },
+  { id: 'ad_4', title: 'Full-stack Developer Needed', price: 350000, category: 'Jobs', location: 'Remote', userID: 'user_abc', timestamp: new Date(), verified: true, images: ['https://placehold.co/600x400.png'], image: 'https://placehold.co/600x400.png', data_ai_hint: 'code screen' },
+  { id: 'ad_5', title: 'German Shepherd Puppies', price: 150000, category: 'Animals & Pets', location: 'Abakpa, Enugu East', userID: 'user_def', timestamp: new Date(), verified: true, images: ['https://placehold.co/600x400.png'], image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute' },
+  { id: 'ad_6', title: 'Used PlayStation 5', price: 450000, category: 'Electronics', location: 'Trans-Ekulu, Enugu East', userID: 'user_ghi', timestamp: new Date(), verified: false, images: ['https://placehold.co/600x400.png'], image: 'https://placehold.co/600x400.png', data_ai_hint: 'gaming console' },
+  { id: 'ad_7', title: 'Plot of Land at Ebeano Tunnel', price: 25000000, category: 'Land', location: 'GRA, Enugu North', userID: 'user_jkl', timestamp: new Date(), verified: true, images: ['https://placehold.co/600x400.png'], image: 'https://placehold.co/600x400.png', data_ai_hint: 'land plot' },
+  { id: 'ad_8', title: 'Wedding Gown for Rent', price: 50000, category: 'Fashion', location: 'New Haven, Enugu North', userID: 'user_mno', timestamp: new Date(), verified: false, images: ['https://placehold.co/600x400.png'], image: 'https://placehold.co/600x400.png', data_ai_hint: 'wedding dress' },
 ];

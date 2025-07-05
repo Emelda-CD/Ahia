@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { allAds } from '@/lib/listings-data';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Trash, Check, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +22,9 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
   // Adding a mock status for demonstration
   const getStatus = (id: string): Status => {
     const statuses: Status[] = ['Active', 'Pending', 'Removed'];
-    return statuses[parseInt(id.replace('ad_', '')) % statuses.length];
+    // Simple hash to get a consistent status for each ad
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return statuses[hash % statuses.length];
   }
 
   let ads = allAds
@@ -80,10 +82,10 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem>View Ad</DropdownMenuItem>
-                   {ad.status === 'Pending' && <DropdownMenuItem>Approve Ad</DropdownMenuItem>}
-                   {ad.status === 'Active' && <DropdownMenuItem>Remove Ad</DropdownMenuItem>}
+                   {ad.status === 'Pending' && <DropdownMenuItem><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
+                   {ad.status === 'Active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Delete Permanently</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
