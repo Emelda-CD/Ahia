@@ -1,5 +1,6 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -16,10 +17,12 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 
 if (typeof window !== 'undefined') { // Run only on the client
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
+    const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('your-');
+    if (!isConfigured) {
         console.warn(`
         ********************************************************************************
         *
@@ -33,7 +36,6 @@ if (typeof window !== 'undefined') { // Run only on the client
         ********************************************************************************
         `);
     } else if (process.env.NODE_ENV === 'development') {
-        // This block runs only in development to help with debugging.
         console.groupCollapsed('%c[Firebase Studio] Debug: Firebase Config', 'color: #00A7F7; font-weight: bold;');
         console.log('The app is reading the following Firebase credentials:');
         console.log(`Project ID: %c${firebaseConfig.projectId}`, 'color: #4CAF50');
@@ -59,4 +61,4 @@ if (typeof window !== 'undefined') { // Run only on the client
 }
 
 
-export { app, db, storage };
+export { app, db, storage, auth };

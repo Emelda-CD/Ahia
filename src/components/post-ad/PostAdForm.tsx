@@ -24,6 +24,8 @@ import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/firebase/storage';
 import { createAd } from '@/lib/firebase/actions';
 import { Badge } from '../ui/badge';
+import { useAuth } from '@/context/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const adSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -44,6 +46,7 @@ export default function PostAdForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { toast } = useToast();
@@ -77,10 +80,17 @@ export default function PostAdForm() {
 
   const onSubmit = async (data: AdFormValues) => {
     setIsSubmitting(true);
+    
+    // Although the form is disabled, this is an extra check.
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to post an ad.' });
+        setIsSubmitting(false);
+        return;
+    }
 
     try {
         const imageUrls = await Promise.all(
-            data.images.map(imageFile => uploadFile(imageFile, `ads/anonymous`))
+            data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
         );
 
         if (imageUrls.length === 0) {
@@ -98,6 +108,7 @@ export default function PostAdForm() {
             images: imageUrls,
             image: imageUrls[0], // Use first image as main
             data_ai_hint: '', // Can be generated or left empty
+            userID: user.uid,
         };
 
         await createAd(adData);
@@ -108,7 +119,7 @@ export default function PostAdForm() {
           className: 'bg-green-100 border-green-300 text-green-800'
         });
 
-        router.push('/');
+        router.push('/account');
 
     } catch (error) {
         console.error("Error creating ad:", error);
@@ -181,7 +192,7 @@ export default function PostAdForm() {
             name="category"
             control={control}
             render={({ field }) => (
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!user}>
                 <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                 <SelectContent>
                 {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
@@ -197,8 +208,8 @@ export default function PostAdForm() {
             name="location"
             control={control}
             render={({ field }) => (
-                <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })}>
-                    <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })} >
+                    <Button type="button" variant="outline" className="w-full justify-between font-normal" disabled={!user}>
                         <span>{field.value || "Select a location"}</span>
                         {field.value ? (
                         <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
@@ -215,7 +226,7 @@ export default function PostAdForm() {
   );
   
   const Step2 = (
-     <div className="space-y-4">
+     <fieldset disabled={!user} className="space-y-4">
         <div>
         <Label htmlFor="title">Ad Title</Label>
         <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
@@ -279,7 +290,7 @@ export default function PostAdForm() {
             )}
         />
         </div>
-    </div>
+    </fieldset>
   );
 
   return (
@@ -292,22 +303,30 @@ export default function PostAdForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!user && (
+            <Alert variant="destructive" className="mb-6">
+                <AlertTitle>You are not logged in!</AlertTitle>
+                <AlertDescription>
+                    Please log in or create an account to post an ad. This ensures we can contact you about your listing and helps keep our community safe.
+                </AlertDescription>
+            </Alert>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {step === 1 && Step1}
           {step === 2 && Step2}
 
           <div className="flex justify-between mt-8">
             {step > 1 ? (
-              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting}>
+              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting || !user}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             ) : <div />}
             {step < 2 ? (
-              <Button type="button" onClick={nextStep} disabled={isSubmitting}>
+              <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !user}>
                 {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : 'Submit Ad'}
               </Button>
             )}
