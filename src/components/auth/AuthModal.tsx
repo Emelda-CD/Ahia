@@ -49,13 +49,13 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     let description: string | React.ReactNode = 'An unknown error occurred. Please try again.';
 
     if (error instanceof FirebaseError) {
-        if (error.code === 'auth/invalid-api-key' || error.message.includes('API key not valid')) {
+        if (error.code.includes('api-key-not-valid') || error.message.includes('API key not valid')) {
             title = 'Invalid Firebase API Key';
             description = (
                 <>
                     <p className="font-bold">Your Firebase API Key is not correct.</p>
                     <p className="mt-2">Please go to your Firebase project settings, copy the `apiKey` value, and paste it into your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file for the `NEXT_PUBLIC_FIREBASE_API_KEY` variable.</p>
-                    <p className="mt-2 text-xs text-muted-foreground">Make sure there are no extra spaces or quotes around the key.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Make sure there are no extra spaces or quotes around the key, and restart your server.</p>
                 </>
             );
         } else if (error.code === 'auth/unauthorized-domain') {
@@ -145,23 +145,19 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         </div>
         <h3 className="mt-4 text-xl font-bold text-destructive">Firebase Not Configured</h3>
         <p className="mt-2 text-muted-foreground">
-            Authentication is disabled because the app is not connected to Firebase.
-            Please add your project credentials to the <code className="font-mono bg-muted p-1 rounded-sm">.env</code> file.
+            Authentication is disabled because the app can't find your Firebase keys.
         </p>
         <div className="mt-4 text-left text-sm bg-muted p-4 rounded-md border">
             <p className="font-semibold">How to Fix:</p>
             <ol className="list-decimal list-inside mt-2 space-y-2">
                 <li>
-                    In the file explorer on the left, open the file named <strong className="text-primary">.env</strong>
+                    Make sure you have copied your credentials into the <strong className="text-primary">.env</strong> file.
                 </li>
                 <li>
-                    Go to your <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Project Settings</a>.
+                    <span className="font-bold text-destructive">Crucial Step:</span> You must <strong className="text-primary">restart your development server</strong> for the changes to take effect.
                 </li>
-                <li>
-                    Under the "General" tab, find your web app in the "Your apps" section.
-                </li>
-                <li>
-                    Select "Config" to view your credentials, then copy and paste the values into your <strong className="text-primary">.env</strong> file.
+                 <li>
+                    Check the browser's developer console for more debug information.
                 </li>
             </ol>
         </div>

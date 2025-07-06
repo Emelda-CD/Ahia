@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
@@ -20,7 +21,6 @@ const storage = getStorage(app);
 
 
 if (typeof window !== 'undefined') { // Run only on the client
-  // Add a check to ensure Firebase config is loaded and log project info for debugging
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('your-')) {
         console.warn(`
         ********************************************************************************
@@ -29,15 +29,20 @@ if (typeof window !== 'undefined') { // Run only on the client
         *
         *      Firebase keys are missing or are placeholders in your .env file.
         *      The app will not connect to Firebase until you add your credentials.
-        *      Please see the .env.example file for the required variables.
+        *
+        *      IMPORTANT: You must restart your development server after editing .env
         *
         ********************************************************************************
         `);
-    } else {
-        console.log('%cFirebase Auth Debug Info', 'color: #FFA500; font-weight: bold;');
-        console.log(`%cProject ID: %c${firebaseConfig.projectId}`, 'font-weight: bold;', 'color: #4CAF50;');
-        console.log(`%cCurrent Hostname: %c${window.location.hostname}`, 'font-weight: bold;', 'color: #4CAF50;');
-        console.log('Please ensure the hostname above is listed in your Firebase project\'s "Authorized domains".');
+    } else if (process.env.NODE_ENV === 'development') {
+        // This block runs only in development to help with debugging.
+        console.groupCollapsed('%c[Firebase Studio] Debug: Firebase Config', 'color: #00A7F7; font-weight: bold;');
+        console.log('The app is reading the following Firebase credentials:');
+        console.log(`Project ID: %c${firebaseConfig.projectId}`, 'color: #4CAF50');
+        console.log(`API Key: %c${firebaseConfig.apiKey?.substring(0, 4)}...`, 'color: #4CAF50');
+        console.log(`Auth Domain: %c${firebaseConfig.authDomain}`, 'color: #4CAF50');
+        console.log('%cIf these values look incorrect, check your .env file and RESTART the dev server.', 'font-weight: bold;');
+        console.groupEnd();
     }
   
   // Enable Firestore offline persistence
