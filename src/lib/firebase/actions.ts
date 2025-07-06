@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db, auth } from './config';
+import { db } from './config';
 import {
   collection,
   addDoc,
@@ -32,11 +32,6 @@ export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>
     ...adData,
     verified: false, // All new ads start as unverified
     timestamp: serverTimestamp(),
-    // These fields are not in the new model but were in the old one.
-    // They can be added if performance tracking is needed later.
-    // views: 0,
-    // contacts: 0,
-    // favorites: 0,
   }
 
   const docRef = await addDoc(adsCollection, dataToSave);
@@ -51,28 +46,6 @@ export async function getAds(): Promise<Ad[]> {
     const adsCollection = collection(db, 'ads');
     
     const queryConstraints: QueryConstraint[] = [
-        orderBy('timestamp', 'desc')
-    ];
-
-    const q = query(adsCollection, ...queryConstraints);
-    const querySnapshot = await getDocs(q);
-
-    const ads = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-        } as Ad;
-    });
-
-    return ads;
-}
-
-export async function getUserAds(userId: string): Promise<Ad[]> {
-    const adsCollection = collection(db, 'ads');
-    
-    const queryConstraints: QueryConstraint[] = [
-        where('userID', '==', userId),
         orderBy('timestamp', 'desc')
     ];
 
@@ -127,7 +100,7 @@ export async function trackAdView(adId: string) {
     if (!adId) return;
     try {
         const adRef = doc(db, 'ads', adId);
-        // The 'views' field is not in the new schema, but this shows where it would go.
+        // The 'views' field is not in the schema, but this shows where it would go.
         // To enable this, add `views: number` to the Ad type and Firestore documents.
         // await updateDoc(adRef, {
         //     views: increment(1)

@@ -21,7 +21,6 @@ import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-rea
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
 import { uploadFile } from '@/lib/firebase/storage';
 import { createAd } from '@/lib/firebase/actions';
 import { Badge } from '../ui/badge';
@@ -47,7 +46,6 @@ export default function PostAdForm() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { user, isLoggedIn } = useAuth();
   const { toast } = useToast();
   const form = useForm<AdFormValues>({
     resolver: zodResolver(adSchema),
@@ -78,16 +76,11 @@ export default function PostAdForm() {
   const prevStep = () => setStep((s) => s - 1);
 
   const onSubmit = async (data: AdFormValues) => {
-    if (!isLoggedIn || !user) {
-        toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to post an ad.'});
-        return;
-    }
-    
     setIsSubmitting(true);
 
     try {
         const imageUrls = await Promise.all(
-            data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
+            data.images.map(imageFile => uploadFile(imageFile, `ads/anonymous`))
         );
 
         if (imageUrls.length === 0) {
@@ -102,7 +95,6 @@ export default function PostAdForm() {
             category: data.category,
             price: data.price,
             location: data.location,
-            userID: user.uid,
             images: imageUrls,
             image: imageUrls[0], // Use first image as main
             data_ai_hint: '', // Can be generated or left empty
@@ -116,7 +108,7 @@ export default function PostAdForm() {
           className: 'bg-green-100 border-green-300 text-green-800'
         });
 
-        router.push('/account?tab=my-ads');
+        router.push('/');
 
     } catch (error) {
         console.error("Error creating ad:", error);
@@ -315,12 +307,11 @@ export default function PostAdForm() {
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting || !isLoggedIn}>
-                 {!isLoggedIn ? 'Login to Submit' : (isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : 'Submit Ad')}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : 'Submit Ad'}
               </Button>
             )}
           </div>
-           {!isLoggedIn && <p className="text-sm text-center text-amber-600 mt-4">You must be logged in to submit an ad.</p>}
         </form>
       </CardContent>
     </Card>

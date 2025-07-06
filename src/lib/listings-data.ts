@@ -1,4 +1,5 @@
 
+
 export type Ad = {
   id: string;
   title: string;
@@ -6,7 +7,7 @@ export type Ad = {
   price: number;
   category: string;
   location: string;
-  userID: string;
+  userID?: string;
   timestamp: any;
   verified: boolean;
   images: string[];
