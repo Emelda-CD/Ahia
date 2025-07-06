@@ -13,7 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
@@ -28,6 +28,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 2.04-4.78 2.04-5.78 0-9.5-4.26-9.5-9.8s3.72-9.8 9.5-9.8c2.8 0 4.93 1.05 6.4 2.45l2.4-2.38C19.2 1.11 16.2.36 12.48.36c-6.9 0-12.13 5.3-12.13 11.97s5.23 11.97 12.13 11.97c6.7 0 11.7-4.4 11.7-11.52 0-.76-.1-1.45-.24-2.04z"/></svg>
 );
 
+const isFirebaseReady = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
 
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +38,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { toast } = useToast();
 
   const handleFirebaseAuthError = (error: unknown) => {
-    // Log the raw error for debugging purposes
     console.error("Full Firebase Auth Error Object:", error);
 
-    // Don't show toast for user-cancelled popups
     if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
         console.log("Authentication popup closed by user.");
         return;
@@ -49,8 +49,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     let description: string | React.ReactNode = 'An unknown error occurred. Please try again.';
 
     if (error instanceof FirebaseError) {
-        // This is the most likely culprit, so let's check for it specifically,
-        // using both the official code and parts of the message.
         if (error.code === 'auth/invalid-api-key' || error.message.includes('API key not valid')) {
             title = 'Invalid Firebase API Key';
             description = (
@@ -76,12 +74,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             title = 'Registration Failed';
             description = 'An account already exists with this email address. Please log in instead.';
         } else {
-             // Generic fallback for other Firebase errors
             title = 'Firebase Error';
             description = `An unexpected Firebase error occurred: ${error.message} (Code: ${error.code})`;
         }
     } else if (error instanceof Error) {
-        // Fallback for non-Firebase errors
         description = `An unexpected error occurred: ${error.message}`;
     }
     
@@ -89,7 +85,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         variant: 'destructive',
         title: title,
         description: description,
-        duration: 20000, // Longer duration for important messages
+        duration: 20000,
     });
   };
 
@@ -139,10 +135,41 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         setIsSocialLoading(false);
     }
   }
-  
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+
+  const FirebaseNotReadyContent = (
+    <div className="text-center p-4">
+        <div className="flex justify-center">
+            <div className="bg-destructive/10 p-3 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+        </div>
+        <h3 className="mt-4 text-xl font-bold text-destructive">Firebase Not Configured</h3>
+        <p className="mt-2 text-muted-foreground">
+            Authentication is disabled because the app is not connected to Firebase.
+            Please add your project credentials to the <code className="font-mono bg-muted p-1 rounded-sm">.env</code> file.
+        </p>
+        <div className="mt-4 text-left text-sm bg-muted p-4 rounded-md border">
+            <p className="font-semibold">How to Fix:</p>
+            <ol className="list-decimal list-inside mt-2 space-y-2">
+                <li>
+                    In the file explorer on the left, open the file named <strong className="text-primary">.env</strong>
+                </li>
+                <li>
+                    Go to your <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Project Settings</a>.
+                </li>
+                <li>
+                    Under the "General" tab, find your web app in the "Your apps" section.
+                </li>
+                <li>
+                    Select "Config" to view your credentials, then copy and paste the values into your <strong className="text-primary">.env</strong> file.
+                </li>
+            </ol>
+        </div>
+    </div>
+  );
+
+  const AuthContent = (
+    <>
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Welcome to Ahia</DialogTitle>
           <DialogDescription className="text-center">
@@ -204,6 +231,13 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             </form>
           </TabsContent>
         </Tabs>
+    </>
+  );
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        {!isFirebaseReady ? FirebaseNotReadyContent : AuthContent}
       </DialogContent>
     </Dialog>
   );
