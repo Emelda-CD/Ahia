@@ -140,38 +140,40 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   }
 
   const FirebaseNotReadyContent = (
-    <div className="text-center p-4">
+    <>
+      <DialogHeader>
         <div className="flex justify-center">
             <div className="bg-destructive/10 p-3 rounded-full">
                 <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
         </div>
-        <h3 className="mt-4 text-xl font-bold text-destructive">Firebase Not Configured</h3>
-        <p className="mt-2 text-muted-foreground">
+        <DialogTitle className="text-center text-xl font-bold text-destructive">Firebase Not Configured</DialogTitle>
+        <DialogDescription className="text-center">
             Authentication is disabled. This is usually because the API keys in your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file are missing or incorrect.
-        </p>
-        <div className="mt-4 text-left text-sm bg-muted p-4 rounded-md border space-y-3">
-           <div>
-             <p className="font-semibold">Your App's Current Project ID:</p>
-             <p className="font-mono bg-background p-2 rounded text-center text-destructive mt-1">{projectId || 'UNDEFINED'}</p>
-             <p className="text-xs text-muted-foreground mt-1">
-                If this says "UNDEFINED" or shows the wrong ID, your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file is not being loaded correctly.
-             </p>
-           </div>
-           
-            <div>
-              <p className="font-semibold">How to Fix:</p>
-              <ol className="list-decimal list-inside mt-2 space-y-2">
-                  <li>
-                      Ensure your Firebase Project ID is correctly set for <code className="font-bold">NEXT_PUBLIC_FIREBASE_PROJECT_ID</code> in the <strong className="text-primary">.env</strong> file.
-                  </li>
-                  <li>
-                      <span className="font-bold text-destructive">Crucial Step:</span> You must <strong className="text-primary">stop and restart</strong> your development server for the changes to take effect.
-                  </li>
-              </ol>
-            </div>
+        </DialogDescription>
+      </DialogHeader>
+      <div className="text-left text-sm bg-muted p-4 rounded-md border space-y-3">
+        <div>
+          <p className="font-semibold">Your App's Current Project ID:</p>
+          <p className="font-mono bg-background p-2 rounded text-center text-destructive mt-1">{projectId || 'UNDEFINED'}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            If this says "UNDEFINED" or shows the wrong ID, your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file is not being loaded correctly.
+          </p>
         </div>
-    </div>
+        
+        <div>
+          <p className="font-semibold">How to Fix:</p>
+          <ol className="list-decimal list-inside mt-2 space-y-2">
+              <li>
+                  Ensure your Firebase Project ID is correctly set for <code className="font-bold">NEXT_PUBLIC_FIREBASE_PROJECT_ID</code> in the <strong className="text-primary">.env</strong> file.
+              </li>
+              <li>
+                  <span className="font-bold text-destructive">Crucial Step:</span> You must <strong className="text-primary">stop and restart</strong> your development server for the changes to take effect.
+              </li>
+          </ol>
+        </div>
+      </div>
+    </>
   );
 
   const AuthContent = (
@@ -248,5 +250,3 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     </Dialog>
   );
 }
-
-    
