@@ -20,13 +20,22 @@ import {
 import type { Ad } from '@/lib/listings-data';
 import type { UserProfile } from '@/context/AuthContext';
 
+const ensureDb = () => {
+    if (!db) {
+        throw new Error("Firebase is not configured. Please check your .env file and restart the server.");
+    }
+    return db;
+}
+
+
 /**
  * Creates a new ad in Firestore.
  * @param adData The data for the new ad.
  * @returns The ID of the newly created ad document.
  */
 export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>) {
-  const adsCollection = collection(db, 'ads');
+  const firestoreDb = ensureDb();
+  const adsCollection = collection(firestoreDb, 'ads');
   
   const dataToSave = {
     ...adData,
@@ -43,7 +52,8 @@ export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>
  * Fetches a list of ads from Firestore based on optional filters.
  */
 export async function getAds(): Promise<Ad[]> {
-    const adsCollection = collection(db, 'ads');
+    const firestoreDb = ensureDb();
+    const adsCollection = collection(firestoreDb, 'ads');
     
     const queryConstraints: QueryConstraint[] = [
         orderBy('timestamp', 'desc')
@@ -64,7 +74,8 @@ export async function getAds(): Promise<Ad[]> {
 }
 
 export async function getRecentAds(count: number): Promise<Ad[]> {
-    const adsCollection = collection(db, 'ads');
+    const firestoreDb = ensureDb();
+    const adsCollection = collection(firestoreDb, 'ads');
     const q = query(adsCollection, orderBy('timestamp', 'desc'), limit(count));
     const querySnapshot = await getDocs(q);
     const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ad));
@@ -76,7 +87,8 @@ export async function getRecentAds(count: number): Promise<Ad[]> {
  */
 export async function getAdById(id: string): Promise<Ad | null> {
     if (!id) return null;
-    const docRef = doc(db, 'ads', id);
+    const firestoreDb = ensureDb();
+    const docRef = doc(firestoreDb, 'ads', id);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -98,9 +110,10 @@ export async function getAdById(id: string): Promise<Ad | null> {
  */
 export async function trackAdView(adId: string) {
     if (!adId) return;
+    const firestoreDb = ensureDb();
     try {
-        const adRef = doc(db, 'ads', adId);
-        // The 'views' field is not in the schema, but this shows where it would go.
+        const adRef = doc(firestoreDb, 'ads', adId);
+        // The 'views' field is not implemented yet.
         // To enable this, add `views: number` to the Ad type and Firestore documents.
         // await updateDoc(adRef, {
         //     views: increment(1)
@@ -115,7 +128,8 @@ export async function trackAdView(adId: string) {
  * Fetches all user profiles from Firestore.
  */
 export async function getAllUsers(): Promise<UserProfile[]> {
-  const usersCollection = collection(db, 'users');
+  const firestoreDb = ensureDb();
+  const usersCollection = collection(firestoreDb, 'users');
   const q = query(usersCollection, orderBy('createdAt', 'desc'));
 
   try {

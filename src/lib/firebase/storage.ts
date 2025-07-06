@@ -1,4 +1,4 @@
-import { storage } from './config';
+import { storage as firebaseStorage } from './config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -9,10 +9,13 @@ import { v4 as uuidv4 } from 'uuid';
  * @returns A promise that resolves with the public download URL of the uploaded file.
  */
 export async function uploadFile(file: File, path: string): Promise<string> {
+  if (!firebaseStorage) {
+      throw new Error("Firebase Storage is not configured. Please check your .env file and restart the server.");
+  }
   if (!file) {
       throw new Error("No file provided for upload.");
   }
-  const storageRef = ref(storage, `${path}/${uuidv4()}-${file.name}`);
+  const storageRef = ref(firebaseStorage, `${path}/${uuidv4()}-${file.name}`);
   const snapshot = await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(snapshot.ref);
   return downloadURL;
