@@ -28,14 +28,17 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 2.04-4.78 2.04-5.78 0-9.5-4.26-9.5-9.8s3.72-9.8 9.5-9.8c2.8 0 4.93 1.05 6.4 2.45l2.4-2.38C19.2 1.11 16.2.36 12.48.36c-6.9 0-12.13 5.3-12.13 11.97s5.23 11.97 12.13 11.97c6.7 0 11.7-4.4 11.7-11.52 0-.76-.1-1.45-.24-2.04z"/></svg>
 );
 
-const isFirebaseReady = process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
 
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<boolean>(false);
   const { loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
   const { toast } = useToast();
+
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const isFirebaseReady = apiKey && !apiKey.includes('your-') && projectId && !projectId.includes('your-');
+
 
   const handleFirebaseAuthError = (error: unknown) => {
     console.error("Full Firebase Auth Error Object:", error);
@@ -145,21 +148,28 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         </div>
         <h3 className="mt-4 text-xl font-bold text-destructive">Firebase Not Configured</h3>
         <p className="mt-2 text-muted-foreground">
-            Authentication is disabled because the app can't find your Firebase keys.
+            Authentication is disabled. This is usually because the API keys in your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file are missing or incorrect.
         </p>
-        <div className="mt-4 text-left text-sm bg-muted p-4 rounded-md border">
-            <p className="font-semibold">How to Fix:</p>
-            <ol className="list-decimal list-inside mt-2 space-y-2">
-                <li>
-                    Make sure you have copied your credentials into the <strong className="text-primary">.env</strong> file.
-                </li>
-                <li>
-                    <span className="font-bold text-destructive">Crucial Step:</span> You must <strong className="text-primary">restart your development server</strong> for the changes to take effect.
-                </li>
-                 <li>
-                    Check the browser's developer console for more debug information.
-                </li>
-            </ol>
+        <div className="mt-4 text-left text-sm bg-muted p-4 rounded-md border space-y-3">
+           <div>
+             <p className="font-semibold">Your App's Current Project ID:</p>
+             <p className="font-mono bg-background p-2 rounded text-center text-destructive mt-1">{projectId || 'UNDEFINED'}</p>
+             <p className="text-xs text-muted-foreground mt-1">
+                If this says "UNDEFINED" or shows the wrong ID, your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file is not being loaded correctly.
+             </p>
+           </div>
+           
+            <div>
+              <p className="font-semibold">How to Fix:</p>
+              <ol className="list-decimal list-inside mt-2 space-y-2">
+                  <li>
+                      Ensure your Firebase Project ID is correctly set for <code className="font-bold">NEXT_PUBLIC_FIREBASE_PROJECT_ID</code> in the <strong className="text-primary">.env</strong> file.
+                  </li>
+                  <li>
+                      <span className="font-bold text-destructive">Crucial Step:</span> You must <strong className="text-primary">stop and restart</strong> your development server for the changes to take effect.
+                  </li>
+              </ol>
+            </div>
         </div>
     </div>
   );
@@ -238,3 +248,5 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     </Dialog>
   );
 }
+
+    
