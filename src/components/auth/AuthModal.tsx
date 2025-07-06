@@ -36,55 +36,60 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { toast } = useToast();
 
   const handleFirebaseAuthError = (error: unknown) => {
-    // Check for common user actions that shouldn't show a big error
+    // Log the raw error for debugging purposes
+    console.error("Full Firebase Auth Error Object:", error);
+
+    // Don't show toast for user-cancelled popups
     if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
         console.log("Authentication popup closed by user.");
         return;
     }
 
-    console.error("Firebase Auth Error:", error);
-
     let title = 'Authentication Failed';
-    let message: string | React.ReactNode = 'An unknown error occurred. Please try again.';
+    let description: string | React.ReactNode = 'An unknown error occurred. Please try again.';
 
     if (error instanceof FirebaseError) {
-        switch (error.code) {
-            case 'auth/invalid-api-key':
-                title = 'Configuration Error';
-                message = "The Firebase API Key is not valid. Please check your .env file and ensure NEXT_PUBLIC_FIREBASE_API_KEY is correct.";
-                break;
-            case 'auth/unauthorized-domain':
-                title = 'Configuration Error';
-                message = (
-                    <>
-                        This app's domain (<b>{window.location.hostname}</b>) is not authorized for Google Sign-In. Please add it to the authorized domains in your Firebase project's Authentication settings.
-                    </>
-                );
-                break;
-            case 'auth/user-not-found':
-                message = 'No account was found with that email address.';
-                break;
-            case 'auth/wrong-password':
-                message = 'Incorrect password. Please try again.';
-                break;
-            case 'auth/email-already-in-use':
-                message = 'An account already exists with this email address. Please log in instead.';
-                break;
-            case 'auth/weak-password':
-                message = 'The password is too weak. It should be at least 6 characters long.';
-                break;
-            default:
-                message = `An unexpected error occurred: ${error.message}`;
+        // This is the most likely culprit, so let's check for it specifically,
+        // using both the official code and parts of the message.
+        if (error.code === 'auth/invalid-api-key' || error.message.includes('API key not valid')) {
+            title = 'Invalid Firebase API Key';
+            description = (
+                <>
+                    <p className="font-bold">Your Firebase API Key is not correct.</p>
+                    <p className="mt-2">Please go to your Firebase project settings, copy the `apiKey` value, and paste it into your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file for the `NEXT_PUBLIC_FIREBASE_API_KEY` variable.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Make sure there are no extra spaces or quotes around the key.</p>
+                </>
+            );
+        } else if (error.code === 'auth/unauthorized-domain') {
+            title = 'Domain Not Authorized';
+            description = (
+                <>
+                    <p className="font-bold">This website's domain is not authorized for Google Sign-In.</p>
+                    <p className="mt-2">Please go to your Firebase Console, navigate to <code className="bg-muted px-1 py-0.5 rounded">Authentication &gt; Settings &gt; Authorized domains</code>, and add the following domain:</p>
+                    <p className="mt-2 font-mono bg-muted p-2 rounded text-center">{window.location.hostname}</p>
+                </>
+            );
+        } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            title = 'Login Failed';
+            description = "Incorrect email or password. Please try again.";
+        } else if (error.code === 'auth/email-already-in-use') {
+            title = 'Registration Failed';
+            description = 'An account already exists with this email address. Please log in instead.';
+        } else {
+             // Generic fallback for other Firebase errors
+            title = 'Firebase Error';
+            description = `An unexpected Firebase error occurred: ${error.message} (Code: ${error.code})`;
         }
     } else if (error instanceof Error) {
-        message = `An unexpected error occurred: ${error.message}`;
+        // Fallback for non-Firebase errors
+        description = `An unexpected error occurred: ${error.message}`;
     }
     
     toast({
         variant: 'destructive',
         title: title,
-        description: message,
-        duration: 15000,
+        description: description,
+        duration: 20000, // Longer duration for important messages
     });
   };
 
