@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 
 const GoogleIcon = () => (
@@ -28,7 +28,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     const [resetPasswordEmail, setResetPasswordEmail] = useState('');
     const [resetFeedback, setResetFeedback] = useState({ type: '', message: '' });
 
-    const { loginWithGoogle, loginWithEmail, registerWithEmail, sendPasswordReset } = useAuth();
+    const { loginWithGoogle, loginWithEmail, registerWithEmail, sendPasswordReset, isFirebaseConfigured } = useAuth();
     const { toast } = useToast();
 
     const handleGoogleLogin = async () => {
@@ -133,6 +133,41 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
         </form>
     );
 
+    const NotConfiguredView = () => (
+        <DialogContent>
+            <DialogHeader>
+                <div className="flex justify-center mb-4">
+                    <AlertTriangle className="h-12 w-12 text-destructive" />
+                </div>
+                <DialogTitle className="text-2xl font-bold text-center text-destructive">
+                    Action Required: Configure Firebase
+                </DialogTitle>
+                <DialogDescription className="text-center text-lg text-muted-foreground px-4">
+                    Your app is not connected to Firebase.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 text-left space-y-3 bg-muted p-4 rounded-lg">
+                <p className="font-semibold">To fix this:</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                    <li>Fill in your Firebase API keys in the <code className="bg-background px-1 py-0.5 rounded">.env</code> file.</li>
+                    <li>
+                        <span className="font-bold text-destructive">MOST IMPORTANT:</span> Restart your development server.
+                        <div className="text-xs text-muted-foreground">(Stop it with <code className="bg-background px-1 py-0.5 rounded">Ctrl + C</code> and start it with <code className="bg-background px-1 py-0.5 rounded">npm run dev</code>)</div>
+                    </li>
+                </ol>
+                <p className="text-xs text-center pt-2 text-muted-foreground">The server only reads API keys on startup.</p>
+            </div>
+        </DialogContent>
+    );
+
+    if (!isFirebaseConfigured) {
+        return (
+             <Dialog open={open} onOpenChange={onOpenChange}>
+                <NotConfiguredView />
+            </Dialog>
+        );
+    }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
         onOpenChange(isOpen);
@@ -188,11 +223,10 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
                                 <Label htmlFor="password-reg">Password</Label>
                                 <Input id="password-reg" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             </div>
-                            {error && <p className="text-destructive text-sm">{error}</p>}
                             <Button type="submit" className="w-full" disabled={!!loading}>
-                                {loading === 'register' ? <Loader2 className="animate-spin" /> : 'Create Account'}
+                                 {loading === 'register' ? <Loader2 className="animate-spin" /> : 'Register'}
                             </Button>
-                        </form>
+                       </form>
                     </TabsContent>
                 </Tabs>
             )}

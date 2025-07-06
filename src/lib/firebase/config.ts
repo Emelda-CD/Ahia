@@ -13,16 +13,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// A single, reliable check for valid configuration
+export const isFirebaseConfigured = 
+    firebaseConfig.apiKey &&
+    !firebaseConfig.apiKey.startsWith('your-') &&
+    firebaseConfig.projectId &&
+    firebaseConfig.projectId !== 'your-project-id';
+
+
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app);
+export const app = !isFirebaseConfigured ? (getApps().length ? getApp() : initializeApp({})) : initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const auth = getAuth(app);
 
 
 if (typeof window !== 'undefined') { // Run only on the client
-    const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('your-');
-    if (!isConfigured) {
+    if (!isFirebaseConfigured) {
         console.warn(`
         ********************************************************************************
         *
@@ -47,18 +54,17 @@ if (typeof window !== 'undefined') { // Run only on the client
   
   // Enable Firestore offline persistence
   try {
-    enableIndexedDbPersistence(db)
-      .catch((err) => {
-          if (err.code == 'failed-precondition') {
-              console.warn("Firestore offline persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.");
-          } else if (err.code == 'unimplemented') {
-              console.warn("Firestore offline persistence failed: The current browser does not support all of the features required to enable persistence.");
-          }
-      });
+    if (isFirebaseConfigured) {
+        enableIndexedDbPersistence(db)
+          .catch((err) => {
+              if (err.code == 'failed-precondition') {
+                  console.warn("Firestore offline persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.");
+              } else if (err.code == 'unimplemented') {
+                  console.warn("Firestore offline persistence failed: The current browser does not support all of the features required to enable persistence.");
+              }
+          });
+    }
   } catch (error) {
       console.error("Error enabling Firestore offline persistence: ", error);
   }
 }
-
-
-export { app, db, storage, auth };

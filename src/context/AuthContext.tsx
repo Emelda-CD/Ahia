@@ -3,7 +3,6 @@
 
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   signOut,
   GoogleAuthProvider,
@@ -15,7 +14,7 @@ import {
   type User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { app, db } from '@/lib/firebase/config';
+import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
 import { sendWelcomeEmail } from '@/lib/email';
 import { useRouter } from 'next/navigation';
 
@@ -35,6 +34,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   user: UserProfile | null;
   loading: boolean;
+  isFirebaseConfigured: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   registerWithEmail: (name: string, email: string, password: string) => Promise<void>;
@@ -45,15 +45,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const auth = getAuth(app);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const handleUser = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    if (firebaseUser) {
+    if (firebaseUser && isFirebaseConfigured) {
       // Check for user profile in Firestore
       const userRef = doc(db, 'users', firebaseUser.uid);
       const userSnap = await getDoc(userRef);
@@ -92,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+        setLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, handleUser);
     return () => unsubscribe();
   }, [handleUser]);
@@ -153,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     isLoggedIn: !!user,
     loading,
+    isFirebaseConfigured,
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
