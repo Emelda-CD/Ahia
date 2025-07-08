@@ -118,13 +118,23 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     
     const [view, setView] = useState<'login' | 'forgot_password'>('login');
     
-    const ErrorAlert = ({ message }: { message: string }) => (
-        <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Authentication Error</AlertTitle>
-            <AlertDescription>{message}</AlertDescription>
-        </Alert>
-    );
+    const ErrorAlert = ({ message }: { message: string }) => {
+        const isProviderError = message.includes('not enabled');
+        return (
+            <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Authentication Error</AlertTitle>
+                <AlertDescription>
+                    {message}
+                    {isProviderError && (
+                        <p className="mt-2 text-xs font-semibold">
+                            <b>How to fix:</b> In your Firebase Console, go to Authentication &rarr; Sign-in method, and enable the provider you are trying to use.
+                        </p>
+                    )}
+                </AlertDescription>
+            </Alert>
+        );
+    };
 
     const LoginView = (
         <form onSubmit={handleEmailLogin} className="space-y-4">
