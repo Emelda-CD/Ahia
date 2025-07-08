@@ -33,6 +33,19 @@ if (isFirebaseConfigured) {
   storage = getStorage(app);
 }
 
+// Server-side startup check (runs only once)
+if (typeof window === 'undefined') {
+    console.log('\n\n--- SERVER-SIDE FIREBASE CONFIG CHECK ---');
+    if (isFirebaseConfigured) {
+        console.log(`[Firebase Studio] Server configured with Project ID: ${firebaseConfig.projectId}`);
+    } else {
+        console.error('[Firebase Studio] SERVER-SIDE FIREBASE IS NOT CONFIGURED.');
+        console.error('Please check your .env file and, most importantly, RESTART the dev server.');
+    }
+    console.log('-----------------------------------------\n\n');
+}
+
+
 // Client-side warnings and persistence setup
 if (typeof window !== 'undefined') {
     if (isFirebaseConfigured && db) {
