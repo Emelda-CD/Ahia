@@ -60,7 +60,9 @@ export default function AccountPage() {
               <CardDescription>{user.email}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start gap-3"><ListOrdered/> My Ads</Button>
+                <Button variant="outline" className="w-full justify-start gap-3" asChild>
+                  <Link href="/account/my-ads"><ListOrdered/> My Ads</Link>
+                </Button>
                 <Button variant="outline" className="w-full justify-start gap-3"><Settings/> Account Settings</Button>
                 {user.role === 'admin' && (
                     <Button variant="outline" className="w-full justify-start gap-3" asChild>
