@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from './config';
+import { db, isFirebaseConfigured } from './config';
 import {
   collection,
   addDoc,
@@ -21,13 +21,12 @@ import {
 import type { Ad } from '@/lib/listings-data';
 import type { UserProfile } from '@/context/AuthContext';
 
-const ensureDb = () => {
-    if (!db) {
-        throw new Error("Firebase is not configured. Please check your .env file and restart the server.");
+// Centralized warning for server-side logs
+const logUnconfigured = () => {
+    if (!isFirebaseConfigured) {
+        console.warn("Firebase is not configured. Database operations will be skipped. Please check your .env file and restart the server.");
     }
-    return db;
-}
-
+};
 
 /**
  * Creates a new ad in Firestore.
@@ -35,8 +34,10 @@ const ensureDb = () => {
  * @returns The ID of the newly created ad document.
  */
 export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>) {
-  const firestoreDb = ensureDb();
-  const adsCollection = collection(firestoreDb, 'ads');
+  if (!isFirebaseConfigured || !db) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+  const adsCollection = collection(db, 'ads');
   
   const dataToSave = {
     ...adData,
@@ -53,8 +54,10 @@ export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>
  * Fetches a list of ads from Firestore based on optional filters.
  */
 export async function getAds(): Promise<Ad[]> {
-    const firestoreDb = ensureDb();
-    const adsCollection = collection(firestoreDb, 'ads');
+    logUnconfigured();
+    if (!isFirebaseConfigured || !db) return [];
+    
+    const adsCollection = collection(db, 'ads');
     
     const queryConstraints: QueryConstraint[] = [
         orderBy('timestamp', 'desc')
@@ -82,8 +85,10 @@ export async function getAds(): Promise<Ad[]> {
  * @returns A promise that resolves to an array of ads.
  */
 export async function getAdsByUserId(userId: string): Promise<Ad[]> {
-  const firestoreDb = ensureDb();
-  const adsCollection = collection(firestoreDb, 'ads');
+  logUnconfigured();
+  if (!isFirebaseConfigured || !db) return [];
+
+  const adsCollection = collection(db, 'ads');
   
   const q = query(
     adsCollection, 
@@ -103,8 +108,10 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
 
 
 export async function getRecentAds(count: number): Promise<Ad[]> {
-    const firestoreDb = ensureDb();
-    const adsCollection = collection(firestoreDb, 'ads');
+    logUnconfigured();
+    if (!isFirebaseConfigured || !db) return [];
+
+    const adsCollection = collection(db, 'ads');
     const q = query(adsCollection, orderBy('timestamp', 'desc'), limit(count));
     const querySnapshot = await getDocs(q);
     const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ad));
@@ -115,9 +122,10 @@ export async function getRecentAds(count: number): Promise<Ad[]> {
  * Fetches a single ad by its ID.
  */
 export async function getAdById(id: string): Promise<Ad | null> {
-    if (!id) return null;
-    const firestoreDb = ensureDb();
-    const docRef = doc(firestoreDb, 'ads', id);
+    logUnconfigured();
+    if (!id || !isFirebaseConfigured || !db) return null;
+    
+    const docRef = doc(db, 'ads', id);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -138,10 +146,11 @@ export async function getAdById(id: string): Promise<Ad | null> {
  * @param adId The ID of the ad that was viewed.
  */
 export async function trackAdView(adId: string) {
-    if (!adId) return;
-    const firestoreDb = ensureDb();
+    logUnconfigured();
+    if (!adId || !isFirebaseConfigured || !db) return;
+    
     try {
-        const adRef = doc(firestoreDb, 'ads', adId);
+        const adRef = doc(db, 'ads', adId);
         // The 'views' field is not implemented yet.
         // To enable this, add `views: number` to the Ad type and Firestore documents.
         // await updateDoc(adRef, {
@@ -157,8 +166,10 @@ export async function trackAdView(adId: string) {
  * Fetches all user profiles from Firestore.
  */
 export async function getAllUsers(): Promise<UserProfile[]> {
-  const firestoreDb = ensureDb();
-  const usersCollection = collection(firestoreDb, 'users');
+  logUnconfigured();
+  if (!isFirebaseConfigured || !db) return [];
+  
+  const usersCollection = collection(db, 'users');
   const q = query(usersCollection, orderBy('createdAt', 'desc'));
 
   try {
@@ -195,8 +206,10 @@ export async function getAllUsers(): Promise<UserProfile[]> {
  * @param adData The new data for the ad.
  */
 export async function updateAd(adId: string, userId: string, adData: Partial<Ad>) {
-  const firestoreDb = ensureDb();
-  const adRef = doc(firestoreDb, 'ads', adId);
+  if (!isFirebaseConfigured || !db) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+  const adRef = doc(db, 'ads', adId);
   const adSnap = await getDoc(adRef);
 
   if (!adSnap.exists()) {
@@ -219,8 +232,10 @@ export async function updateAd(adId: string, userId: string, adData: Partial<Ad>
  * @param userId The UID of the user attempting the deletion.
  */
 export async function deleteAd(adId: string, userId: string) {
-    const firestoreDb = ensureDb();
-    const adRef = doc(firestoreDb, 'ads', adId);
+    if (!isFirebaseConfigured || !db) {
+      throw new Error("Action failed: Firebase is not configured on the server.");
+    }
+    const adRef = doc(db, 'ads', adId);
     const adSnap = await getDoc(adRef);
 
     if (!adSnap.exists()) {
