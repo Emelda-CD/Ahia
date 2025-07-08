@@ -18,6 +18,28 @@ const GoogleIcon = () => (
     </svg>
 );
 
+const getFirebaseAuthErrorMessage = (err: any): string => {
+  if (typeof err !== 'object' || !err?.code) {
+    return err?.message || 'An unexpected error occurred. Please try again.';
+  }
+  switch (err.code) {
+    case 'auth/email-already-in-use':
+      return 'This email address is already in use by another account.';
+    case 'auth/invalid-email':
+      return 'The email address is not valid.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password accounts are not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
+    case 'auth/weak-password':
+      return 'The password is too weak. Please use a stronger password (at least 6 characters).';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please try again.';
+    default:
+      return err.message || 'An unexpected error occurred. Please try again.';
+  }
+};
+
 
 export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void}) {
     const [name, setName] = useState('');
@@ -39,8 +61,9 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
             onOpenChange(false);
             toast({ title: "Login Successful", description: "Welcome back!" });
         } catch (err: any) {
-            setError(err.message);
-            toast({ variant: 'destructive', title: "Login Failed", description: err.message });
+            const friendlyError = getFirebaseAuthErrorMessage(err);
+            setError(friendlyError);
+            toast({ variant: 'destructive', title: "Login Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -55,8 +78,9 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
             onOpenChange(false);
             toast({ title: "Login Successful", description: "Welcome back!" });
         } catch (err: any) {
-            setError(err.message);
-            toast({ variant: 'destructive', title: "Login Failed", description: err.message });
+            const friendlyError = getFirebaseAuthErrorMessage(err);
+            setError(friendlyError);
+            toast({ variant: 'destructive', title: "Login Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -72,8 +96,9 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
             toast({ title: "Registration Successful", description: "Please check your email to verify your account." });
         } catch (err: any)
         {
-            setError(err.message);
-            toast({ variant: 'destructive', title: "Registration Failed", description: err.message });
+            const friendlyError = getFirebaseAuthErrorMessage(err);
+            setError(friendlyError);
+            toast({ variant: 'destructive', title: "Registration Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -87,7 +112,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
             await sendPasswordReset(resetPasswordEmail);
             setResetFeedback({ type: 'success', message: 'Password reset link sent! Check your inbox.' });
         } catch (err: any) {
-            setResetFeedback({ type: 'error', message: err.message });
+            setResetFeedback({ type: 'error', message: getFirebaseAuthErrorMessage(err) });
         } finally {
             setLoading(null);
         }
@@ -223,6 +248,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
                                 <Label htmlFor="password-reg">Password</Label>
                                 <Input id="password-reg" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             </div>
+                             {error && <p className="text-destructive text-sm">{error}</p>}
                             <Button type="submit" className="w-full" disabled={!!loading}>
                                  {loading === 'register' ? <Loader2 className="animate-spin" /> : 'Register'}
                             </Button>
@@ -234,3 +260,5 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     </Dialog>
   );
 }
+
+    
