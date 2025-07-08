@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,17 +17,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin } from 'lucide-react';
+import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin, Sparkles } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/firebase/storage';
-import { createAd } from '@/lib/firebase/actions';
+import { createAd, updateAd } from '@/lib/firebase/actions';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import type { Ad } from '@/lib/listings-data';
+import { handleSuggestTags } from '@/app/post-ad/actions';
 
-const adSchema = z.object({
+const createSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   location: z.string().min(1, 'Location is required'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -39,9 +41,19 @@ const adSchema = z.object({
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
 });
 
-type AdFormValues = z.infer<typeof adSchema>;
+const editSchema = createSchema.extend({
+  images: z.array(z.instanceof(File)).optional(), // Images are optional when editing
+  terms: z.boolean().optional(), // Terms are already accepted
+});
 
-export default function PostAdForm() {
+type AdFormValues = z.infer<typeof createSchema>;
+
+interface PostAdFormProps {
+  mode?: 'create' | 'edit';
+  adToEdit?: Ad | null;
+}
+
+export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProps) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -50,28 +62,42 @@ export default function PostAdForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { toast } = useToast();
+  
   const form = useForm<AdFormValues>({
-    resolver: zodResolver(adSchema),
+    resolver: zodResolver(mode === 'create' ? createSchema : editSchema),
     defaultValues: {
-      terms: false,
+      terms: mode === 'edit' ? true : false,
       category: '',
       location: '',
       images: []
     }
   });
 
-  const { register, handleSubmit, control, trigger, setValue, watch, formState: { errors } } = form;
+  const { register, handleSubmit, control, trigger, setValue, watch, formState: { errors }, reset } = form;
+
+  useEffect(() => {
+    if (mode === 'edit' && adToEdit) {
+      reset({
+        title: adToEdit.title,
+        description: adToEdit.description,
+        price: adToEdit.price,
+        category: adToEdit.category,
+        location: adToEdit.location,
+        terms: true,
+        images: [], // File inputs cannot be pre-populated
+      });
+    }
+  }, [mode, adToEdit, reset]);
 
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
 
   const nextStep = async () => {
-    let fieldsToValidate: (keyof AdFormValues)[];
-    if (step === 1) {
-      fieldsToValidate = ['category', 'location'];
-    } else {
-      fieldsToValidate = ['title', 'description', 'price', 'images', 'terms'];
-    }
+    const fieldsToValidate: (keyof AdFormValues)[] = (step === 1)
+      ? ['category', 'location']
+      : ['title', 'description', 'price', 'images'];
+    if (mode === 'create' && step === 2) fieldsToValidate.push('terms');
+
     const isValid = await trigger(fieldsToValidate);
     if (isValid) setStep((s) => s + 1);
   };
@@ -80,49 +106,50 @@ export default function PostAdForm() {
 
   const onSubmit = async (data: AdFormValues) => {
     setIsSubmitting(true);
-    
-    // Although the form is disabled, this is an extra check.
     if (!user) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to post an ad.' });
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
         setIsSubmitting(false);
         return;
     }
 
     try {
-        const imageUrls = await Promise.all(
-            data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
+      let imageUrls: string[] | undefined;
+      // Only upload new images if they have been provided
+      if (data.images && data.images.length > 0) {
+        imageUrls = await Promise.all(
+          data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
         );
+      }
 
-        if (imageUrls.length === 0) {
-            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload your images. Please try again.' });
-            setIsSubmitting(false);
-            return;
+      if (mode === 'create') {
+        if (!imageUrls || imageUrls.length === 0) {
+          toast({ variant: 'destructive', title: 'Image Upload Required', description: 'Please upload at least one image.' });
+          setIsSubmitting(false);
+          return;
         }
-        
         const adData = {
-            title: data.title,
-            description: data.description,
-            category: data.category,
-            price: data.price,
-            location: data.location,
-            images: imageUrls,
-            image: imageUrls[0], // Use first image as main
-            data_ai_hint: '', // Can be generated or left empty
-            userID: user.uid,
+          title: data.title, description: data.description, category: data.category,
+          price: data.price, location: data.location, images: imageUrls,
+          image: imageUrls[0], data_ai_hint: '', userID: user.uid,
         };
-
         await createAd(adData);
-
-        toast({
-          title: 'Ad Submitted!',
-          description: 'Your ad has been successfully submitted for review.',
-          className: 'bg-green-100 border-green-300 text-green-800'
-        });
-
-        router.push('/account');
-
+        toast({ title: 'Ad Submitted!', description: 'Your ad is now pending review.', className: 'bg-green-100 text-green-800' });
+        router.push('/account/my-ads');
+      } else if (mode === 'edit' && adToEdit) {
+        const adUpdateData: Partial<Ad> = {
+          title: data.title, description: data.description, category: data.category,
+          price: data.price, location: data.location,
+        };
+        if (imageUrls && imageUrls.length > 0) {
+          adUpdateData.images = imageUrls;
+          adUpdateData.image = imageUrls[0];
+        }
+        await updateAd(adToEdit.id, user.uid, adUpdateData);
+        toast({ title: 'Ad Updated!', description: 'Your changes have been saved.', className: 'bg-green-100 text-green-800' });
+        router.push('/account/my-ads');
+      }
     } catch (error) {
-        console.error("Error creating ad:", error);
+        console.error("Error submitting ad:", error);
         toast({ variant: 'destructive', title: 'Submission Failed', description: 'An unexpected error occurred. Please try again.' });
     } finally {
         setIsSubmitting(false);
@@ -132,17 +159,10 @@ export default function PostAdForm() {
   const handleFiles = (files: FileList | null) => {
     if (files) {
       const allowedTypes = ['image/jpeg', 'image/png'];
-      const newFiles = Array.from(files)
-        .filter(file => allowedTypes.includes(file.type));
-
+      const newFiles = Array.from(files).filter(file => allowedTypes.includes(file.type));
       if (newFiles.length !== files.length) {
-          toast({
-              variant: 'destructive',
-              title: 'Invalid File Type',
-              description: 'Please upload only .jpg or .png files.'
-          })
+          toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload only .jpg or .png files.' })
       }
-        
       const currentImages = watch('images') || [];
       const updatedImages = [...currentImages, ...newFiles].slice(0, 10);
       setValue('images', updatedImages, { shouldValidate: true });
@@ -173,11 +193,9 @@ export default function PostAdForm() {
       setDraggedIndex(null);
       return;
     }
-
     const newImages = [...watch('images')];
     const [draggedItem] = newImages.splice(draggedIdx, 1);
     newImages.splice(targetIndex, 0, draggedItem);
-    
     setValue('images', newImages, { shouldValidate: true });
     setDraggedIndex(null);
   };
@@ -192,7 +210,7 @@ export default function PostAdForm() {
             name="category"
             control={control}
             render={({ field }) => (
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!user}>
+            <Select onValueChange={field.onChange} value={field.value} disabled={!user}>
                 <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                 <SelectContent>
                 {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
@@ -243,20 +261,15 @@ export default function PostAdForm() {
             {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
         </div>
         <div>
-        <Label htmlFor="file-upload">Add photos (1-10). Drag to reorder. First is main.</Label>
+        <Label htmlFor="file-upload">
+          {mode === 'edit' ? 'Upload new photos to replace current ones.' : 'Add photos (1-10).'}
+        </Label>
         <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
             {imagePreviews.map((src, index) => (
                 <div 
                     key={src} 
-                    className={cn(
-                        "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary",
-                        draggedIndex === index && "opacity-50"
-                    )}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                    onDragEnd={handleDragEnd}
+                    className={cn( "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary", draggedIndex === index && "opacity-50" )}
+                    draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} onDragEnd={handleDragEnd}
                 >
                     <Image src={src} alt={`preview ${index}`} fill className="rounded-md object-cover" />
                     <button type="button" onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove image">
@@ -274,22 +287,32 @@ export default function PostAdForm() {
         </div>
         <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
         {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
+        {mode === 'edit' && adToEdit && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-muted-foreground">Current photos:</p>
+            <div className="flex gap-2 mt-2">
+              {adToEdit.images.map(img => <Image key={img} src={img} alt="Current ad photo" width={64} height={64} className="rounded-md object-cover"/>)}
+            </div>
+          </div>
+        )}
         </div>
-        <div>
-        <Controller
-            name="terms"
-            control={control}
-            render={({ field }) => (
-                <div className="flex items-start space-x-3">
-                <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
-                <div>
-                    <Label htmlFor="terms">I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link></Label>
-                    {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
-                </div>
-                </div>
-            )}
-        />
-        </div>
+        {mode === 'create' && (
+          <div>
+            <Controller
+                name="terms"
+                control={control}
+                render={({ field }) => (
+                    <div className="flex items-start space-x-3">
+                    <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
+                    <div>
+                        <Label htmlFor="terms">I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link></Label>
+                        {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
+                    </div>
+                    </div>
+                )}
+            />
+          </div>
+        )}
     </fieldset>
   );
 
@@ -297,9 +320,9 @@ export default function PostAdForm() {
     <Card>
       <CardHeader>
         <Progress value={(step / 2) * 100} className="mb-4" />
-        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Submission'}</CardTitle>
+        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
-          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details about your item and post your ad.'}
+          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -327,7 +350,7 @@ export default function PostAdForm() {
               </Button>
             ) : (
               <Button type="submit" disabled={isSubmitting || !user}>
-                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : 'Submit Ad'}
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
               </Button>
             )}
           </div>

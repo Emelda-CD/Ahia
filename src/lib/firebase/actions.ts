@@ -15,7 +15,8 @@ import {
   serverTimestamp,
   updateDoc,
   increment,
-  QueryConstraint
+  QueryConstraint,
+  deleteDoc
 } from 'firebase/firestore';
 import type { Ad } from '@/lib/listings-data';
 import type { UserProfile } from '@/context/AuthContext';
@@ -185,4 +186,51 @@ export async function getAllUsers(): Promise<UserProfile[]> {
         throw error; // Re-throw other errors
     }
   }
+}
+
+/**
+ * Updates an existing ad in Firestore after verifying ownership.
+ * @param adId The ID of the ad to update.
+ * @param userId The UID of the user attempting the update.
+ * @param adData The new data for the ad.
+ */
+export async function updateAd(adId: string, userId: string, adData: Partial<Ad>) {
+  const firestoreDb = ensureDb();
+  const adRef = doc(firestoreDb, 'ads', adId);
+  const adSnap = await getDoc(adRef);
+
+  if (!adSnap.exists()) {
+    throw new Error('Ad not found.');
+  }
+
+  if (adSnap.data().userID !== userId) {
+    throw new Error('You do not have permission to edit this ad.');
+  }
+
+  await updateDoc(adRef, {
+      ...adData,
+      lastUpdated: serverTimestamp()
+  });
+}
+
+/**
+ * Deletes an ad from Firestore after verifying ownership.
+ * @param adId The ID of the ad to delete.
+ * @param userId The UID of the user attempting the deletion.
+ */
+export async function deleteAd(adId: string, userId: string) {
+    const firestoreDb = ensureDb();
+    const adRef = doc(firestoreDb, 'ads', adId);
+    const adSnap = await getDoc(adRef);
+
+    if (!adSnap.exists()) {
+        throw new Error("Ad not found.");
+    }
+
+    if (adSnap.data().userID !== userId) {
+        throw new Error("You do not have permission to delete this ad.");
+    }
+    
+    // In a production app, you would also delete associated images from Cloud Storage here.
+    await deleteDoc(adRef);
 }

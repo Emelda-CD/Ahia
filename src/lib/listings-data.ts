@@ -9,6 +9,7 @@ export type Ad = {
   location: string;
   userID?: string;
   timestamp: any;
+  lastUpdated?: any;
   verified: boolean;
   images: string[];
   image: string; // main image
