@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
@@ -28,7 +29,7 @@ const getFirebaseAuthErrorMessage = (err: any): string => {
     case 'auth/invalid-email':
       return 'The email address is not valid.';
     case 'auth/operation-not-allowed':
-      return 'Email/password accounts are not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
+      return 'The Email/Password sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
     case 'auth/weak-password':
       return 'The password is too weak. Please use a stronger password (at least 6 characters).';
     case 'auth/user-not-found':
@@ -63,7 +64,6 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
         } catch (err: any) {
             const friendlyError = getFirebaseAuthErrorMessage(err);
             setError(friendlyError);
-            toast({ variant: 'destructive', title: "Login Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -80,7 +80,6 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
         } catch (err: any) {
             const friendlyError = getFirebaseAuthErrorMessage(err);
             setError(friendlyError);
-            toast({ variant: 'destructive', title: "Login Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -98,7 +97,6 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
         {
             const friendlyError = getFirebaseAuthErrorMessage(err);
             setError(friendlyError);
-            toast({ variant: 'destructive', title: "Registration Failed", description: friendlyError });
         } finally {
             setLoading(null);
         }
@@ -119,6 +117,14 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     }
     
     const [view, setView] = useState<'login' | 'forgot_password'>('login');
+    
+    const ErrorAlert = ({ message }: { message: string }) => (
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>{message}</AlertDescription>
+        </Alert>
+    );
 
     const LoginView = (
         <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -130,7 +136,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && <ErrorAlert message={error} />}
             <Button type="submit" className="w-full" disabled={!!loading}>
                 {loading === 'email' ? <Loader2 className="animate-spin" /> : 'Login'}
             </Button>
@@ -248,7 +254,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
                                 <Label htmlFor="password-reg">Password</Label>
                                 <Input id="password-reg" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                             </div>
-                             {error && <p className="text-destructive text-sm">{error}</p>}
+                             {error && <ErrorAlert message={error} />}
                             <Button type="submit" className="w-full" disabled={!!loading}>
                                  {loading === 'register' ? <Loader2 className="animate-spin" /> : 'Register'}
                             </Button>
@@ -260,5 +266,3 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     </Dialog>
   );
 }
-
-    
