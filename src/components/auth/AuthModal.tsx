@@ -36,8 +36,10 @@ const getFirebaseAuthErrorMessage = (err: any): string => {
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
       return 'Invalid email or password. Please try again.';
+    case 'permission-denied':
+      return 'Permission denied. This is likely due to your Firestore security rules. Please follow the instructions to update them in your Firebase console.';
     default:
-      return err.message || 'An unexpected error occurred. Please try again.';
+      return err.message || `An unexpected error occurred. Code: ${err.code}`;
   }
 };
 
@@ -120,6 +122,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
     
     const ErrorAlert = ({ message }: { message: string }) => {
         const isProviderError = message.includes('not enabled');
+        const isRulesError = message.includes('security rules');
         return (
             <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
@@ -129,6 +132,11 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
                     {isProviderError && (
                         <p className="mt-2 text-xs font-semibold">
                             <b>How to fix:</b> In your Firebase Console, go to Authentication &rarr; Sign-in method, and enable the provider you are trying to use.
+                        </p>
+                    )}
+                    {isRulesError && (
+                         <p className="mt-2 text-xs font-semibold">
+                            <b>How to fix:</b> In your Firebase Console, go to Firestore Database &rarr; Rules, and update your security rules to allow writes.
                         </p>
                     )}
                 </AlertDescription>
