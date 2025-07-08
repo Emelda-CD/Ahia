@@ -2,6 +2,12 @@
 import 'dotenv/config';
 import type {NextConfig} from 'next';
 
+// This will print to your terminal when the server starts
+console.log('\n--- Building with Firebase Project ID ---');
+console.log(`Project ID: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'NOT FOUND'}`);
+console.log('If the Project ID is "NOT FOUND", please ensure your .env file is in the project root and RESTART the server.');
+console.log('---------------------------------------\n');
+
 const nextConfig: NextConfig = {
   /* config options here */
   env: {
