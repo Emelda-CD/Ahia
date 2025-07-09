@@ -1,10 +1,11 @@
+
 "use client";
 
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, PlusCircle } from 'lucide-react';
+import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, Tag } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
@@ -70,7 +71,7 @@ export default function Header() {
             <Link href="/account">Dashboard</Link>
           </DropdownMenuItem>
            <DropdownMenuItem asChild>
-            <Link href="/post-ad">Sell</Link>
+            <Link href="/post-ad"><Tag className="mr-2 h-4 w-4"/>Sell</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={handleLogout} disabled={isLoggingOut}>
@@ -95,7 +96,7 @@ export default function Header() {
 
         <div className="hidden items-center gap-4 md:flex">
             <Button asChild>
-                <Link href="/post-ad"><PlusCircle className="mr-2 h-4 w-4"/>Sell</Link>
+                <Link href="/post-ad"><Tag />Sell</Link>
             </Button>
             {loading ? (
                 <div className="h-10 w-24 rounded-md bg-muted animate-pulse" />
@@ -138,7 +139,7 @@ export default function Header() {
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
                     <Button asChild size="lg">
-                        <Link href="/post-ad" onClick={() => setMobileMenuOpen(false)}><PlusCircle className="mr-2 h-4 w-4"/>Sell</Link>
+                        <Link href="/post-ad" onClick={() => setMobileMenuOpen(false)}><Tag />Sell</Link>
                     </Button>
                     {loading ? <div className="h-10 w-full rounded-md bg-muted animate-pulse" />
                      : isLoggedIn && user ? (
