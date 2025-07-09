@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Info, Phone, Tag, User, LogOut, ChevronDown, Loader2 } from 'lucide-react';
+import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, PlusCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
@@ -23,7 +23,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 const navLinks = [
-  { href: '/post-ad', label: 'Sell', icon: Tag },
   { href: '/about', label: 'About', icon: Info },
   { href: '/contact', label: 'Contact', icon: Phone },
 ];
@@ -95,13 +94,16 @@ export default function Header() {
           {navLinks.map(link => <NavLink key={link.href} href={link.href}>{link.label}</NavLink>)}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-4 md:flex">
+            <Button asChild>
+                <Link href="/post-ad"><PlusCircle className="mr-2 h-4 w-4"/>Post Ad</Link>
+            </Button>
             {loading ? (
                 <div className="h-10 w-24 rounded-md bg-muted animate-pulse" />
             ) : isLoggedIn && user ? (
                 <UserMenu />
             ) : (
-                <Button onClick={() => setAuthModalOpen(true)}>Login / Register</Button>
+                <Button variant="outline" onClick={() => setAuthModalOpen(true)}>Login / Register</Button>
             )}
         </div>
 
@@ -136,6 +138,9 @@ export default function Header() {
                   ))}
                 </nav>
                 <div className="mt-auto flex flex-col gap-4">
+                    <Button asChild size="lg">
+                        <Link href="/post-ad" onClick={() => setMobileMenuOpen(false)}><PlusCircle className="mr-2 h-4 w-4"/>Post Ad</Link>
+                    </Button>
                     {loading ? <div className="h-10 w-full rounded-md bg-muted animate-pulse" />
                      : isLoggedIn && user ? (
                         <>
@@ -147,7 +152,7 @@ export default function Header() {
                             </Button>
                         </>
                      ) : (
-                        <Button size="lg" onClick={() => { setAuthModalOpen(true); setMobileMenuOpen(false); }}>
+                        <Button size="lg" variant="outline" onClick={() => { setAuthModalOpen(true); setMobileMenuOpen(false); }}>
                             Login / Register
                         </Button>
                      )
