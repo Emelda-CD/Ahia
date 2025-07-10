@@ -4,80 +4,65 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export default function TermsAndConditionsPage() {
   const [lastUpdated, setLastUpdated] = useState('');
 
   useEffect(() => {
-    setLastUpdated(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+    // This will be set to July 2025 as per the user's document
+    setLastUpdated('July 2025');
   }, []);
   
+  const terms = [
+    { title: "Age Requirement", text: "You must be 18+ to post or contact sellers." },
+    { title: "Listing Quality", text: "All listings must be clean, legal, and truthful." },
+    { title: "Prohibited Items", text: "No stolen items, fake documents, drugs, or weapons." },
+    { title: "Moderation", text: "Ahia.ng reserves the right to delete misleading or harmful ads." },
+    { title: "User Responsibility", text: "You’re responsible for what you post and who you deal with." },
+    { title: "Account Suspension", text: "We can suspend accounts that abuse the platform." },
+    { title: "Our Role", text: "Ahia.ng is not part of any transaction – always meet in public and be safe." },
+    { title: "Changes to Terms", text: "Terms can change — you’ll be notified." },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
       <section className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Terms and Conditions</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          Last updated: {lastUpdated}
+          Effective Date: {lastUpdated}
         </p>
       </section>
       
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
-            <CardTitle>Welcome to Ahia!</CardTitle>
+            <CardTitle>Using Ahia.ng</CardTitle>
             <CardDescription>
-                These terms and conditions outline the rules and regulations for the use of Ahia's Website, located at ahia.com.
-                By accessing this website we assume you accept these terms and conditions. Do not continue to use Ahia if you do not agree to take all of the terms and conditions stated on this page.
+                By using Ahia.ng, you agree to the following terms. This helps keep our community in Enugu safe and trusted.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Template Document</AlertTitle>
-              <AlertDescription>
-                This is a template document. Before launching your website, you must replace the content of this page with your own comprehensive and legally compliant terms and conditions.
+            <div className="space-y-4">
+              {terms.map((term, index) => (
+                <div key={index} className="space-y-1">
+                  <h2 className="text-xl font-semibold">{index + 1}. {term.title}</h2>
+                  <p className="text-muted-foreground pl-5">{term.text}</p>
+                </div>
+              ))}
+            </div>
+            
+             <Alert variant="default" className="bg-yellow-50 border-yellow-200">
+              <ShieldCheck className="h-4 w-4 text-yellow-700" />
+              <AlertTitle className="text-yellow-800">Remember Your Safety!</AlertTitle>
+              <AlertDescription className="text-yellow-700">
+                Always verify items before paying and meet sellers in safe, public locations. Ahia.ng does NOT act as a middleman or verify every seller.
               </AlertDescription>
             </Alert>
-            <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
-                <p className="text-muted-foreground">
-                    By using our service, you agree to be bound by these terms. If you disagree with any part of the terms, then you may not access the service. This is a legally binding agreement between you and Ahia.
-                </p>
-            </div>
-            <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">2. User Conduct and Responsibilities</h2>
-                <p className="text-muted-foreground">
-                    You are solely responsible for all information, data, text, photographs, graphics, messages, or other materials ("content") that you upload, post, publish or display. You agree to not use the service to post any content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, or invasive of another's privacy.
-                </p>
-            </div>
-             <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">3. Prohibited Items and Content</h2>
-                <p className="text-muted-foreground">
-                    Users are prohibited from posting ads for illegal items, including but not limited to firearms, drugs, stolen goods, and counterfeit products. We reserve the right to remove any content that violates our policies without prior notice.
-                </p>
-            </div>
-             <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">4. Disclaimers and Limitation of Liability</h2>
-                <p className="text-muted-foreground">
-                    Ahia is a platform that connects buyers and sellers. We are not involved in the actual transaction between users. We do not guarantee the quality, safety, or legality of items advertised. You use the service at your own risk. Ahia will not be liable for any damages of any kind arising from the use of this site.
-                </p>
-            </div>
-             <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">5. Intellectual Property</h2>
-                <p className="text-muted-foreground">
-                    The Service and its original content, features and functionality are and will remain the exclusive property of Ahia and its licensors.
-                </p>
-            </div>
-             <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">6. Changes to Terms</h2>
-                <p className="text-muted-foreground">
-                    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice of any changes by posting the new Terms and Conditions on this page.
-                </p>
-            </div>
-             <div className="space-y-2">
+            
+            <div className="space-y-2 pt-4 border-t">
                 <h2 className="text-2xl font-semibold">Contact Us</h2>
                 <p className="text-muted-foreground">
-                    If you have any questions about these Terms, please <a href="/contact" className="text-primary hover:underline">contact us</a>.
+                    If you have any questions about these Terms, please contact us at <a href="mailto:support@ahia.ng" className="text-primary hover:underline">support@ahia.ng</a>.
                 </p>
             </div>
         </CardContent>
