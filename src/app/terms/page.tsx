@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 export default function TermsAndConditionsPage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -29,6 +31,13 @@ export default function TermsAndConditionsPage() {
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Template Document</AlertTitle>
+              <AlertDescription>
+                This is a template document. Before launching your website, you must replace the content of this page with your own comprehensive and legally compliant terms and conditions.
+              </AlertDescription>
+            </Alert>
             <div className="space-y-2">
                 <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
                 <p className="text-muted-foreground">

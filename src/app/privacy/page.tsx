@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -25,10 +27,16 @@ export default function PrivacyPolicyPage() {
             <CardTitle>Your Privacy is Important to Us</CardTitle>
             <CardDescription>
                 This Privacy Policy explains how Ahia ("we," "us," or "our") collects, uses, and discloses information about you when you use our website and services.
-                This is a template and should be replaced with your own policy.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Template Document</AlertTitle>
+              <AlertDescription>
+                This is a template privacy policy. Before launching your website, you must replace the content of this page with your own comprehensive and legally compliant privacy policy.
+              </AlertDescription>
+            </Alert>
             <div className="space-y-2">
                 <h2 className="text-2xl font-semibold">1. Information We Collect</h2>
                 <p className="text-muted-foreground">
