@@ -10,59 +10,91 @@ export default function TermsAndConditionsPage() {
   const [lastUpdated, setLastUpdated] = useState('');
 
   useEffect(() => {
-    // This will be set to July 2025 as per the user's document
     setLastUpdated('July 2025');
   }, []);
   
-  const terms = [
-    { title: "Age Requirement", text: "You must be 18+ to post or contact sellers." },
-    { title: "Listing Quality", text: "All listings must be clean, legal, and truthful." },
-    { title: "Prohibited Items", text: "No stolen items, fake documents, drugs, or weapons." },
-    { title: "Moderation", text: "Ahia.ng reserves the right to delete misleading or harmful ads." },
-    { title: "User Responsibility", text: "You’re responsible for what you post and who you deal with." },
-    { title: "Account Suspension", text: "We can suspend accounts that abuse the platform." },
-    { title: "Our Role", text: "Ahia.ng is not part of any transaction – always meet in public and be safe." },
-    { title: "Changes to Terms", text: "Terms can change — you’ll be notified." },
-  ];
+  const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="space-y-2">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="text-muted-foreground pl-5">{children}</div>
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-20">
       <section className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Terms and Conditions</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Terms of Use</h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          Effective Date: {lastUpdated}
+          Last Updated: {lastUpdated}
         </p>
       </section>
       
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
-            <CardTitle>Using Ahia.ng</CardTitle>
+            <CardTitle>Welcome to Ahia.ng!</CardTitle>
             <CardDescription>
-                By using Ahia.ng, you agree to the following terms. This helps keep our community in Enugu safe and trusted.
+                By accessing or using Ahia.ng (the “Platform”), you agree to follow the terms below (“Terms”). These Terms are between you and Ahia Digital Marketplace (“we,” “our,” or “us”).
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="space-y-4">
-              {terms.map((term, index) => (
-                <div key={index} className="space-y-1">
-                  <h2 className="text-xl font-semibold">{index + 1}. {term.title}</h2>
-                  <p className="text-muted-foreground pl-5">{term.text}</p>
-                </div>
-              ))}
-            </div>
             
-             <Alert variant="default" className="bg-yellow-50 border-yellow-200">
-              <ShieldCheck className="h-4 w-4 text-yellow-700" />
-              <AlertTitle className="text-yellow-800">Remember Your Safety!</AlertTitle>
-              <AlertDescription className="text-yellow-700">
-                Always verify items before paying and meet sellers in safe, public locations. Ahia.ng does NOT act as a middleman or verify every seller.
-              </AlertDescription>
-            </Alert>
+            <Section title="🌍 Our Service">
+                <p>Ahia.ng is a community-driven platform that connects buyers and sellers in Nigeria, especially within Enugu State. We do not own or sell any item listed. Users are responsible for their ads and interactions.</p>
+            </Section>
+
+            <Section title="🔐 Account Registration">
+                <ul className="list-disc list-outside space-y-1">
+                    <li>You must be 18+ or supervised by a guardian to use our platform.</li>
+                    <li>Create only one account per person.</li>
+                    <li>You're responsible for your login details and all activities under your account.</li>
+                </ul>
+            </Section>
+
+            <Section title="📣 Posting an Ad">
+                <ul className="list-disc list-outside space-y-1">
+                    <li>You must provide clear, truthful information about the product or service you're offering.</li>
+                    <li>Don’t post illegal items, misleading information, or use abusive language.</li>
+                    <li>Keep your contact info up-to-date and reachable. Inactive phone numbers may lead to ad removal.</li>
+                </ul>
+            </Section>
+
+            <Section title="📞 Contacting Sellers / Requesting Callback">
+                 <ul className="list-disc list-outside space-y-1">
+                    <li>Always meet in public, safe places—preferably during daylight hours.</li>
+                    <li>Ahia.ng isn’t responsible for transactions gone wrong. Be smart, verify goods, and don’t pay upfront without checking.</li>
+                </ul>
+            </Section>
             
+            <Section title="🚫 What’s Not Allowed">
+                 <ul className="list-disc list-outside space-y-1">
+                    <li>Selling fake, stolen, or illegal items.</li>
+                    <li>Posting ads with adult content, scams, hate speech, or misleading information.</li>
+                    <li>Creating duplicate accounts to bypass limits or policies.</li>
+                </ul>
+            </Section>
+            
+            <Section title="💳 Paid Services">
+                 <ul className="list-disc list-outside space-y-1">
+                    <li>Most services are free, but we may offer optional paid promotions (e.g., ad boosts).</li>
+                    <li>All paid services are optional and non-refundable.</li>
+                </ul>
+            </Section>
+
+            <Section title="📜 Intellectual Property">
+                <p>Your content is yours, but by posting it, you give us permission to display it on Ahia.ng and in our promotions.</p>
+            </Section>
+            
+            <Section title="⚠️ Disclaimer">
+                <ul className="list-disc list-outside space-y-1">
+                    <li>Ahia.ng is provided “as is.” We don’t guarantee every item’s quality or seller reliability.</li>
+                    <li>We’re not liable for damages, losses, or fraud between users.</li>
+                </ul>
+            </Section>
+
             <div className="space-y-2 pt-4 border-t">
-                <h2 className="text-2xl font-semibold">Contact Us</h2>
+                <h2 className="text-2xl font-semibold">📬 Reporting Problems</h2>
                 <p className="text-muted-foreground">
-                    If you have any questions about these Terms, please contact us at <a href="mailto:support@ahia.ng" className="text-primary hover:underline">support@ahia.ng</a>.
+                    If you see fraud, spam, or something suspicious, please contact us at: <a href="mailto:support@ahia.ng" className="text-primary hover:underline font-semibold">support@ahia.ng</a>
                 </p>
             </div>
         </CardContent>
