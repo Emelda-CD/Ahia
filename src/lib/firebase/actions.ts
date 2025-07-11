@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db, isFirebaseConfigured } from './config';
+import { db, auth, isFirebaseConfigured } from './config';
 import {
   collection,
   addDoc,
@@ -18,7 +18,13 @@ import {
   QueryConstraint,
   deleteDoc
 } from 'firebase/firestore';
-import type { Ad } from '@/lib/listings-data';
+import { 
+    updateProfile,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
+    updatePassword
+} from 'firebase/auth';
+import type { Ad, AdStatus } from '@/lib/listings-data';
 import type { UserProfile } from '@/context/AuthContext';
 
 // Centralized warning for server-side logs
@@ -27,6 +33,63 @@ const logUnconfigured = () => {
         console.warn("Firebase is not configured. Database operations will be skipped. Please check your .env file and restart the server.");
     }
 };
+
+/**
+ * Updates a user's profile information in Firestore and Firebase Auth.
+ * @param userId The UID of the user to update.
+ * @param data The profile data to update.
+ */
+export async function updateUserProfile(userId: string, data: Partial<Pick<UserProfile, 'name' | 'phone'>>) {
+  if (!isFirebaseConfigured || !db || !auth) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+  
+  const userRef = doc(db, 'users', userId);
+  
+  // Update Firestore document
+  await updateDoc(userRef, data);
+
+  // Also update Firebase Auth profile if name is changed
+  if (data.name && auth.currentUser && auth.currentUser.uid === userId) {
+    await updateProfile(auth.currentUser, { displayName: data.name });
+  }
+}
+
+/**
+ * Updates an authenticated user's password.
+ * @param currentPassword The user's current password for re-authentication.
+ * @param newPassword The new password to set.
+ */
+export async function updateUserPassword(currentPassword: string, newPassword: string) {
+    if (!isFirebaseConfigured || !auth) {
+        throw new Error("Action failed: Firebase is not configured on the server.");
+    }
+
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+        throw new Error("No authenticated user found or user does not have an email.");
+    }
+
+    // Re-authenticate the user to ensure they are who they say they are
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    
+    try {
+        await reauthenticateWithCredential(user, credential);
+    } catch (error) {
+        // This will throw an error if the current password is incorrect
+        console.error("Re-authentication failed:", error);
+        throw new Error("The current password you entered is incorrect.");
+    }
+    
+    // If re-authentication is successful, update the password
+    try {
+        await updatePassword(user, newPassword);
+    } catch (error) {
+        console.error("Password update failed:", error);
+        throw new Error("Failed to update password. It might be too weak.");
+    }
+}
+
 
 /**
  * Creates a new ad in Firestore.
