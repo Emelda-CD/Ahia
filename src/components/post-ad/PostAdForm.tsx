@@ -124,9 +124,8 @@ export default function PostAdForm() {
       ? ['category', 'location']
       : ['title', 'description', 'price', 'tags'];
 
-    if (mode === 'create') {
-        if(step === 2) fieldsToValidate.push('images');
-        if(step === 2) fieldsToValidate.push('terms');
+    if (mode === 'create' && step === 2) {
+        fieldsToValidate.push('images', 'terms');
     }
     
     const isValid = await trigger(fieldsToValidate);
@@ -442,7 +441,7 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={Math.round((step / 2) * 100)} className="mb-4" />
+        <Progress value={step === 1 ? 25 : 75} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
           {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
@@ -458,8 +457,7 @@ export default function PostAdForm() {
             </Alert>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {step === 1 && Step1}
-          {step === 2 && Step2}
+          {step === 1 ? Step1 : Step2}
 
           <div className="flex justify-between mt-8">
             {step > 1 ? (
@@ -467,6 +465,7 @@ export default function PostAdForm() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             ) : <div />}
+            
             {step < 2 ? (
               <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
                 Next <ArrowRight className="ml-2 h-4 w-4" />
