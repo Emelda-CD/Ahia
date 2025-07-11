@@ -96,7 +96,7 @@ export async function updateUserPassword(currentPassword: string, newPassword: s
  * @param adData The data for the new ad.
  * @returns The ID of the newly created ad document.
  */
-export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified' | 'status'>) {
+export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified' | 'status' | 'views'>) {
   if (!isFirebaseConfigured || !db) {
     throw new Error("Action failed: Firebase is not configured on the server.");
   }
@@ -104,10 +104,11 @@ export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified' 
   
   const dataToSave = {
     ...adData,
-    verified: false, // All new ads start as unverified
-    status: 'pending', // All new ads start as pending
+    verified: false,
+    status: 'pending' as AdStatus,
+    views: 0,
     timestamp: serverTimestamp(),
-  }
+  };
 
   const docRef = await addDoc(adsCollection, dataToSave as any);
   return docRef.id;
@@ -215,11 +216,9 @@ export async function trackAdView(adId: string) {
     
     try {
         const adRef = doc(db, 'ads', adId);
-        // The 'views' field is not implemented yet.
-        // To enable this, add `views: number` to the Ad type and Firestore documents.
-        // await updateDoc(adRef, {
-        //     views: increment(1)
-        // });
+        await updateDoc(adRef, {
+            views: increment(1)
+        });
     } catch (error) {
         console.error("Error tracking view:", error);
     }
@@ -321,4 +320,29 @@ export async function deleteAd(adId: string, userId: string) {
     
     // In a production app, you would also delete associated images from Cloud Storage here.
     await deleteDoc(adRef);
+}
+
+
+interface FeedbackData {
+    userId: string;
+    rating: number;
+    comment: string;
+}
+
+/**
+ * Submits user feedback to Firestore.
+ * @param feedbackData The feedback data from the user.
+ */
+export async function submitFeedback(feedbackData: FeedbackData) {
+    if (!isFirebaseConfigured || !db) {
+        throw new Error("Action failed: Firebase is not configured on the server.");
+    }
+    const feedbackCollection = collection(db, 'feedback');
+    
+    const dataToSave = {
+        ...feedbackData,
+        timestamp: serverTimestamp(),
+    };
+
+    await addDoc(feedbackCollection, dataToSave);
 }

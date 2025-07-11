@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
@@ -22,7 +22,7 @@ import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/firebase/storage';
-import { createAd, updateAd } from '@/lib/firebase/actions';
+import { createAd, updateAd, getAdById } from '@/lib/firebase/actions';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -48,19 +48,18 @@ const editSchema = createSchema.extend({
 
 type AdFormValues = z.infer<typeof createSchema>;
 
-interface PostAdFormProps {
-  mode?: 'create' | 'edit';
-  adToEdit?: Ad | null;
-}
-
-export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProps) {
+export default function PostAdForm() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [mode, setMode] = useState<'create' | 'edit'>('create');
+  const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
+  const [isFormLoading, setIsFormLoading] = useState(true);
 
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const form = useForm<AdFormValues>({
@@ -76,18 +75,40 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
   const { register, handleSubmit, control, trigger, setValue, watch, formState: { errors }, reset } = form;
 
   useEffect(() => {
-    if (mode === 'edit' && adToEdit) {
-      reset({
-        title: adToEdit.title,
-        description: adToEdit.description,
-        price: adToEdit.price,
-        category: adToEdit.category,
-        location: adToEdit.location,
-        terms: true,
-        images: [], // File inputs cannot be pre-populated
-      });
+    const editAdId = searchParams.get('edit');
+    if (editAdId && user) {
+        setMode('edit');
+        const fetchAd = async () => {
+            try {
+                const ad = await getAdById(editAdId);
+                if (ad && ad.userID === user.uid) {
+                    setAdToEdit(ad);
+                    reset({
+                        title: ad.title,
+                        description: ad.description,
+                        price: ad.price,
+                        category: ad.category,
+                        location: ad.location,
+                        terms: true,
+                        images: [], // File inputs cannot be pre-populated
+                    });
+                } else {
+                    toast({ variant: 'destructive', title: 'Error', description: 'Ad not found or you do not have permission to edit it.' });
+                    router.push('/post-ad');
+                }
+            } catch (error) {
+                 toast({ variant: 'destructive', title: 'Error', description: 'Failed to load ad data.' });
+                 router.push('/post-ad');
+            } finally {
+                setIsFormLoading(false);
+            }
+        }
+        fetchAd();
+    } else {
+        setMode('create');
+        setIsFormLoading(false);
     }
-  }, [mode, adToEdit, reset]);
+  }, [searchParams, user, reset, router, toast]);
 
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
@@ -95,9 +116,13 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
   const nextStep = async () => {
     const fieldsToValidate: (keyof AdFormValues)[] = (step === 1)
       ? ['category', 'location']
-      : ['title', 'description', 'price', 'images'];
-    if (mode === 'create' && step === 2) fieldsToValidate.push('terms');
+      : ['title', 'description', 'price'];
 
+    if (mode === 'create') {
+        if(step === 2) fieldsToValidate.push('images');
+        if(step === 2) fieldsToValidate.push('terms');
+    }
+    
     const isValid = await trigger(fieldsToValidate);
     if (isValid) setStep((s) => s + 1);
   };
@@ -141,11 +166,11 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
           price: data.price, location: data.location,
         };
         if (imageUrls && imageUrls.length > 0) {
-          adUpdateData.images = imageUrls;
-          adUpdateData.image = imageUrls[0];
+          adUpdateData.images = [...(adToEdit.images || []), ...imageUrls];
+          adUpdateData.image = adUpdateData.images[0];
         }
         await updateAd(adToEdit.id, user.uid, adUpdateData);
-        toast({ title: 'Ad Updated!', description: 'Your changes have been saved.', className: 'bg-green-100 text-green-800' });
+        toast({ title: 'Ad Updated!', description: 'Your changes have been saved and sent for review.', className: 'bg-green-100 text-green-800' });
         router.push('/account/my-ads');
       }
     } catch (error) {
@@ -201,6 +226,14 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
   };
   
   const handleDragEnd = () => setDraggedIndex(null);
+
+  if (isFormLoading) {
+    return (
+        <div className="flex justify-center items-center h-96">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
+  }
 
   const Step1 = (
     <div className="space-y-4">
@@ -287,7 +320,7 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
         </div>
         <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
         {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
-        {mode === 'edit' && adToEdit && (
+        {mode === 'edit' && adToEdit && (!images || images.length === 0) && (
           <div className="mt-4">
             <p className="text-sm font-medium text-muted-foreground">Current photos:</p>
             <div className="flex gap-2 mt-2">
@@ -306,7 +339,7 @@ export default function PostAdForm({ mode = 'create', adToEdit }: PostAdFormProp
                     <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
                     <div>
                         <Label htmlFor="terms">I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link></Label>
-                        {errors.terms && <p className="text-red-500 text-sm">{errors.terms.message}</p>}
+                        {errors.terms && <p className="text-sm text-destructive">{errors.terms.message}</p>}
                     </div>
                     </div>
                 )}
