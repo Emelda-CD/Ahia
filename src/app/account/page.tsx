@@ -1,75 +1,16 @@
-
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from '@/components/ui/button';
-import { Loader2, User, LogOut, Shield, Settings } from 'lucide-react';
-import Link from 'next/link';
 
-export default function AccountPage() {
-  const { user, loading, logout } = useAuth();
+// This page will serve as the main dashboard overview.
+// For now, we redirect to the "My Ads" page as it's the primary section.
+export default function AccountDashboardPage() {
   const router = useRouter();
-  
-  // State for handling async logout
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    // If loading is finished and there's no user, redirect to home.
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-  
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-        await logout();
-        router.push('/'); // Redirect to home after logout
-    } catch (error) {
-        console.error("Logout failed:", error);
-        // Optionally show a toast message here
-    } finally {
-        setIsLoggingOut(false);
-    }
-  }
+    router.replace('/account/my-ads');
+  }, [router]);
 
-  if (loading || !user) {
-    return (
-      <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <Card className="max-w-md mx-auto">
-        <CardHeader className="text-center items-center">
-            <Avatar className="w-24 h-24 mb-4 border-2 border-primary">
-                <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="person portrait" />
-                <AvatarFallback className="text-3xl">{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <CardTitle>{user.name}</CardTitle>
-            <CardDescription>{user.email}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start gap-3"><User/> Edit Profile</Button>
-            <Button variant="outline" className="w-full justify-start gap-3"><Settings/> Account Settings</Button>
-             {user.role === 'admin' && (
-                <Button variant="outline" className="w-full justify-start gap-3" asChild>
-                    <Link href="/admin"><Shield/> Admin Panel</Link>
-                </Button>
-            )}
-            <Button variant="destructive" className="w-full justify-start gap-3" onClick={handleLogout} disabled={isLoggingOut}>
-                {isLoggingOut ? <Loader2 className="animate-spin"/> : <LogOut/>} 
-                Logout
-            </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return null; // Render nothing while redirecting
 }
