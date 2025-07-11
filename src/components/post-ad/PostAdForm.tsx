@@ -157,12 +157,18 @@ export default function PostAdForm() {
           setIsSubmitting(false);
           return;
         }
-        const adData = {
-          title: data.title, description: data.description, category: data.category,
-          price: data.price, location: data.location, images: imageUrls, tags: data.tags,
-          image: imageUrls[0], data_ai_hint: '', userID: user.uid,
-        };
-        await createAd(adData);
+        await createAd({
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          price: data.price,
+          location: data.location,
+          images: imageUrls,
+          tags: data.tags,
+          image: imageUrls[0],
+          data_ai_hint: '',
+          userID: user.uid,
+        });
         toast({ title: 'Ad Submitted!', description: 'Your ad is now pending review.', className: 'bg-green-100 text-green-800' });
         router.push('/account/my-ads');
       } else if (mode === 'edit' && adToEdit) {
@@ -436,7 +442,7 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={(step / 2) * 100} className="mb-4" />
+        <Progress value={Math.round((step / 2) * 100)} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
           {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
