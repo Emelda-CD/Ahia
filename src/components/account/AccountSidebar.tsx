@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -8,16 +10,12 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Newspaper,
-  Heart,
   MessageSquare,
-  PhoneForwarded,
   User,
   LogOut,
   Settings,
-  Bell,
   BarChart,
   Gem,
-  Wallet,
   AlertCircle
 } from 'lucide-react';
 
@@ -27,12 +25,12 @@ const navItems = [
   { href: '/account/performance', label: 'Performance', icon: BarChart },
   { href: '/account/pro-sales', label: 'Pro Sales', icon: Gem },
   { href: '/account/premium', label: 'Premium Services', icon: Gem },
-  { href: '/account/balance', label: 'My Balance', icon: Wallet },
 ];
 
 export default function AccountSidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [showAlert, setShowAlert] = useState(true);
 
   if (!user) {
     return null;
@@ -55,16 +53,17 @@ export default function AccountSidebar() {
       </div>
 
       <div className="p-2 rounded-lg border bg-card">
-         <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold flex items-center gap-2"><AlertCircle/> Alerts</h3>
-              <Button variant="ghost" size="sm" className="text-orange-800 hover:bg-orange-200 h-auto p-1">hide</Button>
+         {showAlert && (
+            <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold flex items-center gap-2"><AlertCircle/> Alerts</h3>
+                <Button variant="ghost" size="sm" className="text-orange-800 hover:bg-orange-200 h-auto p-1" onClick={() => setShowAlert(false)}>hide</Button>
+                </div>
+                <p className="text-sm"><b>1 your ad was declined!</b><br/><Link href="#" className="underline hover:text-orange-900">Click here</Link> to edit Ad.</p>
             </div>
-            <p className="text-sm"><b>1 your ad was declined!</b><br/><Link href="#" className="underline hover:text-orange-900">Click here</Link> to edit Ad.</p>
-        </div>
+         )}
         <nav className="mt-2 flex flex-col gap-1">
           {navItems.map((item) => {
-            // A simple way to handle nested routes for active state
             const isActive = pathname.startsWith(item.href);
             return (
               <Button

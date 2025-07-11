@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -94,7 +95,7 @@ export default function MyAdsPage() {
             <TabsTrigger value="active"><BadgeCheck className="mr-2"/> Active ({activeAds.length})</TabsTrigger>
             <TabsTrigger value="pending"><Ban className="mr-2"/> Pending ({pendingAds.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="active" className="space-y-4">
+          <TabsContent value="active" className="space-y-4 pt-4">
             {activeAds.length > 0 ? (
                 activeAds.map(ad => <AdListItem key={ad.id} ad={ad} />)
             ) : (
@@ -108,7 +109,7 @@ export default function MyAdsPage() {
                 </div>
             )}
           </TabsContent>
-          <TabsContent value="pending" className="space-y-4">
+          <TabsContent value="pending" className="space-y-4 pt-4">
              {pendingAds.length > 0 ? (
                 pendingAds.map(ad => <AdListItem key={ad.id} ad={ad} />)
             ) : (
