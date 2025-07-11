@@ -35,6 +35,7 @@ const createSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   price: z.preprocess((a) => parseInt(z.string().parse(a), 10), z.number().positive('Price must be a positive number')),
+  tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
     .min(1, 'Please upload at least 1 photo.')
     .max(10, 'You can upload a maximum of 10 photos.'),
@@ -42,8 +43,8 @@ const createSchema = z.object({
 });
 
 const editSchema = createSchema.extend({
-  images: z.array(z.instanceof(File)).optional(), // Images are optional when editing
-  terms: z.boolean().optional(), // Terms are already accepted
+  images: z.array(z.instanceof(File)).optional(), 
+  terms: z.boolean().optional(),
 });
 
 type AdFormValues = z.infer<typeof createSchema>;
@@ -55,6 +56,8 @@ export default function PostAdForm() {
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(true);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
 
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +71,8 @@ export default function PostAdForm() {
       terms: mode === 'edit' ? true : false,
       category: '',
       location: '',
-      images: []
+      images: [],
+      tags: [],
     }
   });
 
@@ -89,8 +93,9 @@ export default function PostAdForm() {
                         price: ad.price,
                         category: ad.category,
                         location: ad.location,
+                        tags: ad.tags || [],
                         terms: true,
-                        images: [], // File inputs cannot be pre-populated
+                        images: [],
                     });
                 } else {
                     toast({ variant: 'destructive', title: 'Error', description: 'Ad not found or you do not have permission to edit it.' });
@@ -112,11 +117,12 @@ export default function PostAdForm() {
 
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
+  const currentTags = watch('tags') || [];
 
   const nextStep = async () => {
     const fieldsToValidate: (keyof AdFormValues)[] = (step === 1)
       ? ['category', 'location']
-      : ['title', 'description', 'price'];
+      : ['title', 'description', 'price', 'tags'];
 
     if (mode === 'create') {
         if(step === 2) fieldsToValidate.push('images');
@@ -139,7 +145,6 @@ export default function PostAdForm() {
 
     try {
       let imageUrls: string[] | undefined;
-      // Only upload new images if they have been provided
       if (data.images && data.images.length > 0) {
         imageUrls = await Promise.all(
           data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
@@ -154,7 +159,7 @@ export default function PostAdForm() {
         }
         const adData = {
           title: data.title, description: data.description, category: data.category,
-          price: data.price, location: data.location, images: imageUrls,
+          price: data.price, location: data.location, images: imageUrls, tags: data.tags,
           image: imageUrls[0], data_ai_hint: '', userID: user.uid,
         };
         await createAd(adData);
@@ -163,7 +168,7 @@ export default function PostAdForm() {
       } else if (mode === 'edit' && adToEdit) {
         const adUpdateData: Partial<Ad> = {
           title: data.title, description: data.description, category: data.category,
-          price: data.price, location: data.location,
+          price: data.price, location: data.location, tags: data.tags,
         };
         if (imageUrls && imageUrls.length > 0) {
           adUpdateData.images = [...(adToEdit.images || []), ...imageUrls];
@@ -227,6 +232,36 @@ export default function PostAdForm() {
   
   const handleDragEnd = () => setDraggedIndex(null);
 
+  const onSuggestTags = async () => {
+    const title = watch('title');
+    const description = watch('description');
+    if (!title || !description) {
+      toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide a title and description before suggesting tags.' });
+      return;
+    }
+    setIsSuggestingTags(true);
+    try {
+      const result = await handleSuggestTags({ title, description });
+      setSuggestedTags(result.tags);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Suggestion Failed', description: error.message });
+    } finally {
+      setIsSuggestingTags(false);
+    }
+  };
+
+  const addTag = (tag: string) => {
+    const current = watch('tags') || [];
+    if (!current.includes(tag)) {
+      setValue('tags', [...current, tag]);
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setValue('tags', (watch('tags') || []).filter(t => t !== tag));
+  };
+
+
   if (isFormLoading) {
     return (
         <div className="flex justify-center items-center h-96">
@@ -288,6 +323,55 @@ export default function PostAdForm() {
         <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
             {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
         </div>
+
+         <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label htmlFor="tags">Search Tags</Label>
+            <Button type="button" variant="outline" size="sm" onClick={onSuggestTags} disabled={isSuggestingTags}>
+              {isSuggestingTags ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              Suggest Tags
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-2">Add keywords buyers might use to search for your item.</p>
+          <div className="p-3 border rounded-md min-h-[40px] flex flex-wrap gap-2">
+            {currentTags.map(tag => (
+              <Badge key={tag} variant="secondary" className="text-base">
+                {tag}
+                <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+             <Input 
+                id="tags"
+                className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0"
+                placeholder={currentTags.length === 0 ? "e.g., used car, sedan..." : ""}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const newTag = e.currentTarget.value.trim();
+                        if (newTag) {
+                            addTag(newTag);
+                            e.currentTarget.value = '';
+                        }
+                    }
+                }}
+             />
+          </div>
+          {suggestedTags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestedTags.map(tag => (
+                <button key={tag} type="button" onClick={() => addTag(tag)} disabled={currentTags.includes(tag)}>
+                  <Badge variant={currentTags.includes(tag) ? "outline" : "default"} className="cursor-pointer hover:bg-primary/80">
+                    + {tag}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+
         <div>
             <Label htmlFor="price">Price (&#8358;)</Label>
             <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />

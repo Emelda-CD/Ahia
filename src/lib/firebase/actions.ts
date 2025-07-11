@@ -319,7 +319,7 @@ export async function updateAd(adId: string, userId: string, adData: Partial<Ad>
     throw new Error('You do not have permission to edit this ad.');
   }
 
-  const dataToUpdate: Partial<Ad> = {
+  const dataToUpdate: Partial<Ad> & { [key: string]: any } = {
     ...adData,
     lastUpdated: serverTimestamp()
   };
