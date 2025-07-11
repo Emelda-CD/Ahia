@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { MoreHorizontal, Trash, Check, Ban, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Trash, Check, Ban, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,21 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { getAds } from '@/lib/firebase/actions';
-import type { Ad } from '@/lib/listings-data';
+import type { Ad, AdStatus } from '@/lib/listings-data';
 import { useToast } from '@/hooks/use-toast';
 
-type Status = 'Active' | 'Pending';
-
-export default function ListingsTable({ limit, filter }: { limit?: number; filter?: 'Active' | 'Pending' }) {
+export default function ListingsTable({ limit, filter }: { limit?: number; filter?: AdStatus | 'All' }) {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  const getStatus = (ad: Ad): Status => {
-    // A real implementation would check a field on the ad object.
-    // For now, verified ads are 'Active', others are 'Pending'
-    return ad.verified ? 'Active' : 'Pending';
-  }
 
   useEffect(() => {
     const fetchAds = async () => {
@@ -39,11 +31,9 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
       try {
         let allAdsFromDb = await getAds();
 
-        let adsWithStatus = allAdsFromDb
-          .map(ad => ({ ...ad, status: getStatus(ad) }))
-          .filter(ad => filter ? ad.status === filter : true);
+        let filteredAds = allAdsFromDb.filter(ad => filter && filter !== 'All' ? ad.status === filter : true);
         
-        setAds(limit ? adsWithStatus.slice(0, limit) : adsWithStatus);
+        setAds(limit ? filteredAds.slice(0, limit) : filteredAds);
       } catch (error) {
         console.error("Failed to fetch ads:", error);
         toast({
@@ -63,6 +53,16 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
+  }
+
+  const getStatusClass = (status: AdStatus) => {
+    switch (status) {
+        case 'active': return 'bg-green-100 text-green-800 border-green-200';
+        case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
+        case 'declined': return 'bg-red-100 text-red-800 border-red-200';
+        case 'expired': return 'bg-gray-100 text-gray-800 border-gray-200';
+        default: return 'bg-secondary text-secondary-foreground';
+    }
   }
 
   return (
@@ -93,11 +93,8 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
             <TableCell>{`₦${ad.price.toLocaleString()}`}</TableCell>
             <TableCell>
               <Badge 
-                variant={ad.status === 'Active' ? 'secondary' : 'outline'}
-                className={cn({
-                    'bg-green-100 text-green-800': ad.status === 'Active',
-                    'bg-amber-100 text-amber-800 border-amber-200': ad.status === 'Pending',
-                })}
+                variant={'outline'}
+                className={cn('capitalize', getStatusClass(ad.status))}
               >
                 {ad.status}
               </Badge>
@@ -112,8 +109,9 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem>View Ad</DropdownMenuItem>
-                   {ad.status === 'Pending' && <DropdownMenuItem><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
-                   {ad.status === 'Active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
+                   {ad.status === 'pending' && <DropdownMenuItem><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
+                   {ad.status !== 'declined' && <DropdownMenuItem><AlertTriangle className="mr-2 h-4 w-4" />Decline Ad</DropdownMenuItem>}
+                   {ad.status === 'active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
                 </DropdownMenuContent>

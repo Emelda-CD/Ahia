@@ -33,7 +33,7 @@ const logUnconfigured = () => {
  * @param adData The data for the new ad.
  * @returns The ID of the newly created ad document.
  */
-export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>) {
+export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified' | 'status'>) {
   if (!isFirebaseConfigured || !db) {
     throw new Error("Action failed: Firebase is not configured on the server.");
   }
@@ -42,10 +42,11 @@ export async function createAd(adData: Omit<Ad, 'id' | 'timestamp' | 'verified'>
   const dataToSave = {
     ...adData,
     verified: false, // All new ads start as unverified
+    status: 'pending', // All new ads start as pending
     timestamp: serverTimestamp(),
   }
 
-  const docRef = await addDoc(adsCollection, dataToSave);
+  const docRef = await addDoc(adsCollection, dataToSave as any);
   return docRef.id;
 }
 
@@ -220,10 +221,19 @@ export async function updateAd(adId: string, userId: string, adData: Partial<Ad>
     throw new Error('You do not have permission to edit this ad.');
   }
 
-  await updateDoc(adRef, {
-      ...adData,
-      lastUpdated: serverTimestamp()
-  });
+  const dataToUpdate: Partial<Ad> = {
+    ...adData,
+    lastUpdated: serverTimestamp()
+  };
+
+  // If the ad is being updated, it should go back to pending for re-approval
+  if (adData.status !== 'active') { // Avoid resetting status if admin is just editing text
+      dataToUpdate.status = 'pending';
+      dataToUpdate.verified = false;
+  }
+
+
+  await updateDoc(adRef, dataToUpdate);
 }
 
 /**

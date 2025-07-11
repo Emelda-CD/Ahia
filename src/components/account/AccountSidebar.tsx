@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import {
   Gem,
   AlertCircle
 } from 'lucide-react';
+import { getAdsByUserId } from '@/lib/firebase/actions';
+import { Ad } from '@/lib/listings-data';
 
 const navItems = [
   { href: '/account/my-ads', label: 'My Adverts', icon: Newspaper },
@@ -30,7 +32,18 @@ const navItems = [
 export default function AccountSidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const [showAlert, setShowAlert] = useState(true);
+  const [declinedAdsCount, setDeclinedAdsCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.uid) {
+      getAdsByUserId(user.uid)
+        .then(ads => {
+          const declined = ads.filter(ad => ad.status === 'declined').length;
+          setDeclinedAdsCount(declined);
+        })
+        .catch(console.error);
+    }
+  }, [user?.uid]);
 
   if (!user) {
     return null;
@@ -53,16 +66,19 @@ export default function AccountSidebar() {
       </div>
 
       <div className="p-2 rounded-lg border bg-card">
-         {showAlert && (
-            <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold flex items-center gap-2"><AlertCircle/> Alerts</h3>
-                <Button variant="ghost" size="sm" className="text-orange-800 hover:bg-orange-200 h-auto p-1" onClick={() => setShowAlert(false)}>hide</Button>
+         {declinedAdsCount > 0 && (
+            <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg mb-2">
+                <div className="flex justify-between items-start mb-1">
+                  <h3 className="font-bold flex items-center gap-2"><AlertCircle/> Attention Required</h3>
                 </div>
-                <p className="text-sm"><b>1 your ad was declined!</b><br/><Link href="#" className="underline hover:text-orange-900">Click here</Link> to edit Ad.</p>
+                <p className="text-sm">
+                  <b>{declinedAdsCount} of your ad{declinedAdsCount > 1 ? 's were' : ' was'} declined.</b>
+                  <br/>
+                  <Link href="/account/my-ads" className="underline hover:text-orange-900 font-semibold">Click here to edit</Link> and resubmit.
+                </p>
             </div>
          )}
-        <nav className="mt-2 flex flex-col gap-1">
+        <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (

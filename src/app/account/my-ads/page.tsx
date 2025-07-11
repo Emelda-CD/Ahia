@@ -10,8 +10,9 @@ import type { Ad } from '@/lib/listings-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Trash2, Edit, Package, BadgeCheck, Ban } from 'lucide-react';
+import { Loader2, Trash2, Edit, Package, BadgeCheck, Ban, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function MyAdsPage() {
   const [ads, setAds] = useState<Ad[]>([]);
@@ -41,11 +42,12 @@ export default function MyAdsPage() {
     }
   }, [user, toast]);
 
-  const activeAds = ads.filter(ad => ad.verified);
-  const pendingAds = ads.filter(ad => !ad.verified); // Assuming not verified means pending/declined
+  const activeAds = ads.filter(ad => ad.status === 'active');
+  const pendingAds = ads.filter(ad => ad.status === 'pending');
+  const declinedAds = ads.filter(ad => ad.status === 'declined');
 
   const AdListItem = ({ ad }: { ad: Ad }) => (
-    <Card>
+    <Card className={cn(ad.status === 'declined' && 'border-destructive/50 bg-destructive/5')}>
         <CardContent className="p-4 flex flex-col sm:flex-row items-start gap-4">
             <Link href={`/listings/${ad.id}`} className="flex-shrink-0">
                 <Image
@@ -62,12 +64,10 @@ export default function MyAdsPage() {
                 <h3 className="font-semibold text-lg hover:text-primary">
                     <Link href={`/listings/${ad.id}`}>{ad.title}</Link>
                 </h3>
-                {!ad.verified && (
-                    <div className="text-sm text-amber-600 mt-1">
-                        <p><b>Status:</b> Pending Review</p>
-                        <p className="text-xs">Your ad is waiting for approval from our team.</p>
-                    </div>
-                )}
+                 <div className="text-sm mt-1">
+                    {ad.status === 'pending' && <p className="text-amber-600"><b>Status:</b> Pending Review</p>}
+                    {ad.status === 'declined' && <p className="text-destructive"><b>Status:</b> Declined. Please review and edit your ad.</p>}
+                 </div>
             </div>
             <div className="flex gap-2 self-start sm:self-end mt-2 sm:mt-0">
                 <Button variant="outline" size="sm" asChild>
@@ -91,9 +91,12 @@ export default function MyAdsPage() {
         </div>
       ) : (
         <Tabs defaultValue="active">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active"><BadgeCheck className="mr-2"/> Active ({activeAds.length})</TabsTrigger>
             <TabsTrigger value="pending"><Ban className="mr-2"/> Pending ({pendingAds.length})</TabsTrigger>
+            <TabsTrigger value="declined" className="text-destructive data-[state=active]:text-destructive data-[state=active]:border-destructive/50">
+                <AlertTriangle className="mr-2"/> Declined ({declinedAds.length})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="active" className="space-y-4 pt-4">
             {activeAds.length > 0 ? (
@@ -116,6 +119,16 @@ export default function MyAdsPage() {
                 <div className="text-center py-16 border rounded-lg bg-card">
                     <h3 className="text-lg font-semibold">No pending ads</h3>
                     <p className="mt-1 text-sm text-muted-foreground">You have no ads currently awaiting review.</p>
+                </div>
+            )}
+          </TabsContent>
+           <TabsContent value="declined" className="space-y-4 pt-4">
+             {declinedAds.length > 0 ? (
+                declinedAds.map(ad => <AdListItem key={ad.id} ad={ad} />)
+            ) : (
+                <div className="text-center py-16 border rounded-lg bg-card">
+                    <h3 className="text-lg font-semibold">No declined ads</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Great! None of your ads have been declined.</p>
                 </div>
             )}
           </TabsContent>

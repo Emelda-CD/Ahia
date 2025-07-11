@@ -32,7 +32,7 @@ export default function AdminDashboardPage() {
                 <CardDescription>Ads waiting for your approval.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ListingsTable limit={5} filter="Pending" />
+                <ListingsTable limit={5} filter="pending" />
             </CardContent>
         </Card>
       </div>
