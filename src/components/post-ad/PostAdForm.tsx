@@ -34,7 +34,10 @@ const createSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  price: z.preprocess((a) => parseInt(z.string().parse(a), 10), z.number().positive('Price must be a positive number')),
+  price: z.preprocess((a) => {
+    if (typeof a === 'string') return parseInt(a.replace(/,/g, ''), 10);
+    return a;
+  }, z.number({ invalid_type_error: 'Price must be a number' }).positive('Price must be a positive number')),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
     .min(1, 'Please upload at least 1 photo.')
@@ -123,10 +126,6 @@ export default function PostAdForm() {
     const fieldsToValidate: (keyof AdFormValues)[] = (step === 1)
       ? ['category', 'location']
       : ['title', 'description', 'price', 'tags'];
-
-    if (mode === 'create' && step === 2) {
-        fieldsToValidate.push('images', 'terms');
-    }
     
     const isValid = await trigger(fieldsToValidate);
     if (isValid) setStep((s) => s + 1);
@@ -441,7 +440,7 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={step === 1 ? 25 : 75} className="mb-4" />
+        <Progress value={step * 50} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
           {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
@@ -481,3 +480,5 @@ export default function PostAdForm() {
     </Card>
   );
 }
+
+    
