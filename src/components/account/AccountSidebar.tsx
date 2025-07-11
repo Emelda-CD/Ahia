@@ -95,6 +95,16 @@ export default function AccountSidebar() {
               </Button>
             );
           })}
+           <Button
+              variant={pathname.startsWith('/account/settings') ? 'secondary' : 'ghost'}
+              className="w-full justify-start gap-3"
+              asChild
+            >
+              <Link href="/account/settings">
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </Link>
+            </Button>
         </nav>
       </div>
 
