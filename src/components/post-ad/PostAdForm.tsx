@@ -28,6 +28,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Ad } from '@/lib/listings-data';
 import { handleSuggestTags } from '@/app/post-ad/actions';
+import imageCompression from 'browser-image-compression';
+
 
 const createSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -52,6 +54,7 @@ type AdFormValues = z.infer<typeof createSchema>;
 export default function PostAdForm() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
@@ -187,18 +190,43 @@ export default function PostAdForm() {
     }
   };
   
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (files) {
-      const allowedTypes = ['image/jpeg', 'image/png'];
+      setIsCompressing(true);
+      toast({ title: 'Compressing images...', description: 'Please wait while we optimize your photos.' });
+      
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       const newFiles = Array.from(files).filter(file => allowedTypes.includes(file.type));
+      
       if (newFiles.length !== files.length) {
-          toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload only .jpg or .png files.' })
+          toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload only .jpg, .png, or .webp files.' })
       }
-      const currentImages = watch('images') || [];
-      const updatedImages = [...currentImages, ...newFiles].slice(0, 10);
-      setValue('images', updatedImages, { shouldValidate: true });
+      
+      const compressionOptions = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      };
+
+      try {
+        const compressedFiles = await Promise.all(
+          newFiles.map(file => imageCompression(file, compressionOptions))
+        );
+
+        const currentImages = watch('images') || [];
+        const updatedImages = [...currentImages, ...compressedFiles].slice(0, 10);
+        setValue('images', updatedImages, { shouldValidate: true });
+        
+        toast({ title: 'Images ready!', description: 'Your photos have been added.' });
+      } catch (error) {
+        console.error('Image compression error: ', error);
+        toast({ variant: 'destructive', title: 'Compression Failed', description: 'Could not process your images. Please try again.' });
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(event.target.files);
@@ -397,13 +425,13 @@ export default function PostAdForm() {
                 </div>
             ))}
             {images.length < 10 && (
-                <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center cursor-pointer transition-colors hover:border-primary/70">
-                    <FileImage className="h-8 w-8 text-gray-400" />
-                    <span className="mt-2 text-sm text-muted-foreground">Add</span>
+                <div onClick={() => !isCompressing && fileInputRef.current?.click()} className={cn("flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center transition-colors", isCompressing ? "cursor-not-allowed bg-muted/50" : "cursor-pointer hover:border-primary/70")}>
+                    {isCompressing ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin"/> : <FileImage className="h-8 w-8 text-gray-400" />}
+                    <span className="mt-2 text-sm text-muted-foreground">{isCompressing ? "Processing..." : "Add"}</span>
                 </div>
             )}
         </div>
-        <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg"/>
+        <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/webp"/>
         {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
         {mode === 'edit' && adToEdit && (!images || images.length === 0) && (
           <div className="mt-4">
@@ -467,7 +495,7 @@ export default function PostAdForm() {
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting || !user}>
+              <Button type="submit" disabled={isSubmitting || isCompressing || !user}>
                 {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
               </Button>
             )}
