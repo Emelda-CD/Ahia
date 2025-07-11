@@ -144,8 +144,6 @@ export async function getAds(): Promise<Ad[]> {
 
 /**
  * Fetches ads for a specific user.
- * NOTE: This query requires a composite index in Firestore. If it fails,
- * the console will provide a link to create it automatically.
  * @param userId The UID of the user whose ads to fetch.
  * @returns A promise that resolves to an array of ads.
  */
@@ -155,11 +153,8 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
 
   const adsCollection = collection(db, 'ads');
   
-  const q = query(
-    adsCollection, 
-    where('userID', '==', userId), 
-    orderBy('timestamp', 'desc')
-  );
+  // Query only by userID to avoid needing a composite index.
+  const q = query(adsCollection, where('userID', '==', userId));
   
   const querySnapshot = await getDocs(q);
 
@@ -167,6 +162,13 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
       id: doc.id,
       ...doc.data(),
   } as Ad));
+
+  // Sort the results by timestamp in the application code.
+  ads.sort((a, b) => {
+    const dateA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
+    const dateB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
+    return dateB.getTime() - dateA.getTime();
+  });
 
   return ads;
 }
