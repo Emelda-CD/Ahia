@@ -2,119 +2,81 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Star, Loader2 } from 'lucide-react';
-import { submitFeedback } from '@/lib/firebase/actions';
+import { Star, MessageSquare, User } from 'lucide-react';
+import FeedbackCard from '@/components/account/FeedbackCard';
 
-const feedbackSchema = z.object({
-  rating: z.string().nonempty({ message: 'Please select a rating.' }),
-  comment: z.string().min(10, { message: 'Please provide at least 10 characters of feedback.' }),
-});
+// Mock data for received feedback - in a real app, this would be fetched from Firestore
+const mockReceivedFeedback = [
+  {
+    id: '1',
+    fromUser: 'Chinedu O.',
+    rating: 5,
+    comment: 'Great seller! The Toyota Camry was exactly as described. Very smooth transaction.',
+    date: new Date('2024-07-20T10:00:00Z'),
+    adTitle: 'Clean Toyota Camry 2019'
+  },
+  {
+    id: '2',
+    fromUser: 'Nkechi E.',
+    rating: 4,
+    comment: 'The iPhone was in good condition, but communication could have been a bit faster. Overall, a positive experience.',
+    date: new Date('2024-07-18T15:30:00Z'),
+    adTitle: 'Slightly Used iPhone 14'
+  },
+  {
+    id: '3',
+    fromUser: 'Samuel A.',
+    rating: 5,
+    comment: 'Excellent service. Very helpful and patient during the inspection. Highly recommend this seller!',
+    date: new Date('2024-07-15T09:00:00Z'),
+    adTitle: 'Honda CR-V 2018'
+  }
+];
 
-type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 
 export default function FeedbackPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
+  const [feedback, setFeedback] = useState(mockReceivedFeedback);
 
-  const form = useForm<FeedbackFormValues>({
-    resolver: zodResolver(feedbackSchema),
-  });
-
-  const onSubmit = async (data: FeedbackFormValues) => {
-    if (!user) return;
-    setIsSubmitting(true);
-    try {
-      await submitFeedback({
-        userId: user.uid,
-        rating: parseInt(data.rating, 10),
-        comment: data.comment,
-      });
-      toast({
-        title: 'Feedback Submitted!',
-        description: 'Thank you for helping us improve Ahia.',
-        className: 'bg-green-100 text-green-800'
-      });
-      form.reset();
-      setSelectedRating(0);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Submission Failed',
-        description: 'Could not submit your feedback. Please try again.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const averageRating = (feedback.reduce((acc, f) => acc + f.rating, 0) / feedback.length).toFixed(1);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Feedback</h1>
-      <p className="text-muted-foreground">We value your opinion. Let us know how we can improve.</p>
+      <div>
+        <h1 className="text-3xl font-bold">My Feedback</h1>
+        <p className="text-muted-foreground">See what buyers are saying about you and your items.</p>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Share Your Experience</CardTitle>
-          <CardDescription>Your feedback is vital for us to make Ahia better for everyone.</CardDescription>
+          <CardTitle>Your Seller Rating</CardTitle>
+          <CardDescription>This is your average rating based on all feedback received.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label>How would you rate your experience?</Label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <Star
-                    key={rating}
-                    className={`h-8 w-8 cursor-pointer transition-colors ${
-                      rating <= (hoverRating || selectedRating)
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-gray-300'
-                    }`}
-                    onMouseEnter={() => setHoverRating(rating)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => {
-                      setSelectedRating(rating);
-                      form.setValue('rating', String(rating), { shouldValidate: true });
-                    }}
-                  />
-                ))}
-              </div>
-               <input type="hidden" {...form.register('rating')} />
-               {form.formState.errors.rating && <p className="text-sm text-destructive">{form.formState.errors.rating.message}</p>}
+        <CardContent className="flex items-center gap-4">
+            <div className="flex items-center text-4xl font-bold">
+                {averageRating}
+                <Star className="w-8 h-8 ml-2 text-yellow-400 fill-yellow-400" />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="comment">What can we improve?</Label>
-              <Textarea
-                id="comment"
-                placeholder="Tell us about your experience, what you liked, or what went wrong."
-                rows={6}
-                {...form.register('comment')}
-              />
-              {form.formState.errors.comment && <p className="text-sm text-destructive">{form.formState.errors.comment.message}</p>}
-            </div>
-            
-            <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit Feedback
-                </Button>
-            </div>
-          </form>
+            <p className="text-muted-foreground">from {feedback.length} review{feedback.length !== 1 && 's'}</p>
         </CardContent>
       </Card>
+      
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">All Reviews</h2>
+        {feedback.length > 0 ? (
+            feedback.map(item => <FeedbackCard key={item.id} {...item} />)
+        ) : (
+            <Card>
+                <CardContent className="py-12 text-center">
+                    <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No feedback yet</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">When buyers leave feedback, it will appear here.</p>
+                </CardContent>
+            </Card>
+        )}
+      </div>
     </div>
   );
 }
