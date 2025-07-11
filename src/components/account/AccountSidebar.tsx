@@ -25,8 +25,6 @@ const navItems = [
   { href: '/account/my-ads', label: 'My Adverts', icon: Newspaper },
   { href: '/account/feedback', label: 'Feedback', icon: MessageSquare },
   { href: '/account/performance', label: 'Performance', icon: BarChart },
-  { href: '/account/pro-sales', label: 'Pro Sales', icon: Gem },
-  { href: '/account/premium', label: 'Premium Services', icon: Gem },
 ];
 
 export default function AccountSidebar() {
