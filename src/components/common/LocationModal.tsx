@@ -13,7 +13,10 @@ export const LocationModal = ({ onSelect, children }: { onSelect: (town: string,
   const [selectedLGA, setSelectedLGA] = useState<string | null>(null);
 
   const lgas = Object.keys(locations);
-  const towns = selectedLGA ? locations[selectedLGA] ? Object.values(locations[selectedLGA]).flat() : [] : [];
+  const townsInLga = selectedLGA ? locations[selectedLGA] ? Object.values(locations[selectedLGA]).flat() : [] : [];
+  // Ensure towns are unique to prevent React key errors
+  const towns = Array.from(new Set(townsInLga));
+
 
   const handleLgaSelect = (lga: string) => {
     setSelectedLGA(lga);
