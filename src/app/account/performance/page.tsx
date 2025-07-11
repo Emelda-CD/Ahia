@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getAdsByUserId } from '@/lib/firebase/actions';
 import type { Ad } from '@/lib/listings-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Eye, Package, Loader2 } from 'lucide-react';
+import { BarChart, Eye, Package, Loader2, MessageSquare } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
 const StatCard = ({ icon: Icon, title, value }: { icon: React.ElementType, title: string, value: string | number }) => (
@@ -46,6 +46,8 @@ export default function PerformancePage() {
   const totalAds = ads.length;
   // Note: 'views' are not implemented in the Ad object yet, so we mock them.
   const totalViews = ads.reduce((acc, ad) => acc + (ad.views || 0), 0);
+  // Mocked total reviews for now
+  const totalReviews = 3; 
   
   const chartData = ads
     .slice(0, 10) // Show top 10 ads for simplicity
@@ -71,6 +73,7 @@ export default function PerformancePage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={Package} title="Total Ads" value={totalAds} />
         <StatCard icon={Eye} title="Total Views" value={totalViews.toLocaleString()} />
+        <StatCard icon={MessageSquare} title="Total Reviews Received" value={totalReviews} />
         <StatCard icon={BarChart} title="Total Chats (Coming Soon)" value="0" />
       </div>
 
