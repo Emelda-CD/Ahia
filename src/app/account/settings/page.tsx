@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, updateUserPassword } from '@/lib/firebase/actions';
+import { updateUserProfile, updateUserPassword, updateUserProfileImage } from '@/lib/firebase/actions';
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -34,10 +34,13 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
-  const { user, updateUser: updateAuthContextUser, isFirebaseConfigured } = useAuth();
+  const { user, updateUser: updateAuthContextUser } = useAuth();
   const { toast } = useToast();
   const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -93,6 +96,35 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    try {
+        const formData = new FormData();
+        formData.append('profileImage', file);
+
+        const newProfile = await updateUserProfileImage(user.uid, formData);
+
+        updateAuthContextUser({ profileImage: newProfile.profileImage });
+        toast({
+            title: 'Photo Updated',
+            description: 'Your new profile picture has been saved.',
+        });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: error.message || 'Could not upload your photo. Please try again.',
+        });
+    } finally {
+        setIsUploadingPhoto(false);
+        if(fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -117,14 +149,15 @@ export default function SettingsPage() {
                         <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="person portrait" />
                         <AvatarFallback className="text-3xl">{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                     <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full">
-                        <Camera className="h-4 w-4"/>
+                     <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={isUploadingPhoto}>
+                        {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin"/> : <Camera className="h-4 w-4"/>}
                         <span className="sr-only">Change photo</span>
                     </Button>
+                    <input type="file" ref={fileInputRef} className="sr-only" accept="image/png, image/jpeg, image/webp" onChange={handlePhotoChange}/>
                 </div>
                  <div className="text-sm text-muted-foreground">
                     <p>Click the camera to change your profile picture.</p>
-                    <p>This feature is not yet implemented.</p>
+                    <p>Recommended: Square image, under 2MB.</p>
                 </div>
             </div>
             

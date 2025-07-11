@@ -26,6 +26,7 @@ import {
 } from 'firebase/auth';
 import type { Ad, AdStatus } from '@/lib/listings-data';
 import type { UserProfile } from '@/context/AuthContext';
+import { uploadFile } from './storage';
 
 // Centralized warning for server-side logs
 const logUnconfigured = () => {
@@ -49,10 +50,43 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserP
   // Update Firestore document
   await updateDoc(userRef, data);
 
-  // Also update Firebase Auth profile if name is changed
-  if (data.name && auth.currentUser && auth.currentUser.uid === userId) {
-    await updateProfile(auth.currentUser, { displayName: data.name });
+  // Also update Firebase Auth profile if name is changed and the current user is the one being updated
+  const currentUser = auth.currentUser;
+  if (data.name && currentUser && currentUser.uid === userId) {
+    await updateProfile(currentUser, { displayName: data.name });
   }
+}
+
+/**
+ * Updates a user's profile image.
+ * @param userId The UID of the user to update.
+ * @param formData The FormData object containing the new profile image.
+ * @returns The updated user profile with the new image URL.
+ */
+export async function updateUserProfileImage(userId: string, formData: FormData): Promise<Pick<UserProfile, 'profileImage'>> {
+  if (!isFirebaseConfigured || !db || !auth) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+
+  const imageFile = formData.get('profileImage') as File;
+  if (!imageFile) {
+      throw new Error("No image file provided.");
+  }
+
+  // Upload the file to Firebase Storage
+  const imageUrl = await uploadFile(imageFile, `profile-images/${userId}`);
+
+  // Update the user's profile in Firestore
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { profileImage: imageUrl });
+
+  // Also update the Firebase Auth profile
+  const currentUser = auth.currentUser;
+  if (currentUser && currentUser.uid === userId) {
+    await updateProfile(currentUser, { photoURL: imageUrl });
+  }
+
+  return { profileImage: imageUrl };
 }
 
 /**
