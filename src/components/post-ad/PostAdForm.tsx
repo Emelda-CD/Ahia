@@ -34,10 +34,7 @@ const createSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  price: z.preprocess((a) => {
-    if (typeof a === 'string') return parseInt(a.replace(/,/g, ''), 10);
-    return a;
-  }, z.number({ invalid_type_error: 'Price must be a number' }).positive('Price must be a positive number')),
+  price: z.preprocess((val) => Number(val), z.number().min(1, "Price must be at least 1")),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
     .min(1, 'Please upload at least 1 photo.')
@@ -480,5 +477,3 @@ export default function PostAdForm() {
     </Card>
   );
 }
-
-    
