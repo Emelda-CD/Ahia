@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, ShieldCheck } from 'lucide-react';
 import type { Ad } from '@/lib/listings-data';
+import { formatPrice } from '@/lib/formatPrice';
 
 export default function AdCard(ad: Ad) {
   const { id, title, price, location, image, data_ai_hint, verified } = ad;
@@ -32,7 +33,7 @@ export default function AdCard(ad: Ad) {
           </div>
 
           <p className="text-xl font-bold text-primary mb-3">
-             {`₦${price.toLocaleString()}`}
+             {formatPrice(price)}
           </p>
 
           <div className="flex flex-wrap gap-2 items-center text-xs">

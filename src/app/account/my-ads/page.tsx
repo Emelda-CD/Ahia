@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatPrice } from '@/lib/formatPrice';
 
 export default function MyAdsPage() {
   const [ads, setAds] = useState<Ad[]>([]);
@@ -95,7 +96,7 @@ export default function MyAdsPage() {
                 />
             </Link>
             <div className="flex-grow">
-                <p className="text-muted-foreground text-sm">₦{ad.price.toLocaleString()}</p>
+                <p className="text-muted-foreground text-sm">{formatPrice(ad.price)}</p>
                 <h3 className="font-semibold text-lg hover:text-primary">
                     <Link href={`/listings/${ad.id}`}>{ad.title}</Link>
                 </h3>

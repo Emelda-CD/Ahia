@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { getAds } from '@/lib/firebase/actions';
 import type { Ad, AdStatus } from '@/lib/listings-data';
 import { useToast } from '@/hooks/use-toast';
+import { formatPrice } from '@/lib/formatPrice';
 
 export default function ListingsTable({ limit, filter }: { limit?: number; filter?: AdStatus | 'All' }) {
   const [ads, setAds] = useState<Ad[]>([]);
@@ -90,7 +91,7 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
               </div>
             </TableCell>
             <TableCell>{ad.category}</TableCell>
-            <TableCell>{`₦${ad.price.toLocaleString()}`}</TableCell>
+            <TableCell>{formatPrice(ad.price)}</TableCell>
             <TableCell>
               <Badge 
                 variant={'outline'}

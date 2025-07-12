@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, ShieldCheck } from 'lucide-react';
 import type { Ad } from '@/lib/listings-data';
+import { formatPrice } from '@/lib/formatPrice';
 
 export default function AdCardListItem(ad: Ad) {
   const { id, title, price, location, image, data_ai_hint, verified, description } = ad;
@@ -35,7 +36,7 @@ export default function AdCardListItem(ad: Ad) {
                     {verified && <Badge variant="secondary" className="bg-green-100 text-green-800"><ShieldCheck className="w-3 h-3 mr-1" /> Verified</Badge>}
                 </div>
                 <p className="text-xl font-bold text-primary whitespace-nowrap">
-                    {`₦${price.toLocaleString()}`}
+                    {formatPrice(price)}
                 </p>
             </div>
         </CardContent>

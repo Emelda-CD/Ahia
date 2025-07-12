@@ -13,6 +13,7 @@ import { MapPin, Phone, MessageSquare, ShieldCheck, Check, Loader2 } from 'lucid
 import type { Ad } from '@/lib/listings-data';
 import { getAdById, trackAdView } from '@/lib/firebase/actions';
 import { useToast } from '@/hooks/use-toast';
+import { formatPrice } from '@/lib/formatPrice';
 
 const similarAds = [
     { id: '5', title: 'HP Spectre x360 Laptop', price: 750000, location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer', verified: true, userID: '1', timestamp: '', images: [], status: 'active', views: 0 },
@@ -106,7 +107,7 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
                   <p className="text-3xl font-bold text-primary">
-                    {`₦${ad.price.toLocaleString()}`}
+                    {formatPrice(ad.price)}
                   </p>
               </div>
             </CardHeader>
