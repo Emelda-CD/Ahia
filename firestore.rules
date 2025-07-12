@@ -1,26 +1,9 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can read any profile, but only write to their own.
-    match /users/{userId} {
-      allow read;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Ads can be read by anyone, but only created by logged-in users.
-    // Only the ad's original author can update or delete it.
     match /ads/{adId} {
-      allow read;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userID;
-    }
-
-    // Feedback can be created by any authenticated user.
-    // Reading/updating feedback would likely be restricted to admins in a real app.
-    match /feedback/{feedbackId} {
-        allow create: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }
