@@ -465,7 +465,7 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={step * 50} className="mb-4" />
+        <Progress value={(step / 2) * 100} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
           {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
@@ -484,11 +484,9 @@ export default function PostAdForm() {
           {step === 1 ? Step1 : Step2}
 
           <div className="flex justify-between mt-8">
-            {step > 1 ? (
-              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting || !user}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-            ) : <div />}
+            <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting || step === 1 || !user}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
             
             {step < 2 ? (
               <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
