@@ -68,8 +68,8 @@ const baseSchema = z.object({
   salary: z.preprocess(val => Number(String(val).replace(/,/g, '')) || undefined, z.number().optional()),
 });
 
-// Dynamic schema based on category
-const dynamicSchema = baseSchema.superRefine((data, ctx) => {
+// Refinement logic to be applied to both schemas
+const schemaRefinement = (data: z.infer<typeof baseSchema>, ctx: z.RefinementCtx) => {
     switch (data.category) {
         case 'Land':
             if (!data.plotSize) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Plot size is required', path: ['plotSize'] });
@@ -96,13 +96,17 @@ const dynamicSchema = baseSchema.superRefine((data, ctx) => {
             path: ['rentalPeriod'],
         });
     }
-});
+};
 
+// Create mode schema with refinement
+const createSchema = baseSchema.superRefine(schemaRefinement);
 
-const editSchema = dynamicSchema.extend({
+// Edit mode schema: extend base, then apply refinement
+const editSchema = baseSchema.extend({
   images: z.array(z.instanceof(File)).optional(), 
   terms: z.boolean().optional(),
-});
+}).superRefine(schemaRefinement);
+
 
 type AdFormValues = z.infer<typeof baseSchema>;
 
@@ -123,7 +127,7 @@ export default function PostAdForm() {
   const { toast } = useToast();
   
   const form = useForm<AdFormValues>({
-    resolver: zodResolver(mode === 'create' ? dynamicSchema : editSchema),
+    resolver: zodResolver(mode === 'create' ? createSchema : editSchema),
     defaultValues: {
       terms: mode === 'edit' ? true : false,
       images: [],
@@ -707,13 +711,13 @@ export default function PostAdForm() {
                     <Controller
                     name="terms"
                     control={control}
-                    render={({ field }) => (
+                    render={({ field: { value, onChange, ref } }) => (
                         <div className="flex items-start space-x-3">
                         <Checkbox
                             id="terms"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            ref={field.ref}
+                            checked={value}
+                            onCheckedChange={onChange}
+                            ref={ref}
                             className="mt-1"
                         />
                         <div>
