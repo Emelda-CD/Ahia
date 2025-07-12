@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, Tag } from 'lucide-react';
@@ -29,10 +29,19 @@ const navLinks = [
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, isLoggedIn, loading, logout } = useAuth();
+  const { user, isLoggedIn, loading, logout, isFirebaseConfigured } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  useEffect(() => {
+    // Defer opening the modal until after the component has mounted
+    // to avoid the flushSync error.
+    if (!isFirebaseConfigured && !loading) {
+      setTimeout(() => setAuthModalOpen(true), 0);
+    }
+  }, [isFirebaseConfigured, loading]);
+
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

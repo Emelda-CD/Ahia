@@ -209,7 +209,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean, onOpenChange:
         </DialogContent>
     );
 
-    if (!isFirebaseConfigured) {
+    if (!isFirebaseConfigured && open) {
         return (
              <Dialog open={open} onOpenChange={onOpenChange}>
                 <NotConfiguredView />
