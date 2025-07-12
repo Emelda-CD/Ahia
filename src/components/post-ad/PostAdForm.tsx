@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Ad } from '@/lib/listings-data';
 import { handleSuggestTags } from '@/app/post-ad/actions';
 import imageCompression from 'browser-image-compression';
+import { Progress } from '@/components/ui/progress';
 
 // Base schema with common fields
 const baseSchema = z.object({
@@ -330,7 +331,7 @@ export default function PostAdForm() {
     if (step === 1) {
         fieldsToValidate = ['category', 'subcategory', 'location'];
     } else if (step === 2) {
-        fieldsToValidate = ['title', 'price', 'description'];
+        fieldsToValidate = ['title', 'description'];
         // Add dynamic fields validation based on category
         switch (watch('category')) {
             case 'Land': fieldsToValidate.push('plotSize', 'plotMeasurementUnit'); break;
@@ -572,22 +573,23 @@ export default function PostAdForm() {
     return fields.length > 0 ? <div className="space-y-4">{fields}</div> : null;
   }
   
-  const getStepDescription = () => {
+  const getStepInfo = () => {
     switch (step) {
-        case 1: return 'First, select a category and location for your ad.';
-        case 2: return 'Provide the main details and pricing for your item.';
-        case 3: return 'Add photos and publish your ad.';
-        default: return '';
+        case 1: return { title: 'Category & Location', description: 'First, select a category and location for your ad.', progress: 33 };
+        case 2: return { title: 'Ad Details', description: 'Provide the main details for your item.', progress: 66 };
+        case 3: return { title: 'Photos & Pricing', description: 'Add photos and publish your ad.', progress: 100 };
+        default: return { title: '', description: '', progress: 0 };
     }
   }
+  
+  const currentStepInfo = getStepInfo();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Post Your Ad (Step {step} of 3)</CardTitle>
-        <CardDescription>
-          {getStepDescription()}
-        </CardDescription>
+        <Progress value={currentStepInfo.progress} className="w-full mb-4" />
+        <CardTitle>{currentStepInfo.title} (Step {step} of 3)</CardTitle>
+        <CardDescription>{currentStepInfo.description}</CardDescription>
       </CardHeader>
       <CardContent>
         {!user && (
@@ -657,13 +659,7 @@ export default function PostAdForm() {
                         </div>
                         
                         {renderCategorySpecificFields()}
-
-                        <div>
-                            <Label htmlFor="price">Price (&#8358;)</Label>
-                            <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
-                            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
-                        </div>
-
+                        
                         <div>
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
@@ -674,6 +670,12 @@ export default function PostAdForm() {
 
                 {step === 3 && (
                      <div className="space-y-6">
+                        <div>
+                            <Label htmlFor="price">Price (&#8358;)</Label>
+                            <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
+                            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                        </div>
+                        
                         <div>
                             <Label htmlFor="file-upload">
                                 {mode === 'edit' ? 'Upload new photos' : 'Add photos (1-10)'}
