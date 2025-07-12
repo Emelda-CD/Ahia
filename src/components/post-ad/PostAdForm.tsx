@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin, Sparkles } from 'lucide-react';
+import { FileImage, Loader2, X, MapPin, Sparkles } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
@@ -29,29 +29,84 @@ import type { Ad } from '@/lib/listings-data';
 import { handleSuggestTags } from '@/app/post-ad/actions';
 import imageCompression from 'browser-image-compression';
 
-
-const createSchema = z.object({
-  category: z.string().min(1, 'Category is required'),
-  location: z.string().min(1, 'Location is required'),
+// Base schema with common fields
+const baseSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  price: z.preprocess((val) => Number(val), z.number().min(1, "Price must be at least 1")),
+  price: z.preprocess((val) => Number(String(val).replace(/,/g, '')) || 0, z.number().min(1, "Price must be at least 1")),
+  location: z.string().min(1, 'Location is required'),
+  category: z.string().min(1, 'Category is required'),
+  subcategory: z.string().min(1, 'Subcategory is required'),
   tags: z.array(z.string()).optional(),
   images: z.array(z.instanceof(File))
     .min(1, 'Please upload at least 1 photo.')
     .max(10, 'You can upload a maximum of 10 photos.'),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
+  
+  // Optional fields for different categories
+  type: z.enum(['Sale', 'Rent']).optional(),
+  rentalPeriod: z.enum(['per_day', 'per_week', 'per_month']).optional(),
+  plotSize: z.preprocess(val => Number(val) || undefined, z.number().optional()),
+  plotMeasurementUnit: z.string().optional(),
+  rooms: z.preprocess(val => Number(val) || undefined, z.number().optional()),
+  toilets: z.preprocess(val => Number(val) || undefined, z.number().optional()),
+  furnished: z.enum(['Yes', 'No']).optional(),
+  condition: z.string().optional(),
+  make: z.string().optional(),
+  model: z.string().optional(),
+  year: z.preprocess(val => Number(val) || undefined, z.number().optional()),
+  fashionType: z.enum(['Male', 'Female']).optional(),
+  size: z.string().optional(),
+  material: z.string().optional(),
+  brand: z.string().optional(),
+  storage: z.string().optional(),
+  serviceType: z.string().optional(),
+  jobType: z.enum(['Full-time', 'Part-time', 'Contract']).optional(),
+  position: z.string().optional(),
+  company: z.string().optional(),
+  experience: z.string().optional(),
+  salary: z.preprocess(val => Number(String(val).replace(/,/g, '')) || undefined, z.number().optional()),
 });
 
-const editSchema = createSchema.extend({
+// Dynamic schema based on category
+const dynamicSchema = baseSchema.superRefine((data, ctx) => {
+    switch (data.category) {
+        case 'Land':
+            if (!data.plotSize) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Plot size is required', path: ['plotSize'] });
+            if (!data.plotMeasurementUnit) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Measurement unit is required', path: ['plotMeasurementUnit'] });
+            break;
+        case 'Real Estate':
+            if (!data.rooms) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Number of rooms is required', path: ['rooms'] });
+            if (!data.toilets) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Number of toilets is required', path: ['toilets'] });
+            break;
+        case 'Vehicles':
+        case 'Phones & Tablets':
+        case 'Electronics':
+        case 'Fashion':
+             if (!data.condition) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Condition is required', path: ['condition'] });
+             break;
+        case 'Jobs':
+            if (!data.jobType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Job type is required', path: ['jobType']});
+    }
+
+    if (data.type === 'Rent' && !data.rentalPeriod) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Rental period is required for rental items.',
+            path: ['rentalPeriod'],
+        });
+    }
+});
+
+
+const editSchema = dynamicSchema.extend({
   images: z.array(z.instanceof(File)).optional(), 
   terms: z.boolean().optional(),
 });
 
-type AdFormValues = z.infer<typeof createSchema>;
+type AdFormValues = z.infer<typeof baseSchema>;
 
 export default function PostAdForm() {
-  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -68,17 +123,15 @@ export default function PostAdForm() {
   const { toast } = useToast();
   
   const form = useForm<AdFormValues>({
-    resolver: zodResolver(mode === 'create' ? createSchema : editSchema),
+    resolver: zodResolver(mode === 'create' ? dynamicSchema : editSchema),
     defaultValues: {
       terms: mode === 'edit' ? true : false,
-      category: '',
-      location: '',
       images: [],
       tags: [],
     }
   });
 
-  const { register, handleSubmit, control, trigger, setValue, watch, formState: { errors }, reset } = form;
+  const { register, handleSubmit, control, setValue, watch, formState: { errors }, reset } = form;
 
   useEffect(() => {
     const editAdId = searchParams.get('edit');
@@ -89,16 +142,7 @@ export default function PostAdForm() {
                 const ad = await getAdById(editAdId);
                 if (ad && ad.userID === user.uid) {
                     setAdToEdit(ad);
-                    reset({
-                        title: ad.title,
-                        description: ad.description,
-                        price: ad.price,
-                        category: ad.category,
-                        location: ad.location,
-                        tags: ad.tags || [],
-                        terms: true,
-                        images: [],
-                    });
+                    reset({ ...ad, terms: true, images: [] }); // Spread existing ad data
                 } else {
                     toast({ variant: 'destructive', title: 'Error', description: 'Ad not found or you do not have permission to edit it.' });
                     router.push('/post-ad');
@@ -120,17 +164,10 @@ export default function PostAdForm() {
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
   const currentTags = watch('tags') || [];
+  const selectedCategoryName = watch('category');
+  const selectedCategory = useMemo(() => categoriesData.find(c => c.name === selectedCategoryName), [selectedCategoryName]);
+  const selectedType = watch('type');
 
-  const nextStep = async () => {
-    const fieldsToValidate: (keyof AdFormValues)[] = (step === 1)
-      ? ['category', 'location']
-      : ['title', 'description', 'price', 'tags'];
-    
-    const isValid = await trigger(fieldsToValidate);
-    if (isValid) setStep((s) => s + 1);
-  };
-
-  const prevStep = () => setStep((s) => s - 1);
 
   const onSubmit = async (data: AdFormValues) => {
     setIsSubmitting(true);
@@ -141,43 +178,33 @@ export default function PostAdForm() {
     }
 
     try {
-      let imageUrls: string[] | undefined;
+      let imageUrls: string[] = adToEdit?.images || [];
       if (data.images && data.images.length > 0) {
-        imageUrls = await Promise.all(
+        const uploadedUrls = await Promise.all(
           data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
         );
+        imageUrls = uploadedUrls; // Replace images in edit mode
       }
 
+      const adPayload: Partial<Ad> = {
+        ...data,
+        userID: user.uid,
+        images: imageUrls,
+        image: imageUrls[0] || adToEdit?.image || '', // Ensure there's a primary image
+        data_ai_hint: '', // Can be generated or left empty
+      };
+
       if (mode === 'create') {
-        if (!imageUrls || imageUrls.length === 0) {
+        if (imageUrls.length === 0) {
           toast({ variant: 'destructive', title: 'Image Upload Required', description: 'Please upload at least one image.' });
           setIsSubmitting(false);
           return;
         }
-        await createAd({
-          title: data.title,
-          description: data.description,
-          category: data.category,
-          price: data.price,
-          location: data.location,
-          images: imageUrls,
-          tags: data.tags,
-          image: imageUrls[0],
-          data_ai_hint: '',
-          userID: user.uid,
-        });
+        await createAd(adPayload as any); // Cast to any to bypass strict initial type
         toast({ title: 'Ad Submitted!', description: 'Your ad is now pending review.', className: 'bg-green-100 text-green-800' });
         router.push('/account/my-ads');
       } else if (mode === 'edit' && adToEdit) {
-        const adUpdateData: Partial<Ad> = {
-          title: data.title, description: data.description, category: data.category,
-          price: data.price, location: data.location, tags: data.tags,
-        };
-        if (imageUrls && imageUrls.length > 0) {
-          adUpdateData.images = [...(adToEdit.images || []), ...imageUrls];
-          adUpdateData.image = adUpdateData.images[0];
-        }
-        await updateAd(adToEdit.id, user.uid, adUpdateData);
+        await updateAd(adToEdit.id, user.uid, adPayload);
         toast({ title: 'Ad Updated!', description: 'Your changes have been saved and sent for review.', className: 'bg-green-100 text-green-800' });
         router.push('/account/my-ads');
       }
@@ -298,195 +325,222 @@ export default function PostAdForm() {
     )
   }
 
-  const Step1 = (
-    <div className="space-y-4">
-        <div>
-        <Label htmlFor="category">Category</Label>
-        <Controller
-            name="category"
-            control={control}
-            render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value} disabled={!user}>
-                <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                <SelectContent>
-                {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            )}
-        />
-        {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
-        </div>
-        <div>
-        <Label>Location</Label>
-            <Controller
-            name="location"
-            control={control}
-            render={({ field }) => (
-                <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })} >
-                    <Button type="button" variant="outline" className="w-full justify-between font-normal" disabled={!user}>
-                        <span>{field.value || "Select a location"}</span>
-                        {field.value ? (
-                        <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
-                        ) : (
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        )}
-                    </Button>
-                </LocationModal>
-            )}
-            />
-        {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
-        </div>
-    </div>
-  );
-  
-  const Step2 = (
-     <fieldset disabled={!user} className="space-y-4">
-        <div>
-        <Label htmlFor="title">Ad Title</Label>
-        <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
-            {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
-        </div>
-        <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
-            {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-        </div>
+  const renderCategorySpecificFields = () => {
+    if (!selectedCategory) return null;
+    
+    const fields: React.ReactNode[] = [];
 
-         <div>
-          <div className="flex justify-between items-center mb-2">
-            <Label htmlFor="tags">Search Tags</Label>
-            <Button type="button" variant="outline" size="sm" onClick={onSuggestTags} disabled={isSuggestingTags}>
-              {isSuggestingTags ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Suggest Tags
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mb-2">Add keywords buyers might use to search for your item.</p>
-          <div className="p-3 border rounded-md min-h-[40px] flex flex-wrap gap-2">
-            {currentTags.map(tag => (
-              <Badge key={tag} variant="secondary" className="text-base">
-                {tag}
-                <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-             <Input 
-                id="tags"
-                className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0"
-                placeholder={currentTags.length === 0 ? "e.g., used car, sedan..." : ""}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        const newTag = e.currentTarget.value.trim();
-                        if (newTag) {
-                            addTag(newTag);
-                            e.currentTarget.value = '';
-                        }
-                    }
-                }}
-             />
-          </div>
-          {suggestedTags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {suggestedTags.map(tag => (
-                <button key={tag} type="button" onClick={() => addTag(tag)} disabled={currentTags.includes(tag)}>
-                  <Badge variant={currentTags.includes(tag) ? "outline" : "default"} className="cursor-pointer hover:bg-primary/80">
-                    + {tag}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-
-        <div>
-            <Label htmlFor="price">Price (&#8358;)</Label>
-            <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
-            {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
-        </div>
-        <div>
-        <Label htmlFor="file-upload">
-          {mode === 'edit' ? 'Upload new photos to replace current ones.' : 'Add photos (1-10).'}
-        </Label>
-        <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-            {imagePreviews.map((src, index) => (
-                <div 
-                    key={src} 
-                    className={cn( "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary", draggedIndex === index && "opacity-50" )}
-                    draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} onDragEnd={handleDragEnd}
-                >
-                    <Image src={src} alt={`preview ${index}`} fill className="rounded-md object-cover" />
-                    <button type="button" onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove image">
-                        <X className="h-3 w-3" />
-                    </button>
-                    {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Main</Badge>}
-                </div>
-            ))}
-            {images.length < 10 && (
-                <div onClick={() => !isCompressing && fileInputRef.current?.click()} className={cn("flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center transition-colors", isCompressing ? "cursor-not-allowed bg-muted/50" : "cursor-pointer hover:border-primary/70")}>
-                    {isCompressing ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin"/> : <FileImage className="h-8 w-8 text-gray-400" />}
-                    <span className="mt-2 text-sm text-muted-foreground">{isCompressing ? "Processing..." : "Add"}</span>
-                </div>
-            )}
-        </div>
-        <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/webp"/>
-        {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
-        {mode === 'edit' && adToEdit && (!images || images.length === 0) && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-muted-foreground">Current photos:</p>
-            <div className="flex gap-2 mt-2">
-              {adToEdit.images.map(img => <Image key={img} src={img} alt="Current ad photo" width={64} height={64} className="rounded-md object-cover"/>)}
-            </div>
-          </div>
-        )}
-        </div>
-        {mode === 'create' && (
+    // Fields for Land
+    if (selectedCategory.name === 'Land') {
+      fields.push(
+        <div key="plot-size" className="grid grid-cols-2 gap-4">
           <div>
-            <Controller
-              name="terms"
-              control={control}
-              render={({ field }) => (
-                <div className="flex items-start space-x-3">
-                  <Checkbox
-                    id="terms"
-                    onCheckedChange={field.onChange}
-                    checked={field.value}
-                    ref={field.ref}
-                    onBlur={field.onBlur}
-                    className="mt-1"
-                  />
-                  <div>
-                    <Label htmlFor="terms">
-                      I agree to the{" "}
-                      <Link
-                        href="/terms"
-                        className="text-primary hover:underline"
-                        target="_blank"
-                      >
-                        Terms and Conditions
-                      </Link>
-                    </Label>
-                    {errors.terms && (
-                      <p className="text-sm text-destructive">
-                        {errors.terms.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            />
+            <Label htmlFor="plotSize">Plot Size</Label>
+            <Input id="plotSize" type="number" {...register('plotSize')} />
+            {errors.plotSize && <p className="text-red-500 text-sm mt-1">{errors.plotSize.message}</p>}
           </div>
-        )}
-    </fieldset>
-  );
+          <div>
+            <Label htmlFor="plotMeasurementUnit">Unit</Label>
+            <Controller name="plotMeasurementUnit" control={control} render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Square Meters">Square Meters</SelectItem>
+                    <SelectItem value="Acres">Acres</SelectItem>
+                    <SelectItem value="Hectares">Hectares</SelectItem>
+                  </SelectContent>
+                </Select>
+            )} />
+             {errors.plotMeasurementUnit && <p className="text-red-500 text-sm mt-1">{errors.plotMeasurementUnit.message}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    // Fields for Real Estate
+    if (selectedCategory.name === 'Real Estate') {
+       fields.push(
+        <div key="real-estate-details" className="grid grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="rooms">Rooms</Label>
+                <Input id="rooms" type="number" {...register('rooms')} />
+                {errors.rooms && <p className="text-red-500 text-sm mt-1">{errors.rooms.message}</p>}
+            </div>
+            <div>
+                <Label htmlFor="toilets">Toilets</Label>
+                <Input id="toilets" type="number" {...register('toilets')} />
+                {errors.toilets && <p className="text-red-500 text-sm mt-1">{errors.toilets.message}</p>}
+            </div>
+             <div>
+                <Label>Furnished</Label>
+                <Controller name="furnished" control={control} render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                    </SelectContent>
+                    </Select>
+                )} />
+            </div>
+        </div>
+       );
+    }
+    
+    // Condition Field (common to many)
+    const conditionCategories = ['Vehicles', 'Phones & Tablets', 'Electronics', 'Fashion'];
+    if (conditionCategories.includes(selectedCategory.name)) {
+        let conditions = ["New", "Used"];
+        if (selectedCategory.name === 'Vehicles' || selectedCategory.name === 'Phones & Tablets') {
+            conditions = ["New", "Foreign Used", "Nigerian Used"];
+        }
+        fields.push(
+            <div key="condition">
+                <Label>Condition</Label>
+                <Controller name="condition" control={control} render={({field}) => (
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue placeholder="Select condition"/></SelectTrigger>
+                        <SelectContent>
+                            {conditions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                )} />
+                {errors.condition && <p className="text-red-500 text-sm mt-1">{errors.condition.message}</p>}
+            </div>
+        )
+    }
+
+    // Type field (Sale/Rent)
+    const typeCategories = ['Land', 'Real Estate', 'Vehicles'];
+    if (typeCategories.includes(selectedCategory.name)) {
+        fields.push(
+            <div key="type">
+                 <Label>For</Label>
+                <Controller name="type" control={control} render={({field}) => (
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue placeholder="Sale or Rent?"/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Sale">Sale</SelectItem>
+                            <SelectItem value="Rent">Rent</SelectItem>
+                        </SelectContent>
+                    </Select>
+                )} />
+            </div>
+        )
+    }
+
+    // Rental Period
+    if (selectedType === 'Rent') {
+        fields.push(
+             <div key="rentalPeriod">
+                 <Label>Rental Period</Label>
+                <Controller name="rentalPeriod" control={control} render={({field}) => (
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger><SelectValue placeholder="Select period"/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="per_day">Per Day</SelectItem>
+                             <SelectItem value="per_week">Per Week</SelectItem>
+                              <SelectItem value="per_month">Per Month</SelectItem>
+                        </SelectContent>
+                    </Select>
+                )} />
+                 {errors.rentalPeriod && <p className="text-red-500 text-sm mt-1">{errors.rentalPeriod.message}</p>}
+            </div>
+        )
+    }
+    
+     // Fields for Vehicles
+    if (selectedCategory.name === 'Vehicles') {
+        fields.push(
+            <div key="vehicle-details" className="grid sm:grid-cols-3 gap-4">
+                <div><Label>Make</Label><Input placeholder="e.g., Toyota" {...register('make')} /></div>
+                <div><Label>Model</Label><Input placeholder="e.g., Camry" {...register('model')} /></div>
+                <div><Label>Year</Label><Input type="number" placeholder="e.g., 2019" {...register('year')} /></div>
+            </div>
+        );
+    }
+    
+    // Fields for Fashion
+    if (selectedCategory.name === 'Fashion') {
+        fields.push(
+            <div key="fashion-details" className="grid sm:grid-cols-3 gap-4">
+                <div>
+                     <Label>Type</Label>
+                    <Controller name="fashionType" control={control} render={({field}) => (
+                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger><SelectValue placeholder="Select Type"/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Male">Male</SelectItem>
+                                <SelectItem value="Female">Female</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )} />
+                </div>
+                 <div><Label>Size</Label><Input placeholder="e.g., M, 42" {...register('size')} /></div>
+                 <div><Label>Material</Label><Input placeholder="e.g., Cotton" {...register('material')} /></div>
+            </div>
+        )
+    }
+    
+    // Fields for Phones & Tablets / Electronics
+    const brandModelCategories = ['Phones & Tablets', 'Electronics'];
+    if (brandModelCategories.includes(selectedCategory.name)) {
+        fields.push(
+            <div key="brand-model-details" className="grid sm:grid-cols-2 gap-4">
+                 <div><Label>Brand</Label><Input placeholder="e.g., Samsung" {...register('brand')} /></div>
+                 <div><Label>Model</Label><Input placeholder="e.g., Galaxy S22" {...register('model')} /></div>
+            </div>
+        )
+         if (selectedCategory.name === 'Phones & Tablets') {
+             fields.push(<div key="storage"><Label>Storage</Label><Input placeholder="e.g., 256GB" {...register('storage')} /></div>)
+         }
+    }
+    
+     // Fields for Services
+    if (selectedCategory.name === 'Services') {
+        fields.push(<div key="service-type"><Label>Service Type</Label><Input placeholder="e.g., Deep Cleaning" {...register('serviceType')} /></div>);
+    }
+    
+    // Fields for Jobs
+    if (selectedCategory.name === 'Jobs') {
+        fields.push(
+            <div key="job-details" className="space-y-4">
+                 <div>
+                    <Label>Job Type</Label>
+                    <Controller name="jobType" control={control} render={({field}) => (
+                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger><SelectValue placeholder="Select Type"/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Full-time">Full-time</SelectItem>
+                                <SelectItem value="Part-time">Part-time</SelectItem>
+                                <SelectItem value="Contract">Contract</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )} />
+                     {errors.jobType && <p className="text-red-500 text-sm mt-1">{errors.jobType.message}</p>}
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <div><Label>Position</Label><Input placeholder="e.g., Senior Accountant" {...register('position')} /></div>
+                    <div><Label>Company</Label><Input placeholder="e.g., Ahia Inc." {...register('company')} /></div>
+                </div>
+                 <div className="grid sm:grid-cols-2 gap-4">
+                    <div><Label>Experience (optional)</Label><Input placeholder="e.g., 3-5 years" {...register('experience')} /></div>
+                    <div><Label>Salary (optional)</Label><Input type="number" placeholder="e.g., 150000" {...register('salary')} /></div>
+                </div>
+            </div>
+        )
+    }
+
+
+    return fields.length > 0 ? <div className="space-y-4">{fields}</div> : null;
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
+        <CardTitle>Ad Details</CardTitle>
         <CardDescription>
-          {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
+          Provide the information for your ad.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -499,25 +553,197 @@ export default function PostAdForm() {
             </Alert>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {step === 1 ? Step1 : Step2}
+          <fieldset disabled={!user || isSubmitting} className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Controller name="category" control={control} render={({ field }) => (
+                            <Select onValueChange={(value) => { field.onChange(value); setValue('subcategory', ''); }} value={field.value}>
+                                <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                                <SelectContent>
+                                {categoriesData.map(cat => <SelectItem key={cat.slug} value={cat.name}>{cat.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )} />
+                        {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
+                    </div>
+                     <div>
+                        <Label>Subcategory</Label>
+                        <Controller name="subcategory" control={control} render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
+                                <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
+                                <SelectContent>
+                                    {selectedCategory?.subcategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )} />
+                        {errors.subcategory && <p className="text-red-500 text-sm mt-1">{errors.subcategory.message}</p>}
+                    </div>
+                </div>
 
-          <div className="mt-8 flex justify-between">
-            {step > 1 && (
-              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-            )}
-            <div className={step === 1 ? "w-full flex justify-end" : ""}>
-               {step < 2 ? (
-                <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                ) : (
-                <Button type="submit" disabled={isSubmitting || isCompressing || !user}>
-                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
-                </Button>
+                <div>
+                    <Label htmlFor="title">Ad Title</Label>
+                    <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
+                    {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                </div>
+                
+                {renderCategorySpecificFields()}
+
+                <div>
+                    <Label htmlFor="price">Price (&#8358;)</Label>
+                    <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
+                    {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                </div>
+
+                 <div>
+                    <Label>Location</Label>
+                    <Controller name="location" control={control} render={({ field }) => (
+                        <LocationModal onSelect={(town, lga) => setValue('location', `${town}, ${lga}`, { shouldValidate: true })} >
+                            <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                                <span>{field.value || "Select a location"}</span>
+                                {field.value ? (
+                                <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); setValue('location', '', { shouldValidate: true }); }} />
+                                ) : (
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </Button>
+                        </LocationModal>
+                    )} />
+                    {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
+                </div>
+
+                <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
+                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+                </div>
+
+                <div>
+                    <Label htmlFor="file-upload">
+                        {mode === 'edit' ? 'Upload new photos' : 'Add photos (1-10)'}
+                    </Label>
+                    <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                        {imagePreviews.map((src, index) => (
+                            <div 
+                                key={src} 
+                                className={cn( "relative group aspect-square rounded-md border-2 transition-all cursor-grab hover:border-primary", draggedIndex === index && "opacity-50" )}
+                                draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} onDragEnd={handleDragEnd}
+                            >
+                                <Image src={src} alt={`preview ${index}`} fill className="rounded-md object-cover" />
+                                <button type="button" onClick={() => handleRemoveImage(index)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove image">
+                                    <X className="h-3 w-3" />
+                                </button>
+                                {index === 0 && <Badge variant="secondary" className="absolute bottom-1 left-1">Main</Badge>}
+                            </div>
+                        ))}
+                        {images.length < 10 && (
+                            <div onClick={() => !isCompressing && fileInputRef.current?.click()} className={cn("flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input aspect-square text-center transition-colors", isCompressing ? "cursor-not-allowed bg-muted/50" : "cursor-pointer hover:border-primary/70")}>
+                                {isCompressing ? <Loader2 className="h-8 w-8 text-muted-foreground animate-spin"/> : <FileImage className="h-8 w-8 text-gray-400" />}
+                                <span className="mt-2 text-sm text-muted-foreground">{isCompressing ? "Processing..." : "Add"}</span>
+                            </div>
+                        )}
+                    </div>
+                    <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/webp"/>
+                    {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
+                    {mode === 'edit' && adToEdit && (!images || images.length === 0) && (
+                    <div className="mt-4">
+                        <p className="text-sm font-medium text-muted-foreground">Current photos:</p>
+                        <div className="flex gap-2 mt-2">
+                        {adToEdit.images.map(img => <Image key={img} src={img} alt="Current ad photo" width={64} height={64} className="rounded-md object-cover"/>)}
+                        </div>
+                    </div>
+                    )}
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <Label htmlFor="tags">Search Tags (Optional)</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={onSuggestTags} disabled={isSuggestingTags}>
+                        {isSuggestingTags ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Suggest Tags
+                        </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">Add keywords buyers might use to search for your item.</p>
+                    <div className="p-3 border rounded-md min-h-[40px] flex flex-wrap gap-2">
+                        {currentTags.map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-base">
+                            {tag}
+                            <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                            <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        ))}
+                        <Input 
+                            id="tags"
+                            className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0"
+                            placeholder={currentTags.length === 0 ? "e.g., used car, sedan..." : ""}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ',') {
+                                    e.preventDefault();
+                                    const newTag = e.currentTarget.value.trim();
+                                    if (newTag) {
+                                        addTag(newTag);
+                                        e.currentTarget.value = '';
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                    {suggestedTags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                        {suggestedTags.map(tag => (
+                            <button key={tag} type="button" onClick={() => addTag(tag)} disabled={currentTags.includes(tag)}>
+                            <Badge variant={currentTags.includes(tag) ? "outline" : "default"} className="cursor-pointer hover:bg-primary/80">
+                                + {tag}
+                            </Badge>
+                            </button>
+                        ))}
+                        </div>
+                    )}
+                </div>
+                
+                {mode === 'create' && (
+                <div>
+                    <Controller
+                    name="terms"
+                    control={control}
+                    render={({ field }) => (
+                        <div className="flex items-start space-x-3">
+                        <Checkbox
+                            id="terms"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            ref={field.ref}
+                            className="mt-1"
+                        />
+                        <div>
+                            <Label htmlFor="terms">
+                            I agree to the{" "}
+                            <Link
+                                href="/terms"
+                                className="text-primary hover:underline"
+                                target="_blank"
+                            >
+                                Terms and Conditions
+                            </Link>
+                            </Label>
+                            {errors.terms && (
+                            <p className="text-sm text-destructive mt-1">
+                                {errors.terms.message}
+                            </p>
+                            )}
+                        </div>
+                        </div>
+                    )}
+                    />
+                </div>
                 )}
-            </div>
+            </fieldset>
+
+          <div className="mt-8 flex justify-end">
+            <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user}>
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
+            </Button>
           </div>
         </form>
       </CardContent>

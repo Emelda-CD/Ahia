@@ -13,124 +13,85 @@ export const categoriesData: Category[] = [
     slug: "land",
     icon: "🌍",
     subcategories: [
-      "Land for Sale",
-      "Land for Rent",
-      "Commercial Land",
-      "Residential Land",
-      "Agricultural Land",
-      "Joint Venture Land"
+      "Plot", "Farmland", "Farm Estate", "Commercial Land", "Residential Land", "Joint Venture Land"
     ],
     sort_order: 1
   },
   {
-    name: "Phones",
-    slug: "phones",
-    icon: "📱",
+    name: "Real Estate",
+    slug: "real-estate",
+    icon: '🏢',
     subcategories: [
-      "iPhones",
-      "Samsung",
-      "Tecno",
-      "Infinix",
-      "Other Phones",
-      "Phone Accessories"
+      'Flat', 'House', 'Shop', 'Self-contained', 'Commercial Property', 'Event Centres & Venues'
     ],
-    sort_order: 2
+    sort_order: 2,
   },
   {
     name: "Vehicles",
     slug: "vehicles",
     icon: "🚗",
     subcategories: [
-      "Cars",
-      "Motorcycles",
-      "Trucks",
-      "Vehicle Parts",
-      "Buses",
-      "Trailers"
+      "Car", "Motorcycle", "Truck", "Bus", "Vehicle Parts", "Trailer"
     ],
     sort_order: 3
-  },
-  {
-    name: "Electronics",
-    slug: "electronics",
-    icon: "💻",
-    subcategories: [
-      "Laptops",
-      "TVs",
-      "Home Theaters",
-      "Refrigerators",
-      "Cameras",
-      "Accessories"
-    ],
-    sort_order: 4
-  },
-  {
-    name: "Jobs",
-    slug: "jobs",
-    icon: "💼",
-    subcategories: [
-      "IT Jobs",
-      "Teaching Jobs",
-      "Driving Jobs",
-      "Customer Service",
-      "Accounting & Finance",
-      "Others"
-    ],
-    sort_order: 5
-  },
-  {
-    name: "Animals & Pets",
-    slug: "animals-pets",
-    icon: "🐾",
-    subcategories: [
-      "Dogs",
-      "Cats",
-      "Birds",
-      "Fish",
-      "Pet Accessories",
-      "Others"
-    ],
-    sort_order: 6
   },
   {
     name: "Fashion",
     slug: "fashion",
     icon: "👗",
     subcategories: [
-      "Men’s Fashion",
-      "Women’s Fashion",
-      "Shoes",
-      "Bags",
-      "Watches",
-      "Jewelry"
+      "Dress", "Gown", "Trousers", "Skirt", "Hair Tie", "Shoes", "Bags", "Watches", "Jewelry"
     ],
+    sort_order: 4
+  },
+   {
+    name: "Phones & Tablets",
+    slug: "phones-tablets",
+    icon: "📱",
+    subcategories: [
+      "Smartphones", "Tablets", "Other Phones", "Phone Accessories"
+    ],
+    sort_order: 5
+  },
+  {
+    name: "Electronics",
+    slug: "electronics",
+    icon: "💻",
+    subcategories: [
+      "TVs", "Speakers", "Refrigerators", "Laptops", "Home Theaters", "Cameras", "Accessories"
+    ],
+    sort_order: 6
+  },
+  {
+    name: "Services",
+    slug: "services",
+    icon: '🔧',
+    subcategories: ["Cleaning", "Plumbing", "Event Planning", 'Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Catering'],
     sort_order: 7
   },
   {
-    name: 'Property',
-    slug: 'property',
-    icon: '🌍',
+    name: "Jobs",
+    slug: "jobs",
+    icon: "💼",
     subcategories: [
-      'Houses & Apartments for Sale',
-      'Houses & Apartments for Rent',
-      'Commercial Property for Sale',
-      'Commercial Property for Rent',
-      'Event Centres & Venues',
+      "Accounting", "Tech", "Customer Service", "IT Jobs", "Teaching Jobs", "Driving Jobs", "Others"
     ],
-    sort_order: 8,
+    sort_order: 8
+  },
+  {
+    name: "Animals & Pets",
+    slug: "animals-pets",
+    icon: "🐾",
+    subcategories: [
+      "Dogs", "Cats", "Birds", "Fish", "Pet Accessories", "Others"
+    ],
+    sort_order: 9
   },
   {
       name: 'Furniture & Home',
       slug: 'furniture-home',
       icon: '🛋️',
       subcategories: ['Sofas & Chairs', 'Beds & Mattresses', 'Tables & Desks', 'Home Decor', 'Kitchen Appliances'],
-      sort_order: 9
-  },
-  {
-      name: 'Services',
-      slug: 'services',
-      icon: '🔧',
-      subcategories: ['Automotive Services', 'Health & Wellness', 'Legal & Financial', 'Events & Catering', 'Cleaning Services'],
       sort_order: 10
   },
   {

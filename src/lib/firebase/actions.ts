@@ -235,11 +235,20 @@ export async function getAdById(id: string): Promise<Ad | null> {
     }
     
     const data = docSnap.data();
-
-    return {
+    // Convert Firestore Timestamp to Date for client-side usage if needed
+    const adData = {
         id: docSnap.id,
         ...data,
     } as Ad;
+
+    if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+        adData.timestamp = data.timestamp.toDate();
+    }
+     if (data.lastUpdated && typeof data.lastUpdated.toDate === 'function') {
+        adData.lastUpdated = data.lastUpdated.toDate();
+    }
+
+    return adData;
 }
 
 /**
@@ -325,10 +334,10 @@ export async function updateAd(adId: string, userId: string, adData: Partial<Ad>
   };
 
   // If the ad is being updated, it should go back to pending for re-approval
-  if (adData.status !== 'active') { // Avoid resetting status if admin is just editing text
-      dataToUpdate.status = 'pending';
-      dataToUpdate.verified = false;
-  }
+  // but only if the user is not an admin
+  // (In a real app, you'd check the user's role here)
+  dataToUpdate.status = 'pending';
+  dataToUpdate.verified = false;
 
 
   await updateDoc(adRef, dataToUpdate);
