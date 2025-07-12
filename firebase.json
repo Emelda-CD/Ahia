@@ -1,6 +1,11 @@
 {
-    "functions": {
-      "source": "functions"
-    }
+  "functions": {
+    "source": "functions"
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "europe-west3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
-  
+}

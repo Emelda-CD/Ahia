@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { FileImage, ArrowLeft, ArrowRight, Loader2, X, MapPin, Sparkles } from 'lucide-react';
 import { categoriesData } from '@/lib/categories-data';
@@ -445,17 +444,37 @@ export default function PostAdForm() {
         {mode === 'create' && (
           <div>
             <Controller
-                name="terms"
-                control={control}
-                render={({ field }) => (
-                    <div className="flex items-start space-x-3">
-                    <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} className="mt-1"/>
-                    <div>
-                        <Label htmlFor="terms">I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link></Label>
-                        {errors.terms && <p className="text-sm text-destructive">{errors.terms.message}</p>}
-                    </div>
-                    </div>
-                )}
+              name="terms"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="terms"
+                    onCheckedChange={field.onChange}
+                    checked={field.value}
+                    ref={field.ref}
+                    onBlur={field.onBlur}
+                    className="mt-1"
+                  />
+                  <div>
+                    <Label htmlFor="terms">
+                      I agree to the{" "}
+                      <Link
+                        href="/terms"
+                        className="text-primary hover:underline"
+                        target="_blank"
+                      >
+                        Terms and Conditions
+                      </Link>
+                    </Label>
+                    {errors.terms && (
+                      <p className="text-sm text-destructive">
+                        {errors.terms.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             />
           </div>
         )}
@@ -465,7 +484,6 @@ export default function PostAdForm() {
   return (
     <Card>
       <CardHeader>
-        <Progress value={(step / 2) * 100} className="mb-4" />
         <CardTitle>Step {step}: {step === 1 ? 'Category & Location' : 'Details & Photos'}</CardTitle>
         <CardDescription>
           {step === 1 ? 'Tell us what you are selling and where.' : 'Provide details and photos for your ad.'}
@@ -483,20 +501,23 @@ export default function PostAdForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {step === 1 ? Step1 : Step2}
 
-          <div className="flex justify-between mt-8">
-            <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting || step === 1 || !user}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            
-            {step < 2 ? (
-              <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
-                Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button type="submit" disabled={isSubmitting || isCompressing || !user}>
-                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
+          <div className="mt-8 flex justify-between">
+            {step > 1 && (
+              <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             )}
+            <div className={step === 1 ? "w-full flex justify-end" : ""}>
+               {step < 2 ? (
+                <Button type="button" onClick={nextStep} disabled={isSubmitting || !user}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                ) : (
+                <Button type="submit" disabled={isSubmitting || isCompressing || !user}>
+                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
+                </Button>
+                )}
+            </div>
           </div>
         </form>
       </CardContent>

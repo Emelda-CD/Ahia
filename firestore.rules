@@ -1,9 +1,38 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // 🔹 Ads Collection
     match /ads/{adId} {
-      allow read, write: if request.auth != null;
+      // Everyone can read ads
+      allow read: if true;
+
+      // Only logged-in users can create
+      allow create: if request.auth != null;
+
+      // Only the owner of the ad can update or delete it
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.userID;
+    }
+
+    // 🔹 Users Collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // 🔹 Messages Collection (Optional)
+    match /messages/{messageId} {
+      // Only allow sender or receiver to read/write
+      allow read, write: if request.auth != null
+                         && (request.auth.uid == resource.data.senderID
+                         || request.auth.uid == resource.data.receiverID);
+    }
+
+    // 🔒 Prevent access to any other data
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
