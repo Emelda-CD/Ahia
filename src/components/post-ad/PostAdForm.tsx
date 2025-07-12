@@ -326,11 +326,31 @@ export default function PostAdForm() {
   };
   
   const handleNextStep = async () => {
-    const step1Fields: (keyof AdFormValues)[] = ['category', 'subcategory', 'location'];
-    const isValid = await trigger(step1Fields);
-    if (isValid) {
-      setStep(2);
+    let fieldsToValidate: (keyof AdFormValues)[] = [];
+    if (step === 1) {
+        fieldsToValidate = ['category', 'subcategory', 'location'];
+    } else if (step === 2) {
+        fieldsToValidate = ['title', 'price', 'description'];
+        // Add dynamic fields validation based on category
+        switch (watch('category')) {
+            case 'Land': fieldsToValidate.push('plotSize', 'plotMeasurementUnit'); break;
+            case 'Real Estate': fieldsToValidate.push('rooms', 'toilets'); break;
+            case 'Vehicles':
+            case 'Phones & Tablets':
+            case 'Electronics':
+            case 'Fashion': fieldsToValidate.push('condition'); break;
+            case 'Jobs': fieldsToValidate.push('jobType'); break;
+        }
     }
+    
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) {
+      setStep(s => s + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    setStep(s => s - 1);
   };
 
 
@@ -551,13 +571,22 @@ export default function PostAdForm() {
 
     return fields.length > 0 ? <div className="space-y-4">{fields}</div> : null;
   }
+  
+  const getStepDescription = () => {
+    switch (step) {
+        case 1: return 'First, select a category and location for your ad.';
+        case 2: return 'Provide the main details and pricing for your item.';
+        case 3: return 'Add photos and publish your ad.';
+        default: return '';
+    }
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Post Your Ad (Step {step} of 2)</CardTitle>
+        <CardTitle>Post Your Ad (Step {step} of 3)</CardTitle>
         <CardDescription>
-          {step === 1 ? 'First, select a category and location for your ad.' : 'Now, provide the details and photos for your ad.'}
+          {getStepDescription()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -572,7 +601,7 @@ export default function PostAdForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <fieldset disabled={!user || isSubmitting} className="space-y-4">
                 {step === 1 && (
-                    <>
+                    <div className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="category">Category</Label>
@@ -616,11 +645,11 @@ export default function PostAdForm() {
                             )} />
                             {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {step === 2 && (
-                    <>
+                    <div className="space-y-4">
                         <div>
                             <Label htmlFor="title">Ad Title</Label>
                             <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
@@ -640,7 +669,11 @@ export default function PostAdForm() {
                             <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
                             {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
                         </div>
+                    </div>
+                )}
 
+                {step === 3 && (
+                     <div className="space-y-6">
                         <div>
                             <Label htmlFor="file-upload">
                                 {mode === 'edit' ? 'Upload new photos' : 'Add photos (1-10)'}
@@ -727,58 +760,47 @@ export default function PostAdForm() {
                         
                         {mode === 'create' && (
                         <div>
-                            <Controller
-                                name="terms"
+                           <Controller
                                 control={control}
+                                name="terms"
                                 render={({ field }) => (
-                                    <div className="flex items-start space-x-3">
-                                    <Checkbox
-                                        id="terms"
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        ref={field.ref}
-                                        onBlur={field.onBlur}
-                                        name={field.name}
-                                        className="mt-1"
-                                    />
-                                    <div>
-                                        <Label htmlFor="terms">
-                                        I agree to the{" "}
-                                        <Link
-                                            href="/terms"
-                                            className="text-primary hover:underline"
-                                            target="_blank"
-                                        >
-                                            Terms and Conditions
-                                        </Link>
-                                        </Label>
-                                        {errors.terms && (
-                                        <p className="text-sm text-destructive mt-1">
-                                            {errors.terms.message}
-                                        </p>
-                                        )}
-                                    </div>
-                                    </div>
+                                  <div className="flex items-start space-x-3">
+                                      <Checkbox 
+                                          id="terms"
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                          ref={field.ref}
+                                          onBlur={field.onBlur}
+                                          name={field.name}
+                                          className="mt-1"
+                                      />
+                                      <div>
+                                          <Label htmlFor="terms" className="text-muted-foreground">
+                                            I agree to the <Link href="/terms" className="text-primary hover:underline" target="_blank">Terms and Conditions</Link>
+                                          </Label>
+                                           {errors.terms && <p className="text-sm text-destructive mt-1">{errors.terms.message}</p>}
+                                      </div>
+                                  </div>
                                 )}
-                            />
+                              />
                         </div>
                         )}
-                    </>
+                    </div>
                 )}
             </fieldset>
 
             <div className="mt-8 flex justify-end gap-4">
-                {step === 2 && (
-                    <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={isSubmitting}>
+                {step > 1 && (
+                    <Button type="button" variant="outline" onClick={handlePrevStep} disabled={isSubmitting}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back
                     </Button>
                 )}
-                {step === 1 && (
+                {step < 3 && (
                      <Button type="button" size="lg" onClick={handleNextStep}>
                         Next
                     </Button>
                 )}
-                {step === 2 && (
+                {step === 3 && (
                     <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user}>
                         {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
                     </Button>
