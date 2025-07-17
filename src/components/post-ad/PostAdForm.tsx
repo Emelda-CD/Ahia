@@ -169,6 +169,7 @@ export default function PostAdForm() {
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(true);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
@@ -244,22 +245,21 @@ export default function PostAdForm() {
 
     const savedDraftJSON = localStorage.getItem(draftKey);
     if (savedDraftJSON) {
+        setIsRestoring(true);
         try {
             const savedDraft = JSON.parse(savedDraftJSON);
             const { step: savedStep, ...draftData } = savedDraft;
-
-            // Important: Use the callback version of reset if you need to be sure it's fresh.
             reset(draftData);
-            
             if (savedStep) {
                 setStep(savedStep);
             }
-            
             toast({ title: 'Draft Restored', description: 'You can continue where you left off.' });
         } catch (e) {
             console.error("Failed to parse or restore draft:", e);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not restore draft.' });
-            clearDraft(); // Clear corrupted draft
+            clearDraft();
+        } finally {
+            setTimeout(() => setIsRestoring(false), 100);
         }
     }
     setShowDraftDialog(false);
@@ -274,18 +274,18 @@ export default function PostAdForm() {
 
   const watchedValues = watch();
   useEffect(() => {
-    if (mode === 'create' && user) {
+    if (mode === 'create' && user && !isRestoring && !isFormLoading) {
         const draftKey = getDraftKey();
         if (draftKey) {
             const draftData = {
                 ...watchedValues,
-                images: [], // Don't save image files, just metadata if needed
+                images: [],
                 step,
             };
             localStorage.setItem(draftKey, JSON.stringify(draftData));
         }
     }
-  }, [watchedValues, step, mode, user, getDraftKey]);
+  }, [watchedValues, step, mode, user, getDraftKey, isRestoring, isFormLoading]);
 
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
@@ -309,7 +309,7 @@ export default function PostAdForm() {
         const uploadedUrls = await Promise.all(
           data.images.map(imageFile => uploadFile(imageFile, `ads/${user.uid}`))
         );
-        imageUrls = uploadedUrls; // Replace images in edit mode
+        imageUrls = uploadedUrls;
       }
 
       const adPayload: Partial<Ad> = {
@@ -469,7 +469,6 @@ export default function PostAdForm() {
         fieldsToValidate = ['category', 'subcategory', 'location'];
     } else if (step === 2) {
         fieldsToValidate = ['title', 'description'];
-        // Add dynamic fields validation based on category
         switch (watch('category')) {
             case 'Land': fieldsToValidate.push('plotSize', 'plotMeasurementUnit'); break;
             case 'Real Estate': fieldsToValidate.push('rooms', 'toilets'); break;
@@ -504,7 +503,7 @@ export default function PostAdForm() {
     switch (step) {
         case 1: return { title: 'Category & Location', description: 'First, select a category and location for your ad.', progress: 33 };
         case 2: return { title: 'Ad Details', description: 'Provide the main details for your item.', progress: 66 };
-        case 3: return { title: 'Photos & Pricing', description: 'Add photos and publish your ad.', progress: 100 };
+        case 3: return { title: 'Photos & Final Details', description: 'Add photos and pricing to publish your ad.', progress: 100 };
         default: return { title: '', description: '', progress: 0 };
     }
   }
@@ -560,7 +559,7 @@ export default function PostAdForm() {
                                           </SelectContent>
                                       </Select>
                                   )} />
-                                  {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
+                                  {errors.category && <p className="text-destructive text-sm mt-1">{errors.category.message}</p>}
                               </div>
                               <div>
                                   <Label>Subcategory</Label>
@@ -572,7 +571,7 @@ export default function PostAdForm() {
                                           </SelectContent>
                                       </Select>
                                   )} />
-                                  {errors.subcategory && <p className="text-red-500 text-sm mt-1">{errors.subcategory.message}</p>}
+                                  {errors.subcategory && <p className="text-destructive text-sm mt-1">{errors.subcategory.message}</p>}
                               </div>
                           </div>
 
@@ -590,7 +589,7 @@ export default function PostAdForm() {
                                       </Button>
                                   </LocationModal>
                               )} />
-                              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
+                              {errors.location && <p className="text-destructive text-sm mt-1">{errors.location.message}</p>}
                           </div>
                       </div>
                   )}
@@ -612,15 +611,13 @@ export default function PostAdForm() {
                           <div>
                               <Label htmlFor="title">Ad Title</Label>
                               <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
-                              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                              {errors.title && <p className="text-destructive text-sm mt-1">{errors.title.message}</p>}
                           </div>
-                          
-                          {/* {renderCategorySpecificFields()} */}
                           
                           <div>
                               <Label htmlFor="description">Description</Label>
                               <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
-                              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+                              {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                           </div>
                       </div>
                   )}
@@ -630,7 +627,7 @@ export default function PostAdForm() {
                           <div>
                               <Label htmlFor="price">Price (&#8358;)</Label>
                               <Input id="price" type="number" placeholder="e.g., 50000" {...register('price')} />
-                              {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
+                              {errors.price && <p className="text-destructive text-sm mt-1">{errors.price.message}</p>}
                           </div>
                           
                           <div>
@@ -659,7 +656,7 @@ export default function PostAdForm() {
                                   )}
                               </div>
                               <input ref={fileInputRef} id="file-upload" type="file" className="sr-only" multiple onChange={handleFileChange} accept="image/png, image/jpeg, image/webp"/>
-                              {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
+                              {errors.images && <p className="text-destructive text-sm mt-2">{errors.images.message as React.ReactNode}</p>}
                               {mode === 'edit' && adToEdit && (!images || images.length === 0) && (
                               <div className="mt-4">
                                   <p className="text-sm font-medium text-muted-foreground">Current photos:</p>
