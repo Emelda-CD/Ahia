@@ -443,18 +443,14 @@ export default function PostAdForm() {
             <Input id="plotSize" type="number" {...register('plotSize')} />
             {errors.plotSize && <p className="text-red-500 text-sm mt-1">{errors.plotSize.message}</p>}
           </div>
-          <div>
+          <div className="flex flex-col">
             <Label htmlFor="plotMeasurementUnit">Unit</Label>
             <Controller name="plotMeasurementUnit" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Square Meters">Square Meters</SelectItem>
-                    <SelectItem value="Acres">Acres</SelectItem>
-                    <SelectItem value="Hectares">Hectares</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm">
+                   sqm
+                </div>
             )} />
+            <input type="hidden" {...register('plotMeasurementUnit')} value="sqm" />
              {errors.plotMeasurementUnit && <p className="text-red-500 text-sm mt-1">{errors.plotMeasurementUnit.message}</p>}
           </div>
         </div>
@@ -850,9 +846,6 @@ export default function PostAdForm() {
                                           checked={field.value}
                                           onCheckedChange={field.onChange}
                                           ref={field.ref}
-                                          onBlur={field.onBlur}
-                                          name={field.name}
-                                          className="mt-1"
                                       />
                                       <div>
                                           <Label htmlFor="terms" className="text-muted-foreground">
