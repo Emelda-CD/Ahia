@@ -38,7 +38,7 @@ const suggestAdTagsPrompt = ai.definePrompt({
 You will be given the title and description of an ad.
 Your task is to generate a list of short, relevant tags that a potential buyer might use to search for this item.
 The tags should be concise and related to the product, its brand, model, condition, or features.
-You must return your response in the JSON format requested.`,
+You MUST ONLY respond with the JSON object requested and nothing else. Do not add any conversational text or markdown formatting.`,
   input: {schema: SuggestAdTagsInputSchema},
   output: {schema: SuggestAdTagsOutputSchema},
   prompt: `
@@ -54,10 +54,29 @@ const suggestAdTagsFlow = ai.defineFlow(
     outputSchema: SuggestAdTagsOutputSchema,
   },
   async input => {
-    const {output} = await suggestAdTagsPrompt(input);
-    if (!output) {
-      throw new Error('AI failed to generate suggestions in the expected format.');
+    const result = await suggestAdTagsPrompt(input);
+    const text = result.text;
+    
+    try {
+      // First, try to parse the entire response as JSON
+      const parsed = JSON.parse(text);
+      return SuggestAdTagsOutputSchema.parse(parsed);
+    } catch (e) {
+      // If parsing fails, try to extract JSON from a markdown block
+      const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch && jsonMatch[1]) {
+        try {
+          const extractedJson = JSON.parse(jsonMatch[1]);
+          return SuggestAdTagsOutputSchema.parse(extractedJson);
+        } catch (e2) {
+            console.error('Failed to parse extracted JSON:', e2);
+             throw new Error('AI failed to generate suggestions in the expected format.');
+        }
+      }
     }
-    return output;
+    
+    // If both attempts fail, throw an error
+    console.error('AI response was not valid JSON:', text);
+    throw new Error('AI failed to generate suggestions in the expected format.');
   }
 );
