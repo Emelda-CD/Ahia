@@ -21,7 +21,7 @@ import { categoriesData } from '@/lib/categories-data';
 import { LocationModal } from '@/components/common/LocationModal';
 import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/firebase/storage';
-import { createAd, updateAd, getAdById } from '@/lib/firebase/actions';
+import { createAd, updateAd, getAdById, saveDraft, getDraft, deleteDraft } from '@/lib/firebase/actions';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -30,6 +30,7 @@ import { handleSuggestTags, handleSuggestDetails } from '@/app/post-ad/actions';
 import imageCompression from 'browser-image-compression';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { useDebouncedCallback } from 'use-debounce';
 
 // Base schema with common fields
 const baseSchema = z.object({
@@ -169,10 +170,10 @@ export default function PostAdForm() {
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(true);
-  const [isRestoring, setIsRestoring] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [hasCheckedForDraft, setHasCheckedForDraft] = useState(false);
 
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -191,24 +192,13 @@ export default function PostAdForm() {
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors }, reset, trigger, getValues } = form;
 
-  const getDraftKey = useCallback(() => {
-    if (!user) return null;
-    return `postAdDraft-${user.uid}`;
-  }, [user]);
-
-  const clearDraft = useCallback(() => {
-    const draftKey = getDraftKey();
-    if (draftKey) {
-      localStorage.removeItem(draftKey);
-    }
-  }, [getDraftKey]);
-
+  // Check for draft on load
   useEffect(() => {
     const editAdId = searchParams.get('edit');
     if (editAdId && user) {
-        clearDraft(); // Don't use draft when editing an existing ad
         setMode('edit');
         const fetchAd = async () => {
+            setIsFormLoading(true);
             try {
                 const ad = await getAdById(editAdId);
                 if (ad && ad.userID === user.uid) {
@@ -223,33 +213,36 @@ export default function PostAdForm() {
                  router.push('/post-ad');
             } finally {
                 setIsFormLoading(false);
+                setHasCheckedForDraft(true);
             }
         }
         fetchAd();
-    } else {
-        setMode('create');
-        const draftKey = getDraftKey();
-        if (draftKey) {
-            const savedDraft = localStorage.getItem(draftKey);
-            if (savedDraft) {
+    } else if (user && !hasCheckedForDraft && mode === 'create') {
+        const checkForDraft = async () => {
+            setIsFormLoading(true);
+            const draft = await getDraft(user.uid);
+            if (draft) {
                 setShowDraftDialog(true);
             }
-        }
+            setIsFormLoading(false);
+            setHasCheckedForDraft(true);
+        };
+        checkForDraft();
+    } else if (!user) {
         setIsFormLoading(false);
+        setHasCheckedForDraft(true);
     }
-  }, [searchParams, user, reset, router, toast, clearDraft, getDraftKey]);
-  
-  const handleRestoreDraft = () => {
-    const draftKey = getDraftKey();
-    if (!draftKey) return;
+  }, [user, hasCheckedForDraft, mode, searchParams, reset, router, toast]);
 
-    const savedDraftJSON = localStorage.getItem(draftKey);
-    if (savedDraftJSON) {
-        setIsRestoring(true);
+  const handleRestoreDraft = async () => {
+    if (!user) return;
+    setIsFormLoading(true);
+    setShowDraftDialog(false);
+    const draft = await getDraft(user.uid);
+    if (draft) {
         try {
-            const savedDraft = JSON.parse(savedDraftJSON);
-            const { step: savedStep, ...draftData } = savedDraft;
-            reset(draftData);
+            const { step: savedStep, values } = draft;
+            reset(values);
             if (savedStep) {
                 setStep(savedStep);
             }
@@ -257,35 +250,37 @@ export default function PostAdForm() {
         } catch (e) {
             console.error("Failed to parse or restore draft:", e);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not restore draft.' });
-            clearDraft();
-        } finally {
-            setTimeout(() => setIsRestoring(false), 100);
+            await deleteDraft(user.uid);
         }
     }
-    setShowDraftDialog(false);
+    setIsFormLoading(false);
   };
   
-  const handleStartNew = () => {
-      clearDraft();
+  const handleStartNew = async () => {
+      if (user) {
+          await deleteDraft(user.uid);
+      }
       reset({ terms: false, images: [], tags: [] });
       setStep(1);
       setShowDraftDialog(false);
   };
 
   const watchedValues = watch();
-  useEffect(() => {
-    if (mode === 'create' && user && !isRestoring && !isFormLoading) {
-        const draftKey = getDraftKey();
-        if (draftKey) {
-            const draftData = {
-                ...watchedValues,
-                images: [],
-                step,
-            };
-            localStorage.setItem(draftKey, JSON.stringify(draftData));
-        }
+  
+  const debouncedSaveDraft = useDebouncedCallback(async (dataToSave, currentStep) => {
+    if (mode === 'create' && user && hasCheckedForDraft && !showDraftDialog) {
+      const draftData = {
+        values: { ...dataToSave, images: [] }, // Don't save files in Firestore
+        step: currentStep,
+      };
+      await saveDraft(user.uid, draftData);
     }
-  }, [watchedValues, step, mode, user, getDraftKey, isRestoring, isFormLoading]);
+  }, 2000); // Debounce for 2 seconds
+
+  useEffect(() => {
+    debouncedSaveDraft(watchedValues, step);
+  }, [watchedValues, step, debouncedSaveDraft]);
+
 
   const images = watch('images') || [];
   const imagePreviews = useMemo(() => images.map(file => URL.createObjectURL(file)), [images]);
@@ -327,7 +322,7 @@ export default function PostAdForm() {
           return;
         }
         await createAd(adPayload as any); // Cast to any to bypass strict initial type
-        clearDraft(); // Clear draft on successful submission
+        await deleteDraft(user.uid); // Clear draft on successful submission
         toast({ title: 'Ad Submitted!', description: 'Your ad is now pending review.', className: 'bg-green-100 text-green-800' });
         router.push('/account/my-ads');
       } else if (mode === 'edit' && adToEdit) {

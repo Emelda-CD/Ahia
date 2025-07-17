@@ -16,7 +16,8 @@ import {
   updateDoc,
   increment,
   QueryConstraint,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from 'firebase/firestore';
 import { 
     updateProfile,
@@ -390,4 +391,51 @@ export async function submitFeedback(feedbackData: FeedbackData) {
     };
 
     await addDoc(feedbackCollection, dataToSave);
+}
+
+
+// DRAFT ACTIONS
+
+/**
+ * Saves a user's ad draft to Firestore.
+ * @param userId The UID of the user.
+ * @param draftData The draft data, including form values and current step.
+ */
+export async function saveDraft(userId: string, draftData: { values: any; step: number }) {
+  if (!isFirebaseConfigured || !db) return;
+  const draftRef = doc(db, 'drafts', userId);
+  await setDoc(draftRef, {
+    ...draftData,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Retrieves a user's ad draft from Firestore.
+ * @param userId The UID of the user.
+ * @returns The draft data or null if it doesn't exist.
+ */
+export async function getDraft(userId: string): Promise<{ values: any; step: number } | null> {
+  if (!isFirebaseConfigured || !db) return null;
+  const draftRef = doc(db, 'drafts', userId);
+  const draftSnap = await getDoc(draftRef);
+
+  if (draftSnap.exists()) {
+    const data = draftSnap.data();
+    return {
+        values: data.values,
+        step: data.step
+    };
+  }
+  return null;
+}
+
+/**
+ * Deletes a user's ad draft from Firestore.
+ * @param userId The UID of the user.
+ */
+export async function deleteDraft(userId: string) {
+  if (!isFirebaseConfigured || !db) return;
+  const draftRef = doc(db, 'drafts', userId);
+  await deleteDoc(draftRef);
 }
