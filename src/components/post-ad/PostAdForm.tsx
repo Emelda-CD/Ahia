@@ -26,9 +26,10 @@ import { Badge } from '../ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Ad } from '@/lib/listings-data';
-import { handleSuggestTags } from '@/app/post-ad/actions';
+import { handleSuggestTags, handleSuggestDetails } from '@/app/post-ad/actions';
 import imageCompression from 'browser-image-compression';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 
 // Base schema with common fields
 const baseSchema = z.object({
@@ -115,6 +116,51 @@ const editSchema = editBaseSchema.superRefine(schemaRefinement);
 
 type AdFormValues = z.infer<typeof baseSchema>;
 
+const AISuggestionDialog = ({ onSuggest }: { onSuggest: (keywords: string) => void }) => {
+    const [keywords, setKeywords] = useState('');
+    const [open, setOpen] = useState(false);
+
+    const handleSuggest = () => {
+        onSuggest(keywords);
+        setOpen(false);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Suggest with AI
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Suggest Title & Description</DialogTitle>
+                    <DialogDescription>
+                        Enter a few keywords about your item, and our AI will write a title and description for you.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="keywords">Keywords</Label>
+                    <Input
+                        id="keywords"
+                        value={keywords}
+                        onChange={(e) => setKeywords(e.target.value)}
+                        placeholder="e.g., blue toyota camry 2019, leather seats"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSuggest} disabled={!keywords.trim()}>
+                        Generate
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
 export default function PostAdForm() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,7 +170,7 @@ export default function PostAdForm() {
   const [adToEdit, setAdToEdit] = useState<Ad | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(true);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
 
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -304,15 +350,35 @@ export default function PostAdForm() {
       toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide a title and description before suggesting tags.' });
       return;
     }
-    setIsSuggestingTags(true);
+    setIsSuggesting(true);
     try {
       const result = await handleSuggestTags({ title, description });
       setSuggestedTags(result.tags);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Suggestion Failed', description: error.message });
     } finally {
-      setIsSuggestingTags(false);
+      setIsSuggesting(false);
     }
+  };
+
+  const onSuggestDetails = async (keywords: string) => {
+      const category = watch('category');
+      const subcategory = watch('subcategory');
+      if (!category || !subcategory) {
+          toast({ variant: 'destructive', title: 'Missing Info', description: 'Please select a category and subcategory first.' });
+          return;
+      }
+      setIsSuggesting(true);
+      try {
+          const result = await handleSuggestDetails({ keywords, category, subcategory });
+          setValue('title', result.title, { shouldValidate: true });
+          setValue('description', result.description, { shouldValidate: true });
+          toast({ title: 'Content Generated!', description: 'Title and description have been filled in.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Suggestion Failed', description: error.message });
+      } finally {
+          setIsSuggesting(false);
+      }
   };
 
   const addTag = (tag: string) => {
@@ -601,7 +667,7 @@ export default function PostAdForm() {
             </Alert>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <fieldset disabled={!user || isSubmitting} className="space-y-4">
+            <fieldset disabled={!user || isSubmitting || isSuggesting} className="space-y-4">
                 {step === 1 && (
                     <div className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
@@ -652,6 +718,18 @@ export default function PostAdForm() {
 
                 {step === 2 && (
                     <div className="space-y-4">
+                         <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-semibold">Ad Details</h3>
+                            {isSuggesting ? (
+                                <Button type="button" variant="outline" size="sm" disabled>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Generating...
+                                </Button>
+                            ) : (
+                                <AISuggestionDialog onSuggest={onSuggestDetails} />
+                            )}
+                        </div>
+
                         <div>
                             <Label htmlFor="title">Ad Title</Label>
                             <Input id="title" placeholder="e.g., Clean Toyota Camry 2019" {...register('title')} />
@@ -716,8 +794,8 @@ export default function PostAdForm() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <Label htmlFor="tags">Search Tags (Optional)</Label>
-                                <Button type="button" variant="outline" size="sm" onClick={onSuggestTags} disabled={isSuggestingTags}>
-                                {isSuggestingTags ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                <Button type="button" variant="outline" size="sm" onClick={onSuggestTags} disabled={isSuggesting}>
+                                {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                                 Suggest Tags
                                 </Button>
                             </div>
