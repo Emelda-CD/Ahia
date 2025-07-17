@@ -13,7 +13,7 @@ export const categoriesData: Category[] = [
     slug: "land",
     icon: "🌍",
     subcategories: [
-      "Plot", "Farmland", "Farm Estate", "Commercial Land", "Residential Land", "Joint Venture Land"
+      "Farmland", "Farm Estate", "Commercial Land", "Residential Land", "Joint Venture Land", "Land and Plot for Sale", "Land and Plot for Rent"
     ],
     sort_order: 1
   },
