@@ -173,8 +173,8 @@ export default function PostAdForm() {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [hasCheckedForDraft, setHasCheckedForDraft] = useState(false);
-
+  const [isRestoring, setIsRestoring] = useState(false);
+  
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -213,30 +213,27 @@ export default function PostAdForm() {
                  router.push('/post-ad');
             } finally {
                 setIsFormLoading(false);
-                setHasCheckedForDraft(true);
             }
         }
         fetchAd();
-    } else if (user && !hasCheckedForDraft && mode === 'create') {
+    } else if (user && mode === 'create') {
         const checkForDraft = async () => {
-            setIsFormLoading(true);
             const draft = await getDraft(user.uid);
             if (draft) {
                 setShowDraftDialog(true);
+            } else {
+                setIsFormLoading(false); // No draft, enable form
             }
-            setIsFormLoading(false);
-            setHasCheckedForDraft(true);
         };
         checkForDraft();
-    } else if (!user) {
-        setIsFormLoading(false);
-        setHasCheckedForDraft(true);
+    } else {
+       setIsFormLoading(false); // Not logged in or in edit mode without ID
     }
-  }, [user, hasCheckedForDraft, mode, searchParams, reset, router, toast]);
+  }, [user, mode, searchParams, reset, router, toast]);
 
   const handleRestoreDraft = async () => {
     if (!user) return;
-    setIsFormLoading(true);
+    setIsRestoring(true);
     setShowDraftDialog(false);
     const draft = await getDraft(user.uid);
     if (draft) {
@@ -253,7 +250,8 @@ export default function PostAdForm() {
             await deleteDraft(user.uid);
         }
     }
-    setIsFormLoading(false);
+    setIsFormLoading(false); // Enable form after restoration
+    setIsRestoring(false);
   };
   
   const handleStartNew = async () => {
@@ -263,12 +261,13 @@ export default function PostAdForm() {
       reset({ terms: false, images: [], tags: [] });
       setStep(1);
       setShowDraftDialog(false);
+      setIsFormLoading(false); // Enable form
   };
 
   const watchedValues = watch();
   
   const debouncedSaveDraft = useDebouncedCallback(async (dataToSave, currentStep) => {
-    if (mode === 'create' && user && hasCheckedForDraft && !showDraftDialog) {
+    if (mode === 'create' && user && !isFormLoading && !showDraftDialog && !isRestoring) {
       const draftData = {
         values: { ...dataToSave, images: [] }, // Don't save files in Firestore
         step: currentStep,
@@ -484,15 +483,6 @@ export default function PostAdForm() {
   const handlePrevStep = () => {
     setStep(s => s - 1);
   };
-
-
-  if (isFormLoading) {
-    return (
-        <div className="flex justify-center items-center h-96">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    )
-  }
   
   const getStepInfo = () => {
     switch (step) {
@@ -540,7 +530,7 @@ export default function PostAdForm() {
               </Alert>
           )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <fieldset disabled={!user || isSubmitting || isSuggesting} className="space-y-4">
+              <fieldset disabled={!user || isSubmitting || isSuggesting || isFormLoading} className="space-y-4">
                   {step === 1 && (
                       <div className="space-y-4">
                           <div className="grid sm:grid-cols-2 gap-4">
@@ -749,7 +739,7 @@ export default function PostAdForm() {
                       </Button>
                   )}
                   {step === 3 && (
-                      <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user}>
+                      <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user || isFormLoading}>
                           {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
                       </Button>
                   )}
