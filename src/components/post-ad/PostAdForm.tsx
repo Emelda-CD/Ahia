@@ -239,21 +239,30 @@ export default function PostAdForm() {
   }, [searchParams, user, reset, router, toast, clearDraft, getDraftKey]);
   
   const handleRestoreDraft = () => {
-      const draftKey = getDraftKey();
-      if (!draftKey) return;
-      const savedDraft = localStorage.getItem(draftKey);
-      if (savedDraft) {
-          try {
-              const { step: savedStep, ...draftData } = JSON.parse(savedDraft);
-              reset(draftData);
-              setStep(savedStep || 1);
-              toast({ title: 'Draft Restored', description: 'You can continue where you left off.' });
-          } catch (e) {
-              console.error("Failed to parse draft:", e);
-              clearDraft();
-          }
-      }
-      setShowDraftDialog(false);
+    const draftKey = getDraftKey();
+    if (!draftKey) return;
+
+    const savedDraftJSON = localStorage.getItem(draftKey);
+    if (savedDraftJSON) {
+        try {
+            const savedDraft = JSON.parse(savedDraftJSON);
+            const { step: savedStep, ...draftData } = savedDraft;
+
+            // Important: Use the callback version of reset if you need to be sure it's fresh.
+            reset(draftData);
+            
+            if (savedStep) {
+                setStep(savedStep);
+            }
+            
+            toast({ title: 'Draft Restored', description: 'You can continue where you left off.' });
+        } catch (e) {
+            console.error("Failed to parse or restore draft:", e);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not restore draft.' });
+            clearDraft(); // Clear corrupted draft
+        }
+    }
+    setShowDraftDialog(false);
   };
   
   const handleStartNew = () => {
@@ -759,5 +768,3 @@ export default function PostAdForm() {
     </>
   );
 }
-
-    
