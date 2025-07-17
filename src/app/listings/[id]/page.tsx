@@ -16,10 +16,10 @@ import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/formatPrice';
 
 const similarAds = [
-    { id: '5', title: 'HP Spectre x360 Laptop', price: 750000, location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer', verified: true, userID: '1', timestamp: '', images: [], status: 'active', views: 0 },
-    { id: '6', title: 'Office Space for Lease', price: 800000, location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building', verified: false, userID: '1', timestamp: '', images: [], status: 'active', views: 0 },
-    { id: '7', title: 'Honda CR-V 2018', price: 15000000, location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv', verified: true, userID: '1', timestamp: '', images: [], status: 'active', views: 0 },
-    { id: '8', title: 'Cute Puppy for a new home', price: 150000, location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute', verified: false, userID: '1', timestamp: '', images: [], status: 'active', views: 0 },
+    { id: '5', title: 'HP Spectre x360 Laptop', price: 750000, location: 'Uwani, Enugu South', image: 'https://placehold.co/600x400.png', data_ai_hint: 'laptop computer', verified: true, userId: '1', timestamp: '', images: [], status: 'active', views: 0 },
+    { id: '6', title: 'Office Space for Lease', price: 800000, location: 'Independence Layout, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'office building', verified: false, userId: '1', timestamp: '', images: [], status: 'active', views: 0 },
+    { id: '7', title: 'Honda CR-V 2018', price: 15000000, location: 'GRA, Enugu North', image: 'https://placehold.co/600x400.png', data_ai_hint: 'honda crv', verified: true, userId: '1', timestamp: '', images: [], status: 'active', views: 0 },
+    { id: '8', title: 'Cute Puppy for a new home', price: 150000, location: 'Abakpa, Enugu East', image: 'https://placehold.co/600x400.png', data_ai_hint: 'puppy cute', verified: false, userId: '1', timestamp: '', images: [], status: 'active', views: 0 },
 ]
 
 export default function ProductDetailPage() {

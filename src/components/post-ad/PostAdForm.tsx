@@ -201,7 +201,7 @@ export default function PostAdForm() {
             setIsFormLoading(true);
             try {
                 const ad = await getAdById(editAdId);
-                if (ad && ad.userID === user.uid) {
+                if (ad && ad.userId === user.uid) {
                     setAdToEdit(ad);
                     reset({ ...ad, terms: true, images: [] });
                 } else {
@@ -308,7 +308,7 @@ export default function PostAdForm() {
 
       const adPayload: Partial<Ad> = {
         ...data,
-        userID: user.uid,
+        userId: user.uid,
         images: imageUrls,
         image: imageUrls[0] || adToEdit?.image || '', // Ensure there's a primary image
         data_ai_hint: '', // Can be generated or left empty

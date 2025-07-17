@@ -1,28 +1,29 @@
-
 {
   "indexes": [
     {
       "collectionGroup": "ads",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "userID",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "users",
+      "collectionGroup": "ads",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "subcategory", "order": "ASCENDING" },
+        { "fieldPath": "condition", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "location", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     }
   ],

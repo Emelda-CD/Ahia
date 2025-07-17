@@ -188,8 +188,8 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
 
   const adsCollection = collection(db, 'ads');
   
-  // Query only by userID to avoid needing a composite index.
-  const q = query(adsCollection, where('userID', '==', userId));
+  // Query only by userId to avoid needing a composite index.
+  const q = query(adsCollection, where('userId', '==', userId));
   
   const querySnapshot = await getDocs(q);
 
@@ -325,7 +325,7 @@ export async function updateAd(adId: string, userId: string, adData: Partial<Ad>
     throw new Error('Ad not found.');
   }
 
-  if (adSnap.data().userID !== userId) {
+  if (adSnap.data().userId !== userId) {
     throw new Error('You do not have permission to edit this ad.');
   }
 
@@ -360,7 +360,7 @@ export async function deleteAd(adId: string, userId: string) {
         throw new Error("Ad not found.");
     }
 
-    if (adSnap.data().userID !== userId) {
+    if (adSnap.data().userId !== userId) {
         throw new Error("You do not have permission to delete this ad.");
     }
     
