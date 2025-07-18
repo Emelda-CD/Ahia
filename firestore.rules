@@ -3,33 +3,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Users Collection
-    // - Allow anyone to read user profiles (e.g., for seller info on ad pages).
-    // - Allow a user to create and update their own profile.
+    // Users can be read by anyone (e.g., to see a seller's profile)
+    // but can only be written to by the user themselves.
     match /users/{userId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Ads Collection
-    // - Allow anyone to read ads.
-    // - Allow authenticated users to create ads.
-    // - Allow the ad owner to update or delete their ad.
+    // Ads can be read by anyone.
+    // Creation is allowed for any authenticated user.
+    // Updates and deletes are only allowed by the ad's owner.
     match /ads/{adId} {
       allow read: if true;
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Drafts Collection
-    // - A user can only read, create, update, or delete their own draft.
+    // Drafts can only be read or written by the user who owns them.
     match /drafts/{userId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Feedback Collection
-    // - Allow authenticated users to create feedback.
+
+    // Feedback can be created by any authenticated user.
+    // Reading/updating/deleting feedback would require admin rules.
     match /feedback/{feedbackId} {
       allow create: if request.auth != null;
     }
