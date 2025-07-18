@@ -31,6 +31,7 @@ import imageCompression from 'browser-image-compression';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useDebouncedCallback } from 'use-debounce';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 // Base schema with common fields
 const baseSchema = z.object({
@@ -495,6 +496,153 @@ export default function PostAdForm() {
   
   const currentStepInfo = getStepInfo();
 
+  const renderDynamicFields = () => {
+    if (!selectedCategory) return null;
+
+    return (
+      <div className="space-y-4 pt-4 border-t">
+        {['Real Estate', 'Land'].includes(selectedCategory.name) && (
+          <div>
+            <Label>Type</Label>
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Sale" id="sale" />
+                    <Label htmlFor="sale">For Sale</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Rent" id="rent" />
+                    <Label htmlFor="rent">For Rent</Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
+          </div>
+        )}
+
+        {selectedType === 'Rent' && (
+          <div>
+            <Label>Rental Period</Label>
+            <Controller name="rentalPeriod" control={control} render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger><SelectValue placeholder="Select period" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="per_day">Per Day</SelectItem>
+                  <SelectItem value="per_week">Per Week</SelectItem>
+                  <SelectItem value="per_month">Per Month</SelectItem>
+                </SelectContent>
+              </Select>
+            )} />
+            {errors.rentalPeriod && <p className="text-destructive text-sm mt-1">{errors.rentalPeriod.message}</p>}
+          </div>
+        )}
+
+        {selectedCategory.name === 'Land' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="plotSize">Plot Size</Label>
+              <Input id="plotSize" type="number" {...register('plotSize')} />
+              {errors.plotSize && <p className="text-destructive text-sm mt-1">{errors.plotSize.message}</p>}
+            </div>
+            <div>
+              <Label>Unit</Label>
+               <Controller name="plotMeasurementUnit" control={control} render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sqm">sqm</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )} />
+              {errors.plotMeasurementUnit && <p className="text-destructive text-sm mt-1">{errors.plotMeasurementUnit.message}</p>}
+            </div>
+          </div>
+        )}
+
+        {selectedCategory.name === 'Real Estate' && (
+           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="rooms">Bedrooms</Label>
+              <Input id="rooms" type="number" {...register('rooms')} />
+              {errors.rooms && <p className="text-destructive text-sm mt-1">{errors.rooms.message}</p>}
+            </div>
+             <div>
+              <Label htmlFor="toilets">Bathrooms</Label>
+              <Input id="toilets" type="number" {...register('toilets')} />
+              {errors.toilets && <p className="text-destructive text-sm mt-1">{errors.toilets.message}</p>}
+            </div>
+           </div>
+        )}
+
+        {['Vehicles', 'Fashion', 'Phones & Tablets', 'Electronics'].includes(selectedCategory.name) && (
+          <div>
+            <Label>Condition</Label>
+             <Controller name="condition" control={control} render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger><SelectValue placeholder="Select condition" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Used">Used</SelectItem>
+                  <SelectItem value="Nigerian Used">Nigerian Used</SelectItem>
+                  <SelectItem value="Foreign Used">Foreign Used</SelectItem>
+                </SelectContent>
+              </Select>
+            )} />
+            {errors.condition && <p className="text-destructive text-sm mt-1">{errors.condition.message}</p>}
+          </div>
+        )}
+        
+        {selectedCategory.name === 'Vehicles' && (
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="make">Make</Label>
+              <Input id="make" {...register('make')} placeholder="e.g., Toyota"/>
+            </div>
+            <div>
+              <Label htmlFor="model">Model</Label>
+              <Input id="model" {...register('model')} placeholder="e.g., Camry"/>
+            </div>
+             <div>
+              <Label htmlFor="year">Year</Label>
+              <Input id="year" type="number" {...register('year')} placeholder="e.g., 2019"/>
+            </div>
+          </div>
+        )}
+
+        {selectedCategory.name === 'Jobs' && (
+           <div className="space-y-4">
+             <div>
+                <Label>Job Type</Label>
+                <Controller name="jobType" control={control} render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger><SelectValue placeholder="Select job type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Full-time">Full-time</SelectItem>
+                      <SelectItem value="Part-time">Part-time</SelectItem>
+                       <SelectItem value="Contract">Contract</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )} />
+                {errors.jobType && <p className="text-destructive text-sm mt-1">{errors.jobType.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="company">Company Name</Label>
+                <Input id="company" {...register('company')} placeholder="e.g., Ahia Inc."/>
+              </div>
+               <div>
+                <Label htmlFor="salary">Salary (Monthly, Optional)</Label>
+                <Input id="salary" type="number" {...register('salary')} placeholder="e.g., 150000"/>
+              </div>
+           </div>
+        )}
+      </div>
+    );
+  };
+
+
   return (
     <>
       <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
@@ -604,6 +752,8 @@ export default function PostAdForm() {
                               <Textarea id="description" placeholder="Describe your item in detail" {...register('description')} rows={5}/>
                               {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                           </div>
+
+                          {renderDynamicFields()}
                       </div>
                   )}
 
