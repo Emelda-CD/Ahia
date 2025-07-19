@@ -1,38 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Public read access for user profiles (e.g., seller info)
-    // Only authenticated users can update their own profile.
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Ads can be read by anyone.
-    // Authenticated users can create ads.
-    // Owners or admins can update/delete their ads.
-    match /ads/{adId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
-    }
-    
-    // Drafts are private to the user.
-    match /drafts/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Feedback can be created by authenticated users.
-    // Reading feedback should be restricted (e.g., to admins).
-    match /feedback/{feedbackId} {
-      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow create: if request.auth != null;
-    }
 
-    // Default deny all other collections/paths
+    // Default deny all
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // USERS
+    // - Anyone can read a user profile (for seller info)
+    // - Only the owner can update their profile
+    match /users/{userId} {
+      allow get: if true;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    // - Admins (or any logged-in user for now) can list users
+    match /users/{document=**} {
+      allow list: if request.auth != null;
+    }
+
+
+    // ADS
+    // - Anyone can get a single ad or list the collection of ads
+    // - Logged-in users can create ads
+    // - Only the ad owner can update or delete their ad
+    match /ads/{adId} {
+      allow get, list: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // DRAFTS
+    // - Only the owner can read or write their own draft
+    match /drafts/{userId} {
+      allow get, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // FEEDBACK
+    // - Only logged-in users can create feedback
+    // - For now, only the user who submitted it can read it (can be changed to admin-only)
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null;
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
