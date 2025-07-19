@@ -2,36 +2,37 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Public: Read categories for Post Ads
-    match /categories/{categoryId} {
-      allow read: if true;
-    }
-
-    // Public: Read user profiles (seller info)
-    // Only the user can update their own profile
+    // Public read access for user profiles (e.g., seller info)
+    // Only authenticated users can update their own profile.
     match /users/{userId} {
       allow read: if true;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Public: Read ads
+    // Ads can be read by anyone.
+    // Authenticated users can create ads.
+    // Owners or admins can update/delete their ads.
     match /ads/{adId} {
       allow read: if true;
-      // Create must include userId
       allow create: if request.auth != null;
-      // Only owner can update or delete
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
     
-    // Only owner can manage their drafts
+    // Drafts are private to the user.
     match /drafts/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Feedback (authenticated users only)
+    // Feedback can be created by authenticated users.
+    // Reading feedback should be restricted (e.g., to admins).
     match /feedback/{feedbackId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow create: if request.auth != null;
+    }
+
+    // Default deny all other collections/paths
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
