@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { getAds } from '@/lib/firebase/actions';
+import { getAds, updateAdStatus } from '@/lib/firebase/actions';
 import type { Ad, AdStatus } from '@/lib/listings-data';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/formatPrice';
@@ -24,6 +24,7 @@ import { formatPrice } from '@/lib/formatPrice';
 export default function ListingsTable({ limit, filter }: { limit?: number; filter?: AdStatus | 'All' }) {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingAdId, setUpdatingAdId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,6 +48,32 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
     };
     fetchAds();
   }, [limit, filter, toast]);
+
+  const handleUpdateStatus = async (adId: string, newStatus: 'active' | 'declined') => {
+    setUpdatingAdId(adId);
+    try {
+      await updateAdStatus(adId, newStatus);
+      setAds(currentAds => 
+        currentAds.map(ad => 
+          ad.id === adId ? { ...ad, status: newStatus, verified: newStatus === 'active' } : ad
+        )
+      );
+      toast({
+        title: `Ad ${newStatus === 'active' ? 'Approved' : 'Declined'}`,
+        description: `The ad has been successfully updated.`,
+      });
+    } catch (error) {
+      console.error("Failed to update ad status:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update the ad's status. Please try again.",
+      });
+    } finally {
+      setUpdatingAdId(null);
+    }
+  };
+
 
   if (loading) {
      return (
@@ -79,6 +106,7 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
       </TableHeader>
       <TableBody>
         {ads.map((ad) => {
+          const isUpdating = updatingAdId === ad.id;
           return (
           <TableRow key={ad.id}>
             <TableCell>
@@ -103,15 +131,15 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
             <TableCell className="text-right">
                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem>View Ad</DropdownMenuItem>
-                   {ad.status === 'pending' && <DropdownMenuItem><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
-                   {ad.status !== 'declined' && <DropdownMenuItem><AlertTriangle className="mr-2 h-4 w-4" />Decline Ad</DropdownMenuItem>}
+                   {ad.status === 'pending' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'active')}><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
+                   {ad.status !== 'declined' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'declined')}><AlertTriangle className="mr-2 h-4 w-4" />Decline Ad</DropdownMenuItem>}
                    {ad.status === 'active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>

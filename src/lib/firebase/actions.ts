@@ -386,6 +386,32 @@ export async function submitFeedback(feedbackData: FeedbackData) {
     await addDoc(feedbackCollection, dataToSave);
 }
 
+/**
+ * Updates an ad's status. Intended for admin use.
+ * @param adId The ID of the ad to update.
+ * @param status The new status for the ad ('active' or 'declined').
+ */
+export async function updateAdStatus(adId: string, status: 'active' | 'declined') {
+  if (!isFirebaseConfigured || !db) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+  
+  // In a real app, you would verify if the caller is an admin here.
+  // For now, we'll allow it.
+
+  const adRef = doc(db, 'ads', adId);
+  const dataToUpdate: Partial<Ad> & { [key:string]: any} = {
+    status,
+    lastUpdated: serverTimestamp(),
+  };
+
+  if (status === 'active') {
+    dataToUpdate.verified = true;
+  }
+
+  await updateDoc(adRef, dataToUpdate);
+}
+
 
 // DRAFT ACTIONS
 
