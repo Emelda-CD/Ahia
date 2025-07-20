@@ -188,8 +188,8 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
 
   const adsCollection = collection(db, 'ads');
   
-  // Query only by userId to avoid needing a composite index.
-  const q = query(adsCollection, where('userId', '==', userId));
+  // This query now requires a composite index on (userId, timestamp desc)
+  const q = query(adsCollection, where('userId', '==', userId), orderBy('timestamp', 'desc'));
   
   const querySnapshot = await getDocs(q);
 
@@ -197,13 +197,6 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
       id: doc.id,
       ...doc.data(),
   } as Ad));
-
-  // Sort the results by timestamp in the application code.
-  ads.sort((a, b) => {
-    const dateA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
-    const dateB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
-    return dateB.getTime() - dateA.getTime();
-  });
 
   return ads;
 }
@@ -272,13 +265,14 @@ export async function trackAdView(adId: string) {
 
 
 /**
- * Fetches all user profiles from Firestore.
+ * Fetches all user profiles from Firestore, ordered by creation date.
  */
 export async function getAllUsers(): Promise<UserProfile[]> {
   logUnconfigured();
   if (!isFirebaseConfigured || !db) return [];
   
   const usersCollection = collection(db, 'users');
+  // This query requires a composite index on (createdAt, desc)
   const q = query(usersCollection, orderBy('createdAt', 'desc'));
 
   try {
@@ -287,7 +281,6 @@ export async function getAllUsers(): Promise<UserProfile[]> {
         const data = doc.data();
         return {
             uid: doc.id,
-            // Convert timestamp to a serializable format if it exists
             ...data,
         } as UserProfile;
     });
@@ -295,8 +288,8 @@ export async function getAllUsers(): Promise<UserProfile[]> {
   } catch (error) {
      if (error instanceof Error && 'code' in error && (error as any).code === 'failed-precondition') {
         // This happens if the index is not created yet. Firestore provides a link to create it in the console.
-        console.error("Firestore error: The required index for ordering users by 'createdAt' is missing. You can create it in your Firebase console.", error);
-        // Fallback to fetching without ordering
+        console.error("Firestore error: The required index for ordering users by 'createdAt' is missing. You can create it in your Firebase console using the link provided in the error logs.", error);
+        // Fallback to fetching without ordering to prevent app crash
         const fallbackQuery = query(usersCollection);
         const fallbackSnapshot = await getDocs(fallbackQuery);
         const users = fallbackSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
