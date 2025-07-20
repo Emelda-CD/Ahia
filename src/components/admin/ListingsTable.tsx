@@ -53,11 +53,20 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
     setUpdatingAdId(adId);
     try {
       await updateAdStatus(adId, newStatus);
-      setAds(currentAds => 
-        currentAds.map(ad => 
-          ad.id === adId ? { ...ad, status: newStatus, verified: newStatus === 'active' } : ad
-        )
-      );
+
+      if (filter && filter !== 'All' && newStatus !== filter) {
+        // If the table is filtered and the new status doesn't match the filter,
+        // remove the ad from the view.
+        setAds(currentAds => currentAds.filter(ad => ad.id !== adId));
+      } else {
+        // Otherwise, just update the status in the view.
+        setAds(currentAds => 
+            currentAds.map(ad => 
+                ad.id === adId ? { ...ad, status: newStatus, verified: newStatus === 'active' } : ad
+            )
+        );
+      }
+      
       toast({
         title: `Ad ${newStatus === 'active' ? 'Approved' : 'Declined'}`,
         description: `The ad has been successfully updated.`,
