@@ -27,7 +27,7 @@ export interface UserProfile {
   role: 'user' | 'admin';
   profileImage: string;
   provider: string;
-  createdAt?: any;
+  createdAt?: string | null; // Changed to string to be serializable
 }
 
 interface AuthContextType {
@@ -58,15 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (userSnap.exists()) {
         // User profile exists, merge it with auth data
-        const userProfileData = userSnap.data() as Omit<UserProfile, 'uid'>;
+        const userProfileData = userSnap.data();
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          ...userProfileData
+          name: userProfileData.name,
+          phone: userProfileData.phone,
+          role: userProfileData.role,
+          profileImage: userProfileData.profileImage,
+          provider: userProfileData.provider,
+          createdAt: userProfileData.createdAt?.toDate().toISOString() || null
         });
       } else {
         // New user (e.g., first Google login), create a profile
-        const newUserProfile: UserProfile = {
+        const timestamp = serverTimestamp();
+        const newUserProfile: Omit<UserProfile, 'createdAt'> & {createdAt: any} = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName || 'New User',
           email: firebaseUser.email,
@@ -74,10 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: 'user',
           profileImage: firebaseUser.photoURL || `https://placehold.co/100x100.png?text=${firebaseUser.displayName?.charAt(0) || 'U'}`,
           provider: firebaseUser.providerData[0]?.providerId || 'unknown',
-          createdAt: serverTimestamp()
+          createdAt: timestamp
         };
         await setDoc(userRef, newUserProfile);
-        setUser(newUserProfile);
+        setUser({
+            ...newUserProfile,
+            createdAt: new Date().toISOString()
+        });
         // Send welcome email for social logins on first creation
         if(newUserProfile.name && newUserProfile.email) {
             await sendWelcomeEmail(newUserProfile.email, newUserProfile.name);
@@ -113,8 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
+    const timestamp = serverTimestamp();
     // Create user profile in Firestore
-    const userProfile: UserProfile = {
+    const userProfile: Omit<UserProfile, 'createdAt'> & {createdAt: any} = {
       uid: firebaseUser.uid,
       name,
       email,
@@ -122,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: 'user',
       profileImage: `https://placehold.co/100x100.png?text=${name.charAt(0)}`,
       provider: 'email/password',
-      createdAt: serverTimestamp()
+      createdAt: timestamp
     };
     await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
     
@@ -131,7 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendWelcomeEmail(email, name);
 
     // Update local user state
-    setUser(userProfile);
+    setUser({
+        ...userProfile,
+        createdAt: new Date().toISOString()
+    });
   };
   
   const sendPasswordReset = async (email: string) => {

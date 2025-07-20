@@ -87,7 +87,7 @@ export default function UsersTable({ limit }: { limit?: number }) {
                 'User'
               )}
             </TableCell>
-            <TableCell>{user.createdAt ? format(user.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
+            <TableCell>{user.createdAt ? format(new Date(user.createdAt), 'PPP') : 'N/A'}</TableCell>
             <TableCell className="text-right">
                <DropdownMenu>
                 <DropdownMenuTrigger asChild>

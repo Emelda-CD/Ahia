@@ -279,10 +279,18 @@ export async function getAllUsers(): Promise<UserProfile[]> {
     const querySnapshot = await getDocs(q);
     const users = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        return {
+        const plainObject = {
             uid: doc.id,
-            ...data,
-        } as UserProfile;
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            role: data.role,
+            profileImage: data.profileImage,
+            provider: data.provider,
+            // Convert Timestamp to serializable string
+            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+        };
+        return plainObject as UserProfile;
     });
     return users;
   } catch (error) {
