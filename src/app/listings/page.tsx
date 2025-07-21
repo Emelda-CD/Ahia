@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Ad } from '@/lib/listings-data';
 import { cn } from '@/lib/utils';
 import { categoriesData } from '@/lib/categories-data';
@@ -14,41 +14,29 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LandPlot, Sparkles, Car, Briefcase, PawPrint, Sofa, Wrench, Search, X, Shirt, Home, Loader2, LayoutGrid, List, Leaf } from 'lucide-react';
+import { Search, X, Loader2, LayoutGrid, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-
-const categoryIcons: { [key: string]: React.ElementType } = {
-  Property: Home,
-  Land: LandPlot,
-  Electronics: Sparkles,
-  Vehicles: Car,
-  Jobs: Briefcase,
-  'Animals & Pets': PawPrint,
-  'Furniture & Home': Sofa,
-  Services: Wrench,
-  Fashion: Shirt,
-  Phones: Sparkles,
-  'Food, Agriculture & Farming': Leaf,
-};
+import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
 
 const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
-    const query = (searchParams.get('q') || '').toLowerCase();
     const newFilters: any = {
         location: searchParams.get('location') || null,
         minPrice: '',
         maxPrice: '',
         verified: searchParams.get('verified') === 'true' || false,
         category: searchParams.get('category') || null,
+        subcategory: searchParams.get('subcategory') || null,
     };
     return newFilters;
 };
 
 
 export default function ListingsPage() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filteredAds, setFilteredAds] = useState<Ad[]>([]);
@@ -80,34 +68,38 @@ export default function ListingsPage() {
         fetchAds();
     }, [toast]);
 
-    const handleCategoryClick = (categoryName: string) => {
+    const updateUrl = useCallback((newFilters: any) => {
+        const params = new URLSearchParams();
+        if (searchQuery) params.set('q', searchQuery);
+        if (newFilters.category) params.set('category', newFilters.category);
+        if (newFilters.subcategory) params.set('subcategory', newFilters.subcategory);
+        if (newFilters.location) params.set('location', newFilters.location);
+        if (newFilters.verified) params.set('verified', 'true');
+
+        // We use window.history.pushState to avoid a full page reload
+        window.history.pushState(null, '', `/listings?${params.toString()}`);
+    }, [searchQuery]);
+
+    const handleFilterChange = useCallback((key: string, value: any) => {
         setFilters((prev: any) => {
-            if(prev.category === categoryName) return prev;
-            return { ...prev, q: '', category: categoryName };
+            const newFilters = { ...prev, [key]: value };
+            if (key === 'category') {
+                newFilters.subcategory = null; // Reset subcategory when category changes
+            }
+            updateUrl(newFilters);
+            return newFilters;
         });
-    };
+    }, [updateUrl]);
     
-    const handleCategoryValueChange = (value: string) => {
-        if (value === 'all') {
-            setFilters((prev: any) => ({ ...prev, category: null }));
-            return;
-        }
-        setFilters((prev: any) => ({ ...prev, category: value }));
-    };
-
-    const handleCheckboxChange = (key: string, checked: boolean) => {
-        setFilters((prev: any) => ({ ...prev, [key]: checked }));
-    };
-
-    const handleInputChange = useCallback((key: string, value: any) => {
-        setFilters((prev: any) => ({ ...prev, [key]: value }));
-    }, []);
-
     const applyFilters = useCallback(() => {
         let ads = allAds;
         
         if (filters.category) {
             ads = ads.filter(ad => ad.category === filters.category);
+        }
+
+        if (filters.subcategory) {
+            ads = ads.filter(ad => ad.subcategory === filters.subcategory);
         }
 
         const query = searchQuery.toLowerCase();
@@ -138,8 +130,8 @@ export default function ListingsPage() {
     const handleSearch = () => {
         const newUrlParams = new URLSearchParams(window.location.search);
         newUrlParams.set('q', searchQuery);
-        const newFilters = deriveFiltersFromQuery(newUrlParams);
-        setFilters(newFilters);
+        window.history.pushState(null, '', `/listings?${newUrlParams.toString()}`);
+        applyFilters();
     }
     
     return (
@@ -156,36 +148,19 @@ export default function ListingsPage() {
                     />
                      <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-2 sm:gap-4 text-center">
-                    {categoriesData.map(cat => {
-                        const Icon = categoryIcons[cat.name] || Home;
-                        return (
-                        <button
-                            key={cat.name}
-                            onClick={() => handleCategoryClick(cat.name)}
-                            className={cn(
-                                "flex flex-col items-center justify-center p-2 rounded-lg bg-secondary hover:bg-primary/10 transition-colors h-24",
-                                filters.category === cat.name && "bg-primary/10 ring-2 ring-primary"
-                            )}
-                        >
-                            <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-2" />
-                            <span className="font-semibold text-xs text-center">{cat.name}</span>
-                        </button>
-                    )})}
-                </div>
             </section>
             
             <div className="grid lg:grid-cols-4 gap-8">
                 <aside className="lg:col-span-1">
-                    <div className="p-4 rounded-lg border bg-card space-y-6 sticky top-20">
+                    {/* Desktop Filters */}
+                    <div className="hidden lg:block p-4 rounded-lg border bg-card space-y-6 sticky top-24">
                         <h3 className="text-xl font-bold">Filters</h3>
                         
                         <div>
                             <Label>Category</Label>
                             <Select
                                 value={filters.category || 'all'}
-                                onValueChange={handleCategoryValueChange}
+                                onValueChange={(val) => handleFilterChange('category', val === 'all' ? null : val)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
@@ -205,10 +180,10 @@ export default function ListingsPage() {
                             <AccordionItem value="location">
                                 <AccordionTrigger>Location</AccordionTrigger>
                                 <AccordionContent className="space-y-2">
-                                     <LocationModal onSelect={(town, lga) => handleInputChange('location', `${town}, ${lga}`)}>
+                                     <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
                                         <Button variant="outline" className="w-full justify-between">
                                             {filters.location || 'Enugu State'}
-                                            {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleInputChange('location', null);}} />}
+                                            {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', null);}} />}
                                         </Button>
                                     </LocationModal>
                                 </AccordionContent>
@@ -217,8 +192,8 @@ export default function ListingsPage() {
                                 <AccordionTrigger>Price Range</AccordionTrigger>
                                 <AccordionContent className="space-y-2">
                                     <div className="flex gap-2">
-                                        <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleInputChange('minPrice', e.target.value)} />
-                                        <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleInputChange('maxPrice', e.target.value)} />
+                                        <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
+                                        <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -226,7 +201,7 @@ export default function ListingsPage() {
                                 <AccordionTrigger>Verification</AccordionTrigger>
                                 <AccordionContent className="space-y-3">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleCheckboxChange('verified', !!c)} />
+                                        <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleFilterChange('verified', !!c)} />
                                         <Label htmlFor="verified">Verified Ad</Label>
                                     </div>
                                 </AccordionContent>
@@ -234,6 +209,17 @@ export default function ListingsPage() {
                         </Accordion>
                         <Button className="w-full" onClick={applyFilters}>Apply Filters</Button>
                     </div>
+
+                    {/* Mobile Filters Trigger */}
+                    <div className="lg:hidden">
+                        <MobileCategorySelector
+                            selectedCategory={filters.category}
+                            selectedSubcategory={filters.subcategory}
+                            onCategorySelect={(cat) => handleFilterChange('category', cat)}
+                            onSubcategorySelect={(subcat) => handleFilterChange('subcategory', subcat)}
+                        />
+                    </div>
+
                 </aside>
 
                 <main className="lg:col-span-3">
@@ -243,7 +229,7 @@ export default function ListingsPage() {
                         ) : (
                             <p className="text-muted-foreground">
                                 Showing {filteredAds.length} result{filteredAds.length === 1 ? '' : 's'}
-                                {searchQuery && <> for <span className="font-semibold text-foreground">"{searchQuery}"</span></>}
+                                {filters.category && <> in <span className="font-semibold text-foreground">{filters.subcategory || filters.category}</span></>}
                             </p>
                         )}
                         <div className="flex items-center gap-1">
@@ -298,3 +284,5 @@ export default function ListingsPage() {
         </div>
     );
 }
+
+    
