@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Ad } from '@/lib/listings-data';
 import { cn } from '@/lib/utils';
@@ -21,11 +21,19 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
 
+interface AvailableCategory {
+    name: string;
+    count: number;
+    subcategories: { [key: string]: number };
+}
+
 const CategoryFilter = ({
+    availableCategories,
     selectedCategory,
     selectedSubcategory,
     onCategorySelect,
 }: {
+    availableCategories: AvailableCategory[];
     selectedCategory: string | null;
     selectedSubcategory: string | null;
     onCategorySelect: (cat: string | null, subcat: string | null) => void;
@@ -49,7 +57,7 @@ const CategoryFilter = ({
         router.push(`/listings?${params.toString()}`);
     }
 
-    const displayedCategory = selectedCategory ? categoriesData.find(c => c.name === selectedCategory) : null;
+    const displayedCategory = selectedCategory ? availableCategories.find(c => c.name === selectedCategory) : null;
 
     if (displayedCategory) {
         // View when a category is selected
@@ -65,33 +73,39 @@ const CategoryFilter = ({
                                 !selectedSubcategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                             )}
                         >
-                            {displayedCategory.name}
+                           <div className="flex justify-between w-full pr-2">
+                                <span>{displayedCategory.name}</span>
+                                <span className="text-muted-foreground font-normal">{displayedCategory.count}</span>
+                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pl-4 mt-1 space-y-1 border-l-2 border-muted ml-2">
                              <button
                                 onClick={() => handleSelect(displayedCategory.name, null)}
                                 className={cn(
-                                    'block w-full text-left px-2 py-1 rounded-md',
+                                    'flex justify-between w-full text-left px-2 py-1 rounded-md',
                                    !selectedSubcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'text-muted-foreground hover:bg-secondary/50'
                                 )}
                             >
-                                All in {displayedCategory.name}
+                                <span>All in {displayedCategory.name}</span>
+                                <span className="font-normal">{displayedCategory.count}</span>
                             </button>
-                            {displayedCategory.subcategories.map(subcategory => (
+                            {Object.entries(displayedCategory.subcategories).map(([subcategory, count]) => (
                                 <button
                                     key={subcategory}
                                     onClick={() => handleSelect(displayedCategory.name, subcategory)}
                                     className={cn(
-                                        'block w-full text-left px-2 py-1 rounded-md text-muted-foreground',
+                                        'flex justify-between w-full text-left px-2 py-1 rounded-md text-muted-foreground',
                                         selectedSubcategory === subcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'hover:bg-secondary/50'
                                     )}
                                 >
-                                    {subcategory}
+                                    <span>{subcategory}</span>
+                                    <span className="font-normal">{count}</span>
                                 </button>
                             ))}
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
+                 <Button variant="link" size="sm" onClick={() => handleSelect(null, null)}>All categories</Button>
             </div>
         );
     }
@@ -103,13 +117,14 @@ const CategoryFilter = ({
              <button
                 onClick={() => handleSelect(null, null)}
                 className={cn(
-                    'w-full text-left px-2 py-1.5 rounded-md font-semibold',
+                    'flex justify-between items-center w-full text-left px-2 py-1.5 rounded-md font-semibold',
                     !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                 )}
             >
-                All Categories
+                <span>All Categories</span>
+                <span className="text-muted-foreground font-normal">{availableCategories.reduce((sum, cat) => sum + cat.count, 0)}</span>
             </button>
-            {categoriesData.map(category => (
+            {availableCategories.map(category => (
                 <div key={category.name}>
                     <button
                         onClick={() => handleSelect(category.name, null)}
@@ -119,7 +134,10 @@ const CategoryFilter = ({
                         )}
                     >
                         <span>{category.name}</span>
-                        <ChevronRight className="h-4 w-4" />
+                        <div className="flex items-center gap-2">
+                           <span className="text-muted-foreground font-normal">{category.count}</span>
+                           <ChevronRight className="h-4 w-4" />
+                        </div>
                     </button>
                 </div>
             ))}
@@ -136,6 +154,7 @@ export default function ListingsPage() {
     const [filteredAds, setFilteredAds] = useState<Ad[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [view, setView] = useState<'grid' | 'list'>('grid');
+    const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
     
     // State for controlled inputs
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -205,6 +224,31 @@ export default function ListingsPage() {
         }
 
         setFilteredAds(ads);
+        
+        // After filtering, recalculate available categories
+        const categoryMap: { [key: string]: AvailableCategory } = {};
+
+        // If a category is already selected, only calculate stats for that one
+        const adsToAnalyze = category ? ads.filter(ad => ad.category === category) : ads;
+
+        ads.forEach(ad => {
+            if (ad.category) {
+                if (!categoryMap[ad.category]) {
+                    categoryMap[ad.category] = { name: ad.category, count: 0, subcategories: {} };
+                }
+                categoryMap[ad.category].count++;
+                if (ad.subcategory) {
+                    if (!categoryMap[ad.category].subcategories[ad.subcategory]) {
+                        categoryMap[ad.category].subcategories[ad.subcategory] = 0;
+                    }
+                    categoryMap[ad.category].subcategories[ad.subcategory]++;
+                }
+            }
+        });
+        
+        const sortedCategories = Object.values(categoryMap).sort((a, b) => b.count - a.count);
+        setAvailableCategories(sortedCategories);
+
     }, [searchParams, allAds]);
 
 
@@ -265,6 +309,7 @@ export default function ListingsPage() {
                     {/* Desktop Filters */}
                     <div className="hidden lg:block p-4 rounded-lg border bg-card space-y-6 sticky top-24">
                         <CategoryFilter
+                            availableCategories={availableCategories}
                             selectedCategory={searchParams.get('category')}
                             selectedSubcategory={searchParams.get('subcategory')}
                             onCategorySelect={handleCategoryFilterChange}
