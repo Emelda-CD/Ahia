@@ -78,64 +78,66 @@ export default function UsersTable({ limit }: { limit?: number }) {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>User</TableHead>
-          <TableHead className="text-center">Role</TableHead>
-          <TableHead>Joined Date</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {users.map((user) => {
-          const isUpdating = updatingUserId === user.uid;
-          return (
-          <TableRow key={user.uid}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={user.profileImage} data-ai-hint="person portrait" />
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+    <div className="w-full overflow-x-auto">
+        <Table>
+        <TableHeader>
+            <TableRow>
+            <TableHead>User</TableHead>
+            <TableHead className="hidden sm:table-cell text-center">Role</TableHead>
+            <TableHead className="hidden md:table-cell">Joined Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {users.map((user) => {
+            const isUpdating = updatingUserId === user.uid;
+            return (
+            <TableRow key={user.uid}>
+                <TableCell>
+                <div className="flex items-center gap-3">
+                    <Avatar>
+                    <AvatarImage src={user.profileImage} data-ai-hint="person portrait" />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground hidden md:block">{user.email}</p>
+                    </div>
                 </div>
-              </div>
-            </TableCell>
-            <TableCell className="text-center">
-              {user.role === 'admin' ? (
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  <ShieldCheck className="h-3 w-3 mr-1" /> Admin
-                </Badge>
-              ) : (
-                'User'
-              )}
-            </TableCell>
-            <TableCell>{user.createdAt ? format(new Date(user.createdAt), 'PPP') : 'N/A'}</TableCell>
-            <TableCell className="text-right">
-               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem>View Profile</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {user.role === 'admin' ? (
-                    <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'user')}>Demote to User</DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'admin')}>Promote to Admin</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        )})}
-      </TableBody>
-    </Table>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-center">
+                {user.role === 'admin' ? (
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    <ShieldCheck className="h-3 w-3 mr-1" /> Admin
+                    </Badge>
+                ) : (
+                    'User'
+                )}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{user.createdAt ? format(new Date(user.createdAt), 'PPP') : 'N/A'}</TableCell>
+                <TableCell className="text-right">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem>View Profile</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {user.role === 'admin' ? (
+                        <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'user')}>Demote to User</DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'admin')}>Promote to Admin</DropdownMenuItem>
+                    )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                </TableCell>
+            </TableRow>
+            )})}
+        </TableBody>
+        </Table>
+    </div>
   );
 }

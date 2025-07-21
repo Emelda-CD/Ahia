@@ -76,8 +76,8 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
           {/* Image Gallery */}
           <Card className="mb-6">
             <CardContent className="p-4">
@@ -97,16 +97,16 @@ export default function ProductDetailPage() {
           {/* Product Info */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div>
                     {ad.verified && <Badge variant="secondary" className="bg-green-100 text-green-800">Verified</Badge>}
-                    <h1 className="text-3xl font-bold mt-2">{ad.title}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold mt-2">{ad.title}</h1>
                     <div className="flex items-center text-muted-foreground mt-2">
                         <MapPin className="w-5 h-5 mr-2" />
                         <span>Posted in {ad.location}</span>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-primary">
+                  <p className="text-2xl md:text-3xl font-bold text-primary sm:text-right whitespace-nowrap">
                     {formatPrice(ad.price)}
                   </p>
               </div>
@@ -120,7 +120,7 @@ export default function ProductDetailPage() {
           </Card>
         </div>
 
-        <div className="md:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-6">
           {/* Seller Info */}
           <Card>
             <CardHeader>

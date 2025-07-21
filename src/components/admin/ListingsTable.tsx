@@ -103,61 +103,63 @@ export default function ListingsTable({ limit, filter }: { limit?: number; filte
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Ad</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Price</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {ads.map((ad) => {
-          const isUpdating = updatingAdId === ad.id;
-          return (
-          <TableRow key={ad.id}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                 <Image src={ad.image} alt={ad.title} width={64} height={48} className="rounded-md object-cover" data-ai-hint={ad.data_ai_hint || 'ad image'} />
-                <div>
-                  <p className="font-medium">{ad.title}</p>
-                  <p className="text-sm text-muted-foreground">{ad.location}</p>
+    <div className="w-full overflow-x-auto">
+        <Table>
+        <TableHeader>
+            <TableRow>
+            <TableHead>Ad</TableHead>
+            <TableHead className="hidden md:table-cell">Category</TableHead>
+            <TableHead className="hidden sm:table-cell">Price</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {ads.map((ad) => {
+            const isUpdating = updatingAdId === ad.id;
+            return (
+            <TableRow key={ad.id}>
+                <TableCell>
+                <div className="flex items-center gap-3">
+                    <Image src={ad.image} alt={ad.title} width={64} height={48} className="rounded-md object-cover hidden sm:block" data-ai-hint={ad.data_ai_hint || 'ad image'} />
+                    <div>
+                    <p className="font-medium">{ad.title}</p>
+                    <p className="text-sm text-muted-foreground hidden lg:block">{ad.location}</p>
+                    </div>
                 </div>
-              </div>
-            </TableCell>
-            <TableCell>{ad.category}</TableCell>
-            <TableCell>{formatPrice(ad.price)}</TableCell>
-            <TableCell>
-              <Badge 
-                variant={'outline'}
-                className={cn('capitalize', getStatusClass(ad.status))}
-              >
-                {ad.status}
-              </Badge>
-            </TableCell>
-            <TableCell className="text-right">
-               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isUpdating}>
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem>View Ad</DropdownMenuItem>
-                   {ad.status === 'pending' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'active')}><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
-                   {ad.status !== 'declined' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'declined')}><AlertTriangle className="mr-2 h-4 w-4" />Decline Ad</DropdownMenuItem>}
-                   {ad.status === 'active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        )})}
-      </TableBody>
-    </Table>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{ad.category}</TableCell>
+                <TableCell className="hidden sm:table-cell">{formatPrice(ad.price)}</TableCell>
+                <TableCell>
+                <Badge 
+                    variant={'outline'}
+                    className={cn('capitalize', getStatusClass(ad.status))}
+                >
+                    {ad.status}
+                </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem>View Ad</DropdownMenuItem>
+                    {ad.status === 'pending' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'active')}><Check className="mr-2 h-4 w-4" />Approve Ad</DropdownMenuItem>}
+                    {ad.status !== 'declined' && <DropdownMenuItem onClick={() => handleUpdateStatus(ad.id, 'declined')}><AlertTriangle className="mr-2 h-4 w-4" />Decline Ad</DropdownMenuItem>}
+                    {ad.status === 'active' && <DropdownMenuItem><Ban className="mr-2 h-4 w-4" />Remove Ad</DropdownMenuItem>}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash className="mr-2 h-4 w-4" />Delete Permanently</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                </TableCell>
+            </TableRow>
+            )})}
+        </TableBody>
+        </Table>
+    </div>
   );
 }

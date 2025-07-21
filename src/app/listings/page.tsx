@@ -157,7 +157,7 @@ export default function ListingsPage() {
                      <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-2 sm:gap-4 text-center">
                     {categoriesData.map(cat => {
                         const Icon = categoryIcons[cat.name] || Home;
                         return (
@@ -165,12 +165,12 @@ export default function ListingsPage() {
                             key={cat.name}
                             onClick={() => handleCategoryClick(cat.name)}
                             className={cn(
-                                "flex flex-col items-center justify-center p-2 rounded-lg bg-secondary hover:bg-primary/10 transition-colors",
+                                "flex flex-col items-center justify-center p-2 rounded-lg bg-secondary hover:bg-primary/10 transition-colors h-24",
                                 filters.category === cat.name && "bg-primary/10 ring-2 ring-primary"
                             )}
                         >
-                            <Icon className="h-8 w-8 text-primary mb-2" />
-                            <span className="font-semibold text-xs">{cat.name}</span>
+                            <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary mb-2" />
+                            <span className="font-semibold text-xs text-center">{cat.name}</span>
                         </button>
                     )})}
                 </div>

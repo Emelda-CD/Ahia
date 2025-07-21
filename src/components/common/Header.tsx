@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, Tag } from 'lucide-react';
+import { Menu, Info, Phone, User, LogOut, ChevronDown, Loader2, Tag, Newspaper } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const navLinks = [
   { href: '/about', label: 'About', icon: Info },
+  { href: '/listings', label: 'Listings', icon: Newspaper },
   { href: '/contact', label: 'Contact', icon: Phone },
 ];
 
@@ -35,8 +36,6 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   useEffect(() => {
-    // Defer opening the modal until after the component has mounted
-    // to avoid the flushSync error.
     if (!isFirebaseConfigured && !loading) {
       setTimeout(() => setAuthModalOpen(true), 0);
     }

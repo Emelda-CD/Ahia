@@ -76,33 +76,35 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-12">
       <section className="mb-12">
-        <div className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white rounded-lg p-10 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+        <div className="bg-[linear-gradient(135deg,_#591942_0%,_#764ba2_100%)] text-white rounded-lg p-6 md:p-10 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white md:text-5xl">
               Welcome to Ahia
             </h1>
             <p className="mt-4 text-lg leading-8 text-gray-200">
               Your trusted online marketplace in Enugu. Find or sell anything.
             </p>
-            <div className="mt-8 max-w-3xl mx-auto bg-white rounded-full p-2 flex items-center shadow-lg flex-col sm:flex-row gap-2 sm:gap-0">
+            <div className="mt-8 max-w-3xl mx-auto bg-white rounded-lg p-2 flex items-center shadow-lg flex-col sm:flex-row gap-2 sm:gap-0">
                 <div className="relative flex-grow w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                         placeholder="What are you looking for?"
-                        className="w-full pl-12 pr-4 py-3 text-gray-900 bg-transparent border-none rounded-full focus:ring-0"
+                        className="w-full pl-12 pr-4 py-3 h-12 text-gray-900 bg-transparent border-none rounded-full focus:ring-0"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                 </div>
                 <div className="border-l border-gray-200 h-8 mx-2 hidden sm:block"></div>
-                <LocationModal onSelect={(town, lga) => setLocation(`${town}, ${lga}`)}>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border border-gray-300 rounded-full">
-                        <MapPin className="h-5 w-5" />
-                        <span>{location || 'All Enugu'}</span>
-                        {location && <X className="h-4 w-4 ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setLocation(null);}} />}
-                    </button>
-                </LocationModal>
-                <Button size="lg" className="rounded-full w-full sm:w-auto" onClick={handleSearch}>Search</Button>
+                 <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+                    <LocationModal onSelect={(town, lga) => setLocation(`${town}, ${lga}`)}>
+                        <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border border-gray-200 rounded-full h-12 text-base">
+                            <MapPin className="h-5 w-5" />
+                            <span>{location || 'All Enugu'}</span>
+                            {location && <X className="h-4 w-4 ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setLocation(null);}} />}
+                        </button>
+                    </LocationModal>
+                    <Button size="lg" className="rounded-full w-full sm:w-auto h-12" onClick={handleSearch}>Search</Button>
+                 </div>
             </div>
             <div className="mt-8">
                <Button size="lg" asChild>
@@ -114,7 +116,7 @@ export default function Home() {
 
       <div className="grid lg:grid-cols-4 gap-8 items-start">
         {/* Sidebar */}
-        <aside className="lg:col-span-1 lg:sticky lg:top-24">
+        <aside className="lg:col-span-1 lg:sticky lg:top-24 hidden lg:block">
           <Card>
             <CardHeader>
               <CardTitle>Categories</CardTitle>
@@ -157,9 +159,9 @@ export default function Home() {
         <main className="lg:col-span-3">
           <section>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold">Recent Ads</h2>
+                <h2 className="text-2xl md:text-3xl font-bold">Recent Ads</h2>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
+                    <div className="hidden sm:flex items-center gap-1">
                         <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('grid')} aria-label="Grid view" disabled={isLoading || recentAds.length === 0}>
                             <LayoutGrid className="h-5 w-5" />
                         </Button>
