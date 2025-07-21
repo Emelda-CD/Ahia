@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Ad } from '@/lib/listings-data';
 import { cn } from '@/lib/utils';
-import { categoriesData } from '@/lib/categories-data';
+import { categoriesData, Category } from '@/lib/categories-data';
 
 import AdCard from '@/components/AdCard';
 import AdCardListItem from '@/components/AdCardListItem';
@@ -14,13 +14,84 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, X, Loader2, LayoutGrid, List } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, X, Loader2, LayoutGrid, List, ChevronDown, ChevronRight } from 'lucide-react';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
+
+const CategoryFilter = ({
+    selectedCategory,
+    selectedSubcategory,
+    onCategorySelect,
+}: {
+    selectedCategory: string | null;
+    selectedSubcategory: string | null;
+    onCategorySelect: (cat: string, subcat: string | null) => void;
+}) => {
+    const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (selectedCategory && !expandedCategories.includes(selectedCategory)) {
+            setExpandedCategories(prev => [...prev, selectedCategory]);
+        }
+    }, [selectedCategory]);
+
+    const toggleCategory = (categoryName: string) => {
+        setExpandedCategories(prev =>
+            prev.includes(categoryName)
+                ? prev.filter(c => c !== categoryName)
+                : [...prev, categoryName]
+        );
+    };
+
+    return (
+        <div className="space-y-1">
+            <h4 className="font-semibold text-lg px-2">Categories</h4>
+             <button
+                onClick={() => onCategorySelect('', null)}
+                className={cn(
+                    'w-full text-left px-2 py-1.5 rounded-md font-semibold',
+                    !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                )}
+            >
+                All Categories
+            </button>
+            {categoriesData.map(category => (
+                <div key={category.name}>
+                    <div
+                        onClick={() => toggleCategory(category.name)}
+                        className={cn(
+                            'flex justify-between items-center w-full text-left px-2 py-1.5 rounded-md cursor-pointer',
+                             selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                        )}
+                    >
+                        <span className="font-semibold">{category.name}</span>
+                        {expandedCategories.includes(category.name) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </div>
+                    {expandedCategories.includes(category.name) && (
+                        <div className="pl-4 mt-1 space-y-1 border-l-2 border-muted ml-2">
+                           {category.subcategories.map(subcategory => (
+                               <button
+                                   key={subcategory}
+                                   onClick={() => onCategorySelect(category.name, subcategory)}
+                                   className={cn(
+                                       'block w-full text-left px-2 py-1 rounded-md text-muted-foreground',
+                                       selectedSubcategory === subcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'hover:bg-secondary/50'
+                                   )}
+                               >
+                                   {subcategory}
+                               </button>
+                           ))}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 
 export default function ListingsPage() {
     const router = useRouter();
@@ -38,8 +109,6 @@ export default function ListingsPage() {
         minPrice: searchParams.get('minPrice') || '',
         maxPrice: searchParams.get('maxPrice') || '',
         verified: searchParams.get('verified') === 'true',
-        category: searchParams.get('category') || '',
-        subcategory: searchParams.get('subcategory') || '',
     });
 
     const { toast } = useToast();
@@ -123,7 +192,22 @@ export default function ListingsPage() {
             params.delete('q');
         }
         router.push(`/listings?${params.toString()}`);
-    }
+    };
+
+    const handleCategoryFilterChange = (category: string, subcategory: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (category) {
+            params.set('category', category);
+        } else {
+            params.delete('category');
+        }
+        if (subcategory) {
+            params.set('subcategory', subcategory);
+        } else {
+            params.delete('subcategory');
+        }
+        router.push(`/listings?${params.toString()}`);
+    };
     
     return (
         <div className="container mx-auto px-4 py-8">
@@ -145,27 +229,11 @@ export default function ListingsPage() {
                 <aside className="lg:col-span-1">
                     {/* Desktop Filters */}
                     <div className="hidden lg:block p-4 rounded-lg border bg-card space-y-6 sticky top-24">
-                        <h3 className="text-xl font-bold">Filters</h3>
-                        
-                        <div>
-                            <Label>Category</Label>
-                            <Select
-                                value={filters.category || 'all'}
-                                onValueChange={(val) => handleFilterChange('category', val === 'all' ? '' : val)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Categories" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
-                                    {categoriesData.map(cat => (
-                                        <SelectItem key={cat.name} value={cat.name}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <CategoryFilter
+                            selectedCategory={searchParams.get('category')}
+                            selectedSubcategory={searchParams.get('subcategory')}
+                            onCategorySelect={handleCategoryFilterChange}
+                        />
                         
                        <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
                             <AccordionItem value="location">
@@ -231,7 +299,7 @@ export default function ListingsPage() {
                         ) : (
                             <p className="text-muted-foreground">
                                 Showing {filteredAds.length} result{filteredAds.length === 1 ? '' : 's'}
-                                {filters.category && <> in <span className="font-semibold text-foreground">{filters.subcategory || filters.category}</span></>}
+                                {searchParams.get('category') && <> in <span className="font-semibold text-foreground">{searchParams.get('subcategory') || searchParams.get('category')}</span></>}
                             </p>
                         )}
                         <div className="flex items-center gap-1">
