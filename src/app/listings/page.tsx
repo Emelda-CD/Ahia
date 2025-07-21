@@ -92,7 +92,6 @@ const CategoryFilter = ({
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
-                <Button variant="link" onClick={() => handleSelect(null, null)}>View All Categories</Button>
             </div>
         );
     }
