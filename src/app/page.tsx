@@ -88,7 +88,7 @@ export default function Home() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                         placeholder="What are you looking for?"
-                        className="w-full pl-12 pr-4 py-3 h-12 text-gray-900 bg-transparent border-none rounded-full focus:ring-0"
+                        className="w-full pl-12 pr-4 py-3 h-12 text-gray-900 bg-transparent border-none focus-visible:ring-transparent focus-visible:ring-offset-0"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -97,7 +97,7 @@ export default function Home() {
                 <div className="border-l border-gray-200 h-8 mx-2 hidden sm:block"></div>
                  <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
                     <LocationModal onSelect={(town, lga) => setLocation(`${town}, ${lga}`)}>
-                        <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border border-gray-200 rounded-full h-12 text-base">
+                        <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 whitespace-nowrap w-full justify-center sm:w-auto border sm:border-0 border-gray-200 rounded-full h-12 text-base">
                             <MapPin className="h-5 w-5" />
                             <span>{location || 'All Enugu'}</span>
                             {location && <X className="h-4 w-4 ml-1 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setLocation(null);}} />}
@@ -115,8 +115,8 @@ export default function Home() {
       </section>
 
       <div className="grid lg:grid-cols-4 gap-8 items-start">
-        {/* Sidebar */}
-        <aside className="lg:col-span-1 lg:sticky lg:top-24 hidden lg:block">
+        {/* Categories Section - Now visible on all screens */}
+        <aside className="lg:col-span-1 lg:sticky lg:top-24">
           <Card>
             <CardHeader>
               <CardTitle>Categories</CardTitle>
