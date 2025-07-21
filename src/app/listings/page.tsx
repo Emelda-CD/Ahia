@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, X, Loader2, LayoutGrid, List, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, X, Loader2, LayoutGrid, List, ArrowLeft } from 'lucide-react';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
 import { Card } from '@/components/ui/card';
@@ -30,57 +30,65 @@ const CategoryFilter = ({
     selectedSubcategory: string | null;
     onCategorySelect: (cat: string | null, subcat: string | null) => void;
 }) => {
+    const activeCategory = useMemo(() => {
+        return categoriesData.find(c => c.name === selectedCategory);
+    }, [selectedCategory]);
+
+    if (activeCategory) {
+        return (
+            <div className="w-full">
+                <button
+                    onClick={() => onCategorySelect(null, null)}
+                    className="flex items-center w-full text-left px-4 py-2 text-base font-semibold rounded-md hover:bg-muted mb-2"
+                >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    All Categories
+                </button>
+                <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
+                <ul className="space-y-2 pl-8 pt-2">
+                    <li>
+                        <button
+                            onClick={() => onCategorySelect(activeCategory.name, null)}
+                            className={cn(
+                                'hover:text-primary w-full text-left',
+                                !selectedSubcategory ? 'text-primary font-bold' : ''
+                            )}
+                        >
+                            All in {activeCategory.name}
+                        </button>
+                    </li>
+                    {activeCategory.subcategories.map(sub => (
+                        <li key={sub}>
+                            <button
+                                onClick={() => onCategorySelect(activeCategory.name, sub)}
+                                className={cn(
+                                    'text-muted-foreground hover:text-primary w-full text-left',
+                                    selectedSubcategory === sub ? 'text-primary font-bold' : ''
+                                )}
+                            >
+                                {sub}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
+
     return (
-        <Accordion type="multiple" defaultValue={selectedCategory ? [selectedCategory] : []} className="w-full">
+        <Accordion type="multiple" className="w-full">
             <h4 className="font-semibold text-lg px-4 mb-2">Categories</h4>
-             <button
-                onClick={() => onCategorySelect(null, null)}
-                className={cn(
-                    'flex items-center w-full text-left px-4 py-2 text-base font-semibold rounded-md',
-                    !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                )}
-            >
-                All Categories
-            </button>
             {categoriesData.map(category => (
-                <AccordionItem value={category.name} key={category.name}>
-                    <AccordionTrigger
+                <AccordionItem value={category.name} key={category.name} className="border-b-0">
+                     <button
                         onClick={() => onCategorySelect(category.name, null)}
                         className={cn(
-                            'px-4 py-2 text-base font-semibold hover:no-underline rounded-md',
-                            selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                            'px-4 py-2 w-full text-left text-base font-semibold hover:no-underline rounded-md hover:bg-muted',
+                            selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : ''
                         )}
                     >
                         {category.name}
-                    </AccordionTrigger>
-                    <AccordionContent className="pl-8">
-                        <ul className="space-y-2">
-                           <li>
-                                <button
-                                    onClick={() => onCategorySelect(category.name, null)}
-                                    className={cn(
-                                        'hover:text-primary w-full text-left',
-                                        selectedCategory === category.name && !selectedSubcategory ? 'text-primary font-bold' : ''
-                                    )}
-                                >
-                                    All in {category.name}
-                                </button>
-                            </li>
-                            {category.subcategories.map(sub => (
-                                <li key={sub}>
-                                    <button
-                                        onClick={() => onCategorySelect(category.name, sub)}
-                                        className={cn(
-                                            'text-muted-foreground hover:text-primary w-full text-left',
-                                            selectedSubcategory === sub ? 'text-primary font-bold' : ''
-                                        )}
-                                    >
-                                        {sub}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </AccordionContent>
+                    </button>
                 </AccordionItem>
             ))}
         </Accordion>
@@ -348,4 +356,5 @@ export default function ListingsPage() {
             </div>
         </div>
     );
-}
+
+    
