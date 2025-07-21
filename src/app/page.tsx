@@ -16,17 +16,18 @@ import { Input } from '@/components/ui/input';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getRecentAds } from '@/lib/firebase/actions';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   Land: LandPlot,
-  Property: HomeIcon,
+  "Real Estate": HomeIcon,
   Vehicles: Car,
   Electronics: Sparkles,
   Jobs: Briefcase,
   Fashion: Shirt,
   Services: Wrench,
-  Phones: Sparkles,
+  "Phones & Tablets": Sparkles,
   'Animals & Pets': PawPrint,
   'Furniture & Home': HomeIcon,
   'Food, Agriculture & Farming': Leaf,
@@ -114,9 +115,30 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Categories for mobile */}
+      <section className="lg:hidden mb-12">
+        <div className="grid grid-cols-3 xs:grid-cols-4 gap-4">
+          {categoriesData.map((category) => {
+            const Icon = categoryIcons[category.name] || HomeIcon;
+            return (
+              <Link
+                key={category.slug}
+                href={`/listings?category=${encodeURIComponent(category.name)}`}
+                className="group flex flex-col items-center justify-center text-center p-2 rounded-lg bg-card hover:bg-primary/10 transition-colors border"
+              >
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-2 group-hover:bg-primary/20">
+                    <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <span className="font-semibold text-xs text-center leading-tight">{category.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="grid lg:grid-cols-4 gap-8 items-start">
-        {/* Categories Section - Now visible on all screens */}
-        <aside className="lg:col-span-1 lg:sticky lg:top-24">
+        {/* Categories Section for Desktop */}
+        <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-24">
           <Card>
             <CardHeader>
               <CardTitle>Categories</CardTitle>
@@ -214,3 +236,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
