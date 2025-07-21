@@ -28,29 +28,81 @@ const CategoryFilter = ({
 }: {
     selectedCategory: string | null;
     selectedSubcategory: string | null;
-    onCategorySelect: (cat: string, subcat: string | null) => void;
+    onCategorySelect: (cat: string | null, subcat: string | null) => void;
 }) => {
-    const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-    useEffect(() => {
-        if (selectedCategory && !expandedCategories.includes(selectedCategory)) {
-            setExpandedCategories(prev => [...prev, selectedCategory]);
+    const handleSelect = (cat: string | null, subcat: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (cat) {
+            params.set('category', cat);
+        } else {
+            params.delete('category');
         }
-    }, [selectedCategory]);
 
-    const toggleCategory = (categoryName: string) => {
-        setExpandedCategories(prev =>
-            prev.includes(categoryName)
-                ? prev.filter(c => c !== categoryName)
-                : [...prev, categoryName]
+        if (subcat) {
+            params.set('subcategory', subcat);
+        } else {
+            params.delete('subcategory');
+        }
+        router.push(`/listings?${params.toString()}`);
+    }
+
+    const displayedCategory = selectedCategory ? categoriesData.find(c => c.name === selectedCategory) : null;
+
+    if (displayedCategory) {
+        // View when a category is selected
+        return (
+             <div className="space-y-1">
+                <h4 className="font-semibold text-lg px-2 mb-2">Category</h4>
+                <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+                    <AccordionItem value="item-1" className="border-b-0">
+                        <AccordionTrigger
+                            onClick={() => handleSelect(displayedCategory.name, null)}
+                            className={cn(
+                                'px-2 py-1.5 rounded-md font-semibold hover:no-underline',
+                                !selectedSubcategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                            )}
+                        >
+                            {displayedCategory.name}
+                        </AccordionTrigger>
+                        <AccordionContent className="pl-4 mt-1 space-y-1 border-l-2 border-muted ml-2">
+                             <button
+                                onClick={() => handleSelect(displayedCategory.name, null)}
+                                className={cn(
+                                    'block w-full text-left px-2 py-1 rounded-md',
+                                   !selectedSubcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'text-muted-foreground hover:bg-secondary/50'
+                                )}
+                            >
+                                All in {displayedCategory.name}
+                            </button>
+                            {displayedCategory.subcategories.map(subcategory => (
+                                <button
+                                    key={subcategory}
+                                    onClick={() => handleSelect(displayedCategory.name, subcategory)}
+                                    className={cn(
+                                        'block w-full text-left px-2 py-1 rounded-md text-muted-foreground',
+                                        selectedSubcategory === subcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'hover:bg-secondary/50'
+                                    )}
+                                >
+                                    {subcategory}
+                                </button>
+                            ))}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+                <Button variant="link" onClick={() => handleSelect(null, null)}>View All Categories</Button>
+            </div>
         );
-    };
-
+    }
+    
+    // View when no category is selected
     return (
         <div className="space-y-1">
             <h4 className="font-semibold text-lg px-2">Categories</h4>
              <button
-                onClick={() => onCategorySelect('', null)}
+                onClick={() => handleSelect(null, null)}
                 className={cn(
                     'w-full text-left px-2 py-1.5 rounded-md font-semibold',
                     !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
@@ -60,32 +112,16 @@ const CategoryFilter = ({
             </button>
             {categoriesData.map(category => (
                 <div key={category.name}>
-                    <div
-                        onClick={() => toggleCategory(category.name)}
+                    <button
+                        onClick={() => handleSelect(category.name, null)}
                         className={cn(
-                            'flex justify-between items-center w-full text-left px-2 py-1.5 rounded-md cursor-pointer',
-                             selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                            'flex justify-between items-center w-full text-left px-2 py-1.5 rounded-md cursor-pointer font-semibold',
+                             'hover:bg-muted'
                         )}
                     >
-                        <span className="font-semibold">{category.name}</span>
-                        {expandedCategories.includes(category.name) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </div>
-                    {expandedCategories.includes(category.name) && (
-                        <div className="pl-4 mt-1 space-y-1 border-l-2 border-muted ml-2">
-                           {category.subcategories.map(subcategory => (
-                               <button
-                                   key={subcategory}
-                                   onClick={() => onCategorySelect(category.name, subcategory)}
-                                   className={cn(
-                                       'block w-full text-left px-2 py-1 rounded-md text-muted-foreground',
-                                       selectedSubcategory === subcategory ? 'bg-secondary font-semibold text-secondary-foreground' : 'hover:bg-secondary/50'
-                                   )}
-                               >
-                                   {subcategory}
-                               </button>
-                           ))}
-                        </div>
-                    )}
+                        <span>{category.name}</span>
+                        <ChevronRight className="h-4 w-4" />
+                    </button>
                 </div>
             ))}
         </div>
@@ -194,7 +230,7 @@ export default function ListingsPage() {
         router.push(`/listings?${params.toString()}`);
     };
 
-    const handleCategoryFilterChange = (category: string, subcategory: string | null) => {
+    const handleCategoryFilterChange = (category: string | null, subcategory: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
         if (category) {
             params.set('category', category);
