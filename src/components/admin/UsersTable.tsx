@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getAllUsers } from '@/lib/firebase/actions';
+import { getAllUsers, updateUserRole } from '@/lib/firebase/actions';
 import type { UserProfile } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -23,27 +23,51 @@ import { useToast } from '@/hooks/use-toast';
 export default function UsersTable({ limit }: { limit?: number }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const allUsers = await getAllUsers();
+      setUsers(limit ? allUsers.slice(0, limit) : allUsers);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      toast({
+        variant: "destructive",
+        title: "Could not load users",
+        description: "There was an issue fetching user data.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const allUsers = await getAllUsers();
-        setUsers(limit ? allUsers.slice(0, limit) : allUsers);
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-        toast({
-          variant: "destructive",
-          title: "Could not load users",
-          description: "There was an issue fetching user data.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, [limit, toast]);
+
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'user') => {
+    setUpdatingUserId(userId);
+    try {
+        await updateUserRole(userId, newRole);
+        setUsers(currentUsers =>
+            currentUsers.map(u => u.uid === userId ? { ...u, role: newRole } : u)
+        );
+        toast({
+            title: "User Role Updated",
+            description: `User has been successfully made an ${newRole}.`
+        });
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: error.message || "Could not update the user's role.",
+        });
+    } finally {
+        setUpdatingUserId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -64,7 +88,9 @@ export default function UsersTable({ limit }: { limit?: number }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.map((user) => (
+        {users.map((user) => {
+          const isUpdating = updatingUserId === user.uid;
+          return (
           <TableRow key={user.uid}>
             <TableCell>
               <div className="flex items-center gap-3">
@@ -91,8 +117,8 @@ export default function UsersTable({ limit }: { limit?: number }) {
             <TableCell className="text-right">
                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -100,15 +126,15 @@ export default function UsersTable({ limit }: { limit?: number }) {
                   <DropdownMenuItem>View Profile</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {user.role === 'admin' ? (
-                    <DropdownMenuItem>Demote to User</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'user')}>Demote to User</DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem>Promote to Admin</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'admin')}>Promote to Admin</DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
           </TableRow>
-        ))}
+        )})}
       </TableBody>
     </Table>
   );

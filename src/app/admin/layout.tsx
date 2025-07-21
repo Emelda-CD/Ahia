@@ -3,7 +3,8 @@
 
 import { ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/common/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, Users, Package, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Settings, LogOut, ChevronDown, Loader2 } from 'lucide-react';
 
 
 const AdminNavLink = ({ href, children, icon: Icon }: { href: string; children: React.ReactNode; icon: React.ElementType }) => {
@@ -34,7 +35,28 @@ const AdminNavLink = ({ href, children, icon: Icon }: { href: string; children: 
 
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-    // NOTE: Auth has been removed. This admin panel is now publicly accessible.
+    const { user, loading, logout } = useAuth();
+    const router = useRouter();
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (!user || user.role !== 'admin') {
+        router.replace('/');
+        return (
+             <div className="flex h-screen items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold">Access Denied</h1>
+                    <p className="text-muted-foreground">Redirecting you to the homepage...</p>
+                </div>
+            </div>
+        );
+    }
     
   return (
     <div className="min-h-screen w-full flex bg-muted/40">
@@ -57,10 +79,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative flex items-center gap-2">
                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://placehold.co/100x100.png" alt="Admin" data-ai-hint="person icon" />
-                            <AvatarFallback>A</AvatarFallback>
+                            <AvatarImage src={user.profileImage} alt={user.name} data-ai-hint="person icon" />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span>Admin</span>
+                        <span>{user.name}</span>
                         <ChevronDown className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -68,14 +90,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/admin/settings">Settings</Link>
+                    <Link href="/account/settings">My Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>Support</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" asChild>
-                    <Link href="/" className="flex items-center gap-2 w-full">
-                        <LogOut className="h-4 w-4" /> Exit Admin
-                    </Link>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => logout()}>
+                    <LogOut className="mr-2 h-4 w-4" /> Exit Admin
                   </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

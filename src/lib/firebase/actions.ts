@@ -59,6 +59,23 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserP
 }
 
 /**
+ * Updates a user's role. Intended for admin use.
+ * @param userId The UID of the user to update.
+ * @param role The new role to assign.
+ */
+export async function updateUserRole(userId: string, role: 'user' | 'admin') {
+  if (!isFirebaseConfigured || !db) {
+    throw new Error("Action failed: Firebase is not configured on the server.");
+  }
+
+  // NOTE: In a production app, you would add a check here
+  // to ensure the calling user is an admin before proceeding.
+
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { role });
+}
+
+/**
  * Updates a user's profile image.
  * @param userId The UID of the user to update.
  * @param formData The FormData object containing the new profile image.
@@ -171,6 +188,7 @@ export async function getAds(): Promise<Ad[]> {
         return {
             id: doc.id,
             ...data,
+            timestamp: data.timestamp?.toDate().toISOString() || null,
         } as Ad;
     });
 
@@ -196,6 +214,7 @@ export async function getAdsByUserId(userId: string): Promise<Ad[]> {
   const ads = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate().toISOString() || null,
   } as Ad));
 
   return ads;
@@ -209,7 +228,11 @@ export async function getRecentAds(count: number): Promise<Ad[]> {
     const adsCollection = collection(db, 'ads');
     const q = query(adsCollection, orderBy('timestamp', 'desc'), limit(count));
     const querySnapshot = await getDocs(q);
-    const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ad));
+    const ads = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate().toISOString() || null,
+    } as Ad));
     return ads;
 }
 
@@ -236,10 +259,10 @@ export async function getAdById(id: string): Promise<Ad | null> {
     } as Ad;
 
     if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-        adData.timestamp = data.timestamp.toDate();
+        adData.timestamp = data.timestamp.toDate().toISOString();
     }
      if (data.lastUpdated && typeof data.lastUpdated.toDate === 'function') {
-        adData.lastUpdated = data.lastUpdated.toDate();
+        adData.lastUpdated = data.lastUpdated.toDate().toISOString();
     }
 
     return adData;
@@ -300,7 +323,14 @@ export async function getAllUsers(): Promise<UserProfile[]> {
         // Fallback to fetching without ordering to prevent app crash
         const fallbackQuery = query(usersCollection);
         const fallbackSnapshot = await getDocs(fallbackQuery);
-        const users = fallbackSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+        const users = fallbackSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                 uid: doc.id,
+                ...data,
+                createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+            } as UserProfile
+        });
         return users;
     } else {
         console.error("Error fetching all users:", error);
