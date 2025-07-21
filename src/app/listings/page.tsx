@@ -22,32 +22,29 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
 
-const deriveFiltersFromQuery = (searchParams: URLSearchParams): any => {
-    const newFilters: any = {
-        location: searchParams.get('location') || null,
-        minPrice: '',
-        maxPrice: '',
-        verified: searchParams.get('verified') === 'true' || false,
-        category: searchParams.get('category') || null,
-        subcategory: searchParams.get('subcategory') || null,
-    };
-    return newFilters;
-};
-
-
 export default function ListingsPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-    const [filteredAds, setFilteredAds] = useState<Ad[]>([]);
+    
     const [allAds, setAllAds] = useState<Ad[]>([]);
+    const [filteredAds, setFilteredAds] = useState<Ad[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     
-    const initialFilters = useMemo(() => deriveFiltersFromQuery(searchParams), [searchParams]);
-    const [filters, setFilters] = useState<any>(initialFilters);
+    // State for controlled inputs
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [filters, setFilters] = useState({
+        location: searchParams.get('location') || '',
+        minPrice: searchParams.get('minPrice') || '',
+        maxPrice: searchParams.get('maxPrice') || '',
+        verified: searchParams.get('verified') === 'true',
+        category: searchParams.get('category') || '',
+        subcategory: searchParams.get('subcategory') || '',
+    });
+
     const { toast } = useToast();
 
+    // Fetch all ads once on component mount
     useEffect(() => {
         const fetchAds = async () => {
             setIsLoading(true);
@@ -68,70 +65,64 @@ export default function ListingsPage() {
         fetchAds();
     }, [toast]);
 
-    const updateUrl = useCallback((newFilters: any) => {
-        const params = new URLSearchParams();
-        if (searchQuery) params.set('q', searchQuery);
-        if (newFilters.category) params.set('category', newFilters.category);
-        if (newFilters.subcategory) params.set('subcategory', newFilters.subcategory);
-        if (newFilters.location) params.set('location', newFilters.location);
-        if (newFilters.verified) params.set('verified', 'true');
-
-        // We use window.history.pushState to avoid a full page reload
-        window.history.pushState(null, '', `/listings?${params.toString()}`);
-    }, [searchQuery]);
-
-    const handleFilterChange = useCallback((key: string, value: any) => {
-        setFilters((prev: any) => {
-            const newFilters = { ...prev, [key]: value };
-            if (key === 'category') {
-                newFilters.subcategory = null; // Reset subcategory when category changes
-            }
-            updateUrl(newFilters);
-            return newFilters;
-        });
-    }, [updateUrl]);
-    
-    const applyFilters = useCallback(() => {
-        let ads = allAds;
-        
-        if (filters.category) {
-            ads = ads.filter(ad => ad.category === filters.category);
-        }
-
-        if (filters.subcategory) {
-            ads = ads.filter(ad => ad.subcategory === filters.subcategory);
-        }
-
-        const query = searchQuery.toLowerCase();
-        if (query) {
-            ads = ads.filter(ad => ad.title.toLowerCase().includes(query) || (ad.description && ad.description.toLowerCase().includes(query)));
-        }
-
-        if (filters.location) {
-            ads = ads.filter(ad => ad.location === filters.location);
-        }
-
-        if (filters.minPrice) {
-            ads = ads.filter(ad => ad.price >= Number(filters.minPrice));
-        }
-        if (filters.maxPrice) {
-            ads = ads.filter(ad => ad.price <= Number(filters.maxPrice));
-        }
-        
-        if(filters.verified) ads = ads.filter(ad => ad.verified);
-        
-        setFilteredAds(ads);
-    }, [filters, searchQuery, allAds]);
-    
+    // This effect will run whenever the search params in the URL change.
+    // It is the single source of truth for filtering.
     useEffect(() => {
-        applyFilters();
-    }, [applyFilters]);
+        let ads = allAds;
 
-    const handleSearch = () => {
-        const newUrlParams = new URLSearchParams(window.location.search);
-        newUrlParams.set('q', searchQuery);
-        window.history.pushState(null, '', `/listings?${newUrlParams.toString()}`);
-        applyFilters();
+        const q = searchParams.get('q')?.toLowerCase() || '';
+        const category = searchParams.get('category');
+        const subcategory = searchParams.get('subcategory');
+        const location = searchParams.get('location');
+        const minPrice = searchParams.get('minPrice');
+        const maxPrice = searchParams.get('maxPrice');
+        const verified = searchParams.get('verified') === 'true';
+
+        if (q) {
+            ads = ads.filter(ad => ad.title.toLowerCase().includes(q) || (ad.description && ad.description.toLowerCase().includes(q)));
+        }
+        if (category) {
+            ads = ads.filter(ad => ad.category === category);
+        }
+        if (subcategory) {
+            ads = ads.filter(ad => ad.subcategory === subcategory);
+        }
+        if (location) {
+            ads = ads.filter(ad => ad.location === location);
+        }
+        if (minPrice) {
+            ads = ads.filter(ad => ad.price >= Number(minPrice));
+        }
+        if (maxPrice) {
+            ads = ads.filter(ad => ad.price <= Number(maxPrice));
+        }
+        if (verified) {
+            ads = ads.filter(ad => ad.verified);
+        }
+
+        setFilteredAds(ads);
+    }, [searchParams, allAds]);
+
+
+    const handleFilterChange = (key: string, value: any) => {
+        setFilters(prev => ({...prev, [key]: value}));
+    };
+    
+    const applyFiltersToUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) {
+                params.set(key, String(value));
+            } else {
+                params.delete(key);
+            }
+        });
+        if (searchQuery) {
+            params.set('q', searchQuery);
+        } else {
+            params.delete('q');
+        }
+        router.push(`/listings?${params.toString()}`);
     }
     
     return (
@@ -144,9 +135,9 @@ export default function ListingsPage() {
                         className="pl-10 h-12 text-lg" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        onKeyDown={(e) => e.key === 'Enter' && applyFiltersToUrl()}
                     />
-                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearch}>Search</Button>
+                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={applyFiltersToUrl}>Search</Button>
                 </div>
             </section>
             
@@ -160,7 +151,7 @@ export default function ListingsPage() {
                             <Label>Category</Label>
                             <Select
                                 value={filters.category || 'all'}
-                                onValueChange={(val) => handleFilterChange('category', val === 'all' ? null : val)}
+                                onValueChange={(val) => handleFilterChange('category', val === 'all' ? '' : val)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="All Categories" />
@@ -183,7 +174,7 @@ export default function ListingsPage() {
                                      <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
                                         <Button variant="outline" className="w-full justify-between">
                                             {filters.location || 'Enugu State'}
-                                            {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', null);}} />}
+                                            {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
                                         </Button>
                                     </LocationModal>
                                 </AccordionContent>
@@ -207,16 +198,27 @@ export default function ListingsPage() {
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
-                        <Button className="w-full" onClick={applyFilters}>Apply Filters</Button>
+                        <Button className="w-full" onClick={applyFiltersToUrl}>Apply Filters</Button>
                     </div>
 
                     {/* Mobile Filters Trigger */}
                     <div className="lg:hidden">
                         <MobileCategorySelector
-                            selectedCategory={filters.category}
-                            selectedSubcategory={filters.subcategory}
-                            onCategorySelect={(cat) => handleFilterChange('category', cat)}
-                            onSubcategorySelect={(subcat) => handleFilterChange('subcategory', subcat)}
+                            selectedCategory={searchParams.get('category')}
+                            selectedSubcategory={searchParams.get('subcategory')}
+                            onCategorySelect={(cat) => {
+                                const params = new URLSearchParams(searchParams.toString());
+                                if (cat) params.set('category', cat);
+                                else params.delete('category');
+                                params.delete('subcategory');
+                                router.push(`/listings?${params.toString()}`);
+                            }}
+                            onSubcategorySelect={(subcat) => {
+                                const params = new URLSearchParams(searchParams.toString());
+                                if (subcat && subcat !== 'all') params.set('subcategory', subcat);
+                                else params.delete('subcategory');
+                                router.push(`/listings?${params.toString()}`);
+                            }}
                         />
                     </div>
 
@@ -284,5 +286,3 @@ export default function ListingsPage() {
         </div>
     );
 }
-
-    
