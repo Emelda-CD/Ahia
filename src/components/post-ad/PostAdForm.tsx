@@ -71,20 +71,16 @@ const baseSchema = z.object({
   salary: z.preprocess(val => Number(String(val).replace(/,/g, '')) || undefined, z.number().optional()),
 });
 
-// Create mode needs terms
-const createBaseSchema = baseSchema.extend({
+// Create mode needs terms and at least one image file.
+const createSchema = baseSchema.extend({
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
-});
+}).superRefine((data, ctx) => {
+    // This refinement runs for all categories
+    if (data.type === 'Rent' && !data.rentalPeriod) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Rental period is required for rental items.', path: ['rentalPeriod'] });
+    }
 
-// Edit mode makes terms and images optional
-const editBaseSchema = baseSchema.extend({
-  images: z.array(z.instanceof(File)).optional(),
-  terms: z.boolean().optional(),
-});
-
-
-// Refinement logic to be applied to both schemas
-const schemaRefinement = (data: z.infer<typeof baseSchema>, ctx: z.RefinementCtx) => {
+    // Category-specific refinements
     switch (data.category) {
         case 'Land':
             if (!data.plotSize) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Plot size is required', path: ['plotSize'] });
@@ -102,19 +98,42 @@ const schemaRefinement = (data: z.infer<typeof baseSchema>, ctx: z.RefinementCtx
              break;
         case 'Jobs':
             if (!data.jobType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Job type is required', path: ['jobType']});
+            break;
     }
+});
 
+// Edit mode makes images optional and doesn't require terms checkbox
+const editSchema = baseSchema.extend({
+  images: z.array(z.instanceof(File)).optional(),
+  terms: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+    // This refinement runs for all categories
     if (data.type === 'Rent' && !data.rentalPeriod) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Rental period is required for rental items.',
-            path: ['rentalPeriod'],
-        });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Rental period is required for rental items.', path: ['rentalPeriod'] });
     }
-};
+    
+    // Category-specific refinements
+    switch (data.category) {
+        case 'Land':
+            if (!data.plotSize) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Plot size is required', path: ['plotSize'] });
+            if (!data.plotMeasurementUnit) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Measurement unit is required', path: ['plotMeasurementUnit'] });
+            break;
+        case 'Real Estate':
+            if (!data.rooms) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Number of rooms is required', path: ['rooms'] });
+            if (!data.toilets) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Number of toilets is required', path: ['toilets'] });
+            break;
+        case 'Vehicles':
+        case 'Phones & Tablets':
+        case 'Electronics':
+        case 'Fashion':
+             if (!data.condition) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Condition is required', path: ['condition'] });
+             break;
+        case 'Jobs':
+            if (!data.jobType) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Job type is required', path: ['jobType']});
+            break;
+    }
+});
 
-const createSchema = createBaseSchema.superRefine(schemaRefinement);
-const editSchema = editBaseSchema.superRefine(schemaRefinement);
 
 type AdFormValues = z.infer<typeof baseSchema>;
 
@@ -900,3 +919,5 @@ export default function PostAdForm() {
     </>
   );
 }
+
+    
