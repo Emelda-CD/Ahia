@@ -46,17 +46,6 @@ const CategoryFilter = ({
                 </button>
                 <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
                 <ul className="space-y-1 pl-4 pt-2">
-                    <li>
-                        <button
-                            onClick={() => onCategorySelect(activeCategory.name, null)}
-                            className={cn(
-                                'hover:text-primary w-full text-left p-2 rounded-md',
-                                !selectedSubcategory ? 'text-primary font-bold bg-primary/10' : 'text-foreground'
-                            )}
-                        >
-                            All in {activeCategory.name}
-                        </button>
-                    </li>
                     {activeCategory.subcategories.map(sub => (
                         <li key={sub}>
                             <button
@@ -356,5 +345,4 @@ export default function ListingsPage() {
             </div>
         </div>
     );
-
-    
+}
