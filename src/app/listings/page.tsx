@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, X, Loader2, LayoutGrid, List, ArrowLeft } from 'lucide-react';
+import { Search, X, Loader2, LayoutGrid, List } from 'lucide-react';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
 import { Card, CardContent } from '@/components/ui/card';
@@ -104,18 +104,17 @@ export default function ListingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     
-    // State for controlled inputs
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filters, setFilters] = useState({
         location: searchParams.get('location') || '',
         minPrice: searchParams.get('minPrice') || '',
         maxPrice: searchParams.get('maxPrice') || '',
         verified: searchParams.get('verified') === 'true',
+        condition: searchParams.getAll('condition') || [],
     });
 
     const { toast } = useToast();
 
-    // Fetch all ads once on component mount
     useEffect(() => {
         const fetchAds = async () => {
             setIsLoading(true);
@@ -136,8 +135,6 @@ export default function ListingsPage() {
         fetchAds();
     }, [toast]);
 
-    // This effect will run whenever the search params in the URL change.
-    // It is the single source of truth for filtering.
     useEffect(() => {
         let ads = allAds;
 
@@ -148,6 +145,7 @@ export default function ListingsPage() {
         const minPrice = searchParams.get('minPrice');
         const maxPrice = searchParams.get('maxPrice');
         const verified = searchParams.get('verified') === 'true';
+        const conditions = searchParams.getAll('condition');
 
         if (q) {
             ads = ads.filter(ad => ad.title.toLowerCase().includes(q) || (ad.description && ad.description.toLowerCase().includes(q)));
@@ -170,24 +168,45 @@ export default function ListingsPage() {
         if (verified) {
             ads = ads.filter(ad => ad.verified);
         }
+        if (conditions.length > 0) {
+            ads = ads.filter(ad => ad.condition && conditions.includes(ad.condition));
+        }
 
         setFilteredAds(ads);
     }, [searchParams, allAds]);
-
 
     const handleFilterChange = (key: string, value: any) => {
         setFilters(prev => ({...prev, [key]: value}));
     };
     
+    const handleConditionChange = (condition: string, checked: boolean) => {
+        const currentConditions = filters.condition || [];
+        const newConditions = checked 
+            ? [...currentConditions, condition] 
+            : currentConditions.filter(c => c !== condition);
+        handleFilterChange('condition', newConditions);
+    };
+
     const applyFiltersToUrl = () => {
         const params = new URLSearchParams(window.location.search);
+        
+        // Handle single-value filters
         Object.entries(filters).forEach(([key, value]) => {
-            if (value) {
-                params.set(key, String(value));
-            } else {
-                params.delete(key);
+            if (key !== 'condition') { // Exclude multi-value filters from this loop
+                if (value) {
+                    params.set(key, String(value));
+                } else {
+                    params.delete(key);
+                }
             }
         });
+
+        // Handle multi-value 'condition' filter
+        params.delete('condition');
+        if (filters.condition && filters.condition.length > 0) {
+            filters.condition.forEach(c => params.append('condition', c));
+        }
+
         if (searchQuery) {
             params.set('q', searchQuery);
         } else {
@@ -219,6 +238,8 @@ export default function ListingsPage() {
         return "Search for anything...";
     }, [searchParams]);
     
+    const conditions = ["New", "Used", "Nigerian Used", "Foreign Used"];
+
     return (
         <div className="container mx-auto px-4 py-8">
             <section className="mb-8">
@@ -249,7 +270,7 @@ export default function ListingsPage() {
                         
                        <Card>
                            <CardContent className="p-4 space-y-4">
-                               <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
+                               <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'condition']} className="w-full">
                                     <AccordionItem value="location">
                                         <AccordionTrigger className="font-semibold">Location</AccordionTrigger>
                                         <AccordionContent className="space-y-2 pt-2">
@@ -268,6 +289,21 @@ export default function ListingsPage() {
                                                 <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
                                                 <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
                                             </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                    <AccordionItem value="condition">
+                                        <AccordionTrigger className="font-semibold">Condition</AccordionTrigger>
+                                        <AccordionContent className="space-y-3 pt-2">
+                                            {conditions.map(condition => (
+                                                <div key={condition} className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id={`condition-${condition}`}
+                                                        checked={filters.condition.includes(condition)}
+                                                        onCheckedChange={(checked) => handleConditionChange(condition, !!checked)}
+                                                    />
+                                                    <Label htmlFor={`condition-${condition}`}>{condition}</Label>
+                                                </div>
+                                            ))}
                                         </AccordionContent>
                                     </AccordionItem>
                                     <AccordionItem value="verification" className="border-b-0">
