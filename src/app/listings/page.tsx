@@ -30,11 +30,18 @@ const CategoryFilter = ({
     selectedSubcategory: string | null;
     onCategorySelect: (cat: string | null, subcat: string | null) => void;
 }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const SUBCATEGORY_LIMIT = 5;
+
     const activeCategory = useMemo(() => {
         return categoriesData.find(c => c.name === selectedCategory);
     }, [selectedCategory]);
 
     if (activeCategory) {
+        const subcategoriesToShow = isExpanded
+            ? activeCategory.subcategories
+            : activeCategory.subcategories.slice(0, SUBCATEGORY_LIMIT);
+            
         return (
             <div className="w-full">
                 <button
@@ -46,7 +53,7 @@ const CategoryFilter = ({
                 </button>
                 <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
                 <ul className="space-y-1 pl-4 pt-2">
-                    {activeCategory.subcategories.map(sub => (
+                    {subcategoriesToShow.map(sub => (
                         <li key={sub}>
                             <button
                                 onClick={() => onCategorySelect(activeCategory.name, sub)}
@@ -60,6 +67,13 @@ const CategoryFilter = ({
                         </li>
                     ))}
                 </ul>
+                {activeCategory.subcategories.length > SUBCATEGORY_LIMIT && (
+                     <div className="pl-6 pt-2">
+                        <Button variant="link" onClick={() => setIsExpanded(!isExpanded)} className="p-0 h-auto">
+                            {isExpanded ? 'Show Less' : 'Show More'}
+                        </Button>
+                    </div>
+                )}
             </div>
         );
     }
