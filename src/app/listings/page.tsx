@@ -20,6 +20,7 @@ import { getAds } from '@/lib/firebase/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
+import { useDebouncedCallback } from 'use-debounce';
 
 const CategoryFilter = ({
     selectedCategory,
@@ -113,15 +114,41 @@ export default function ListingsPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid');
     
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-    const [filters, setFilters] = useState({
-        location: searchParams.get('location') || '',
-        minPrice: searchParams.get('minPrice') || '',
-        maxPrice: searchParams.get('maxPrice') || '',
-        verified: searchParams.get('verified') === 'true',
-        condition: searchParams.getAll('condition') || [],
-    });
-
+    
     const { toast } = useToast();
+    
+    const updateUrlParams = useDebouncedCallback((newParams: URLSearchParams) => {
+        router.push(`/listings?${newParams.toString()}`);
+    }, 300);
+
+    const handleFilterChange = useCallback((key: string, value: any) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+            params.set(key, String(value));
+        } else {
+            params.delete(key);
+        }
+        updateUrlParams(params);
+    }, [searchParams, updateUrlParams]);
+    
+    const handleMultiFilterChange = (key: string, value: string, checked: boolean) => {
+        const params = new URLSearchParams(searchParams.toString());
+        const existingValues = params.getAll(key);
+
+        if (checked) {
+            if (!existingValues.includes(value)) {
+                params.append(key, value);
+            }
+        } else {
+            const newValues = existingValues.filter(v => v !== value);
+            params.delete(key);
+            if (newValues.length > 0) {
+                newValues.forEach(v => params.append(key, v));
+            }
+        }
+        router.push(`/listings?${params.toString()}`);
+    };
+
 
     useEffect(() => {
         const fetchAds = async () => {
@@ -182,47 +209,7 @@ export default function ListingsPage() {
 
         setFilteredAds(ads);
     }, [searchParams, allAds]);
-
-    const handleFilterChange = (key: string, value: any) => {
-        setFilters(prev => ({...prev, [key]: value}));
-    };
     
-    const handleConditionChange = (condition: string, checked: boolean) => {
-        const currentConditions = filters.condition || [];
-        const newConditions = checked 
-            ? [...currentConditions, condition] 
-            : currentConditions.filter(c => c !== condition);
-        handleFilterChange('condition', newConditions);
-    };
-
-    const applyFiltersToUrl = () => {
-        const params = new URLSearchParams(window.location.search);
-        
-        // Handle single-value filters
-        Object.entries(filters).forEach(([key, value]) => {
-            if (key !== 'condition') { // Exclude multi-value filters from this loop
-                if (value) {
-                    params.set(key, String(value));
-                } else {
-                    params.delete(key);
-                }
-            }
-        });
-
-        // Handle multi-value 'condition' filter
-        params.delete('condition');
-        if (filters.condition && filters.condition.length > 0) {
-            filters.condition.forEach(c => params.append('condition', c));
-        }
-
-        if (searchQuery) {
-            params.set('q', searchQuery);
-        } else {
-            params.delete('q');
-        }
-        router.push(`/listings?${params.toString()}`);
-    };
-
     const handleCategoryFilterChange = (category: string | null, subcategory: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
         if (category) {
@@ -237,6 +224,16 @@ export default function ListingsPage() {
         }
         router.push(`/listings?${params.toString()}`);
     };
+    
+    const handleSearchClick = () => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (searchQuery) {
+            params.set('q', searchQuery);
+        } else {
+            params.delete('q');
+        }
+        router.push(`/listings?${params.toString()}`);
+    }
 
     const searchPlaceholder = useMemo(() => {
         const category = searchParams.get('category');
@@ -282,9 +279,9 @@ export default function ListingsPage() {
                         className="pl-10 h-12 text-lg" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && applyFiltersToUrl()}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
                     />
-                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={applyFiltersToUrl}>Search</Button>
+                     <Button size="lg" className="absolute right-0 top-0 h-12" onClick={handleSearchClick}>Search</Button>
                 </div>
             </section>
             
@@ -308,8 +305,8 @@ export default function ListingsPage() {
                                         <AccordionContent className="space-y-2 pt-2">
                                             <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
                                                 <Button variant="outline" className="w-full justify-between">
-                                                    {filters.location || 'Enugu State'}
-                                                    {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
+                                                    {searchParams.get('location') || 'Enugu State'}
+                                                    {searchParams.get('location') && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
                                                 </Button>
                                             </LocationModal>
                                         </AccordionContent>
@@ -318,8 +315,8 @@ export default function ListingsPage() {
                                         <AccordionTrigger className="font-semibold">Price Range</AccordionTrigger>
                                         <AccordionContent className="space-y-2 pt-2">
                                             <div className="flex gap-2">
-                                                <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
-                                                <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
+                                                <Input placeholder="Min" type="number" defaultValue={searchParams.get('minPrice') || ''} onChange={e => handleFilterChange('minPrice', e.target.value)} />
+                                                <Input placeholder="Max" type="number" defaultValue={searchParams.get('maxPrice') || ''} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
                                             </div>
                                         </AccordionContent>
                                     </AccordionItem>
@@ -330,8 +327,8 @@ export default function ListingsPage() {
                                                 <div key={condition} className="flex items-center space-x-2">
                                                     <Checkbox
                                                         id={`condition-${condition}`}
-                                                        checked={filters.condition.includes(condition)}
-                                                        onCheckedChange={(checked) => handleConditionChange(condition, !!checked)}
+                                                        checked={searchParams.getAll('condition').includes(condition)}
+                                                        onCheckedChange={(checked) => handleMultiFilterChange('condition', condition, !!checked)}
                                                     />
                                                     <Label htmlFor={`condition-${condition}`}>{condition}</Label>
                                                 </div>
@@ -342,13 +339,12 @@ export default function ListingsPage() {
                                         <AccordionTrigger className="font-semibold">Verification</AccordionTrigger>
                                         <AccordionContent className="space-y-3 pt-2">
                                             <div className="flex items-center space-x-2">
-                                                <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleFilterChange('verified', !!c)} />
-                                                <Label htmlFor="verified">Verified Ad</Label>
+                                                <Checkbox id="verified" checked={searchParams.get('verified') === 'true'} onCheckedChange={(c) => handleFilterChange('verified', c ? 'true' : '')} />
+                                                <Label htmlFor="verified">Verified Seller</Label>
                                             </div>
                                         </AccordionContent>
                                     </AccordionItem>
                                 </Accordion>
-                                <Button className="w-full" onClick={applyFiltersToUrl}>Apply Filters</Button>
                            </CardContent>
                        </Card>
                     </div>
@@ -438,5 +434,3 @@ export default function ListingsPage() {
         </div>
     );
 }
-
-    
