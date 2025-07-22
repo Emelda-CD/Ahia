@@ -17,7 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Search, X, Loader2, LayoutGrid, List, ArrowLeft } from 'lucide-react';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
 
@@ -37,10 +37,6 @@ const CategoryFilter = ({
         return categoriesData.find(c => c.name === selectedCategory);
     }, [selectedCategory]);
 
-    const handleBackToAll = () => {
-        onCategorySelect(null, null);
-    };
-
     if (activeCategory) {
         const subcategoriesToShow = isExpanded
             ? activeCategory.subcategories
@@ -48,13 +44,7 @@ const CategoryFilter = ({
             
         return (
             <div className="w-full">
-                <button
-                    onClick={handleBackToAll}
-                    className="flex items-center w-full text-left px-4 py-2 text-sm font-semibold rounded-md hover:bg-muted mb-2 text-muted-foreground"
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    All Categories
-                </button>
+                <h4 className="font-semibold text-lg px-4 mb-2 text-primary-foreground bg-primary -mx-4 -mt-4 p-4 rounded-t-lg">Categories</h4>
                 <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
                 <ul className="space-y-1 pl-4 pt-2">
                     {subcategoriesToShow.map(sub => (
