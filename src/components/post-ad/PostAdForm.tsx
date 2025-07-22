@@ -42,9 +42,6 @@ const baseSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   subcategory: z.string().min(1, 'Subcategory is required'),
   tags: z.array(z.string()).optional(),
-  images: z.array(z.instanceof(File))
-    .min(1, 'Please upload at least 1 photo.')
-    .max(10, 'You can upload a maximum of 10 photos.'),
   
   // Optional fields for different categories
   type: z.enum(['Sale', 'Rent']).optional(),
@@ -73,6 +70,9 @@ const baseSchema = z.object({
 
 // Create mode needs terms and at least one image file.
 const createSchema = baseSchema.extend({
+  images: z.array(z.instanceof(File))
+    .min(1, 'Please upload at least 1 photo.')
+    .max(10, 'You can upload a maximum of 10 photos.'),
   terms: z.boolean().refine((val) => val === true, 'You must accept the terms and conditions'),
 }).superRefine((data, ctx) => {
     // This refinement runs for all categories
@@ -696,7 +696,7 @@ export default function PostAdForm() {
                   </AlertDescription>
               </Alert>
           )}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          
               <fieldset disabled={!user || isSubmitting || isSuggesting || isFormLoading} className="space-y-4">
                   {step === 1 && (
                       <div className="space-y-4">
@@ -775,6 +775,7 @@ export default function PostAdForm() {
                           {renderDynamicFields()}
                       </div>
                   )}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
                   {step === 3 && (
                       <div className="space-y-6">
@@ -892,8 +893,22 @@ export default function PostAdForm() {
                             />
                           </div>
                           )}
+                           <div className="mt-8 flex justify-end gap-4">
+                              {step > 1 && (
+                                  <Button type="button" variant="outline" onClick={handlePrevStep} disabled={isSubmitting}>
+                                      <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                                  </Button>
+                              )}
+                             
+                                  <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user || isFormLoading}>
+                                      {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
+                                  </Button>
+                            
+                          </div>
                       </div>
+                      
                   )}
+                  </form>
               </fieldset>
 
               <div className="mt-8 flex justify-end gap-4">
@@ -907,13 +922,7 @@ export default function PostAdForm() {
                           Next
                       </Button>
                   )}
-                  {step === 3 && (
-                      <Button type="submit" size="lg" disabled={isSubmitting || isCompressing || !user || isFormLoading}>
-                          {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : (mode === 'create' ? 'Submit Ad' : 'Update Ad')}
-                      </Button>
-                  )}
               </div>
-          </form>
         </CardContent>
       </Card>
     </>
