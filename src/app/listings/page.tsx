@@ -39,19 +39,19 @@ const CategoryFilter = ({
             <div className="w-full">
                 <button
                     onClick={() => onCategorySelect(null, null)}
-                    className="flex items-center w-full text-left px-4 py-2 text-base font-semibold rounded-md hover:bg-muted mb-2"
+                    className="flex items-center w-full text-left px-4 py-2 text-sm font-semibold rounded-md hover:bg-muted mb-2 text-muted-foreground"
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     All Categories
                 </button>
                 <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
-                <ul className="space-y-2 pl-8 pt-2">
+                <ul className="space-y-1 pl-4 pt-2">
                     <li>
                         <button
                             onClick={() => onCategorySelect(activeCategory.name, null)}
                             className={cn(
-                                'hover:text-primary w-full text-left',
-                                !selectedSubcategory ? 'text-primary font-bold' : ''
+                                'hover:text-primary w-full text-left p-2 rounded-md',
+                                !selectedSubcategory ? 'text-primary font-bold bg-primary/10' : 'text-foreground'
                             )}
                         >
                             All in {activeCategory.name}
@@ -62,8 +62,8 @@ const CategoryFilter = ({
                             <button
                                 onClick={() => onCategorySelect(activeCategory.name, sub)}
                                 className={cn(
-                                    'text-muted-foreground hover:text-primary w-full text-left',
-                                    selectedSubcategory === sub ? 'text-primary font-bold' : ''
+                                    'hover:text-primary w-full text-left p-2 rounded-md',
+                                    selectedSubcategory === sub ? 'text-primary font-bold bg-primary/10' : 'text-foreground'
                                 )}
                             >
                                 {sub}
