@@ -37,6 +37,10 @@ const CategoryFilter = ({
         return categoriesData.find(c => c.name === selectedCategory);
     }, [selectedCategory]);
 
+    const handleBackToAll = () => {
+        onCategorySelect(null, null);
+    };
+
     if (activeCategory) {
         const subcategoriesToShow = isExpanded
             ? activeCategory.subcategories
@@ -45,7 +49,7 @@ const CategoryFilter = ({
         return (
             <div className="w-full">
                 <button
-                    onClick={() => onCategorySelect(null, null)}
+                    onClick={handleBackToAll}
                     className="flex items-center w-full text-left px-4 py-2 text-sm font-semibold rounded-md hover:bg-muted mb-2 text-muted-foreground"
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -79,22 +83,24 @@ const CategoryFilter = ({
     }
 
     return (
-        <Accordion type="multiple" className="w-full">
-            <h4 className="font-semibold text-lg px-4 mb-2">Categories</h4>
-            {categoriesData.map(category => (
-                <AccordionItem value={category.name} key={category.name} className="border-b-0">
-                     <button
-                        onClick={() => onCategorySelect(category.name, null)}
-                        className={cn(
-                            'px-4 py-2 w-full text-left text-base font-semibold hover:no-underline rounded-md hover:bg-muted',
-                            selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : ''
-                        )}
-                    >
-                        {category.name}
-                    </button>
-                </AccordionItem>
-            ))}
-        </Accordion>
+        <div className="w-full">
+            <h4 className="font-semibold text-lg px-4 mb-2 text-primary-foreground bg-primary -mx-4 -mt-4 p-4 rounded-t-lg">Categories</h4>
+            <Accordion type="multiple" className="w-full -mx-4">
+                {categoriesData.map(category => (
+                    <AccordionItem value={category.name} key={category.name} className="border-b-0 px-4">
+                        <button
+                            onClick={() => onCategorySelect(category.name, null)}
+                            className={cn(
+                                'py-2 w-full text-left text-base font-semibold hover:no-underline rounded-md hover:bg-muted',
+                                selectedCategory === category.name && !selectedSubcategory ? 'bg-primary/10 text-primary' : ''
+                            )}
+                        >
+                            {category.name}
+                        </button>
+                    </AccordionItem>
+                ))}
+            </Accordion>
+        </div>
     );
 };
 
@@ -234,45 +240,51 @@ export default function ListingsPage() {
             <div className="grid lg:grid-cols-4 gap-8">
                 <aside className="lg:col-span-1">
                     {/* Desktop Filters */}
-                    <div className="hidden lg:block p-4 rounded-lg border bg-card space-y-6 sticky top-24">
-                        <CategoryFilter
-                            selectedCategory={searchParams.get('category')}
-                            selectedSubcategory={searchParams.get('subcategory')}
-                            onCategorySelect={handleCategoryFilterChange}
-                        />
+                    <div className="hidden lg:block space-y-6 sticky top-24">
+                        <div className="p-4 rounded-lg border bg-card">
+                            <CategoryFilter
+                                selectedCategory={searchParams.get('category')}
+                                selectedSubcategory={searchParams.get('subcategory')}
+                                onCategorySelect={handleCategoryFilterChange}
+                            />
+                        </div>
                         
-                       <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
-                            <AccordionItem value="location">
-                                <AccordionTrigger>Location</AccordionTrigger>
-                                <AccordionContent className="space-y-2">
-                                     <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
-                                        <Button variant="outline" className="w-full justify-between">
-                                            {filters.location || 'Enugu State'}
-                                            {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
-                                        </Button>
-                                    </LocationModal>
-                                </AccordionContent>
-                            </AccordionItem>
-                             <AccordionItem value="price">
-                                <AccordionTrigger>Price Range</AccordionTrigger>
-                                <AccordionContent className="space-y-2">
-                                    <div className="flex gap-2">
-                                        <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
-                                        <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="verification">
-                                <AccordionTrigger>Verification</AccordionTrigger>
-                                <AccordionContent className="space-y-3">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleFilterChange('verified', !!c)} />
-                                        <Label htmlFor="verified">Verified Ad</Label>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                        <Button className="w-full" onClick={applyFiltersToUrl}>Apply Filters</Button>
+                       <Card>
+                           <CardContent className="p-4 space-y-4">
+                               <Accordion type="multiple" defaultValue={['location', 'price', 'verification']} className="w-full">
+                                    <AccordionItem value="location">
+                                        <AccordionTrigger className="font-semibold">Location</AccordionTrigger>
+                                        <AccordionContent className="space-y-2 pt-2">
+                                            <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
+                                                <Button variant="outline" className="w-full justify-between">
+                                                    {filters.location || 'Enugu State'}
+                                                    {filters.location && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
+                                                </Button>
+                                            </LocationModal>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                    <AccordionItem value="price">
+                                        <AccordionTrigger className="font-semibold">Price Range</AccordionTrigger>
+                                        <AccordionContent className="space-y-2 pt-2">
+                                            <div className="flex gap-2">
+                                                <Input placeholder="Min" type="number" value={filters.minPrice} onChange={e => handleFilterChange('minPrice', e.target.value)} />
+                                                <Input placeholder="Max" type="number" value={filters.maxPrice} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                    <AccordionItem value="verification" className="border-b-0">
+                                        <AccordionTrigger className="font-semibold">Verification</AccordionTrigger>
+                                        <AccordionContent className="space-y-3 pt-2">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="verified" checked={filters.verified} onCheckedChange={(c) => handleFilterChange('verified', !!c)} />
+                                                <Label htmlFor="verified">Verified Ad</Label>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+                                <Button className="w-full" onClick={applyFiltersToUrl}>Apply Filters</Button>
+                           </CardContent>
+                       </Card>
                     </div>
 
                     {/* Mobile Filters Trigger */}
