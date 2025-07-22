@@ -37,6 +37,10 @@ const CategoryFilter = ({
         return categoriesData.find(c => c.name === selectedCategory);
     }, [selectedCategory]);
 
+    const handleBackToAll = () => {
+        onCategorySelect(null, null);
+    };
+
     if (activeCategory) {
         const subcategoriesToShow = isExpanded
             ? activeCategory.subcategories
@@ -44,9 +48,24 @@ const CategoryFilter = ({
             
         return (
             <div className="w-full">
-                <h4 className="font-semibold text-lg px-4 mb-2 text-primary-foreground bg-primary -mx-4 -mt-4 p-4 rounded-t-lg">Categories</h4>
+                <div className="bg-primary text-primary-foreground -mx-4 -mt-4 p-4 rounded-t-lg mb-2">
+                    <button onClick={handleBackToAll} className="font-semibold text-lg hover:underline flex items-center gap-2">
+                         <ArrowLeft className="w-5 h-5"/> All Categories
+                    </button>
+                </div>
                 <h3 className="px-4 py-2 text-lg font-bold text-primary">{activeCategory.name}</h3>
                 <ul className="space-y-1 pl-4 pt-2">
+                     <li key="all">
+                        <button
+                            onClick={() => onCategorySelect(activeCategory.name, null)}
+                            className={cn(
+                                'hover:text-primary w-full text-left p-2 rounded-md',
+                                !selectedSubcategory ? 'text-primary font-bold bg-primary/10' : 'text-foreground'
+                            )}
+                        >
+                            All in {activeCategory.name}
+                        </button>
+                    </li>
                     {subcategoriesToShow.map(sub => (
                         <li key={sub}>
                             <button
@@ -64,7 +83,7 @@ const CategoryFilter = ({
                 {activeCategory.subcategories.length > SUBCATEGORY_LIMIT && (
                      <div className="pl-6 pt-2">
                         <Button variant="link" onClick={() => setIsExpanded(!isExpanded)} className="p-0 h-auto">
-                            {isExpanded ? 'Show Less' : 'Show More'}
+                            {isExpanded ? 'Show Less' : `Show ${activeCategory.subcategories.length - SUBCATEGORY_LIMIT} more`}
                         </Button>
                     </div>
                 )}
@@ -406,3 +425,5 @@ export default function ListingsPage() {
         </div>
     );
 }
+
+    
