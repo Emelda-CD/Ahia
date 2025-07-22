@@ -210,6 +210,14 @@ export default function ListingsPage() {
         }
         router.push(`/listings?${params.toString()}`);
     };
+
+    const searchPlaceholder = useMemo(() => {
+        const category = searchParams.get('category');
+        const subcategory = searchParams.get('subcategory');
+        if (subcategory) return `Search in ${subcategory}...`;
+        if (category) return `Search in ${category}...`;
+        return "Search for anything...";
+    }, [searchParams]);
     
     return (
         <div className="container mx-auto px-4 py-8">
@@ -217,7 +225,7 @@ export default function ListingsPage() {
                  <div className="relative w-full max-w-2xl mx-auto mb-8">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input 
-                        placeholder="Search for anything..." 
+                        placeholder={searchPlaceholder}
                         className="pl-10 h-12 text-lg" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
