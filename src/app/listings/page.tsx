@@ -48,7 +48,7 @@ const CategoryFilter = ({
             
         return (
             <div className="w-full">
-                <div className="bg-primary text-primary-foreground -mx-4 -mt-4 p-4 rounded-t-lg mb-2">
+                 <div className="bg-primary text-primary-foreground -mx-4 -mt-4 p-4 rounded-t-lg mb-2">
                     <button onClick={handleBackToAll} className="font-semibold text-lg hover:underline flex items-center gap-2">
                          <ArrowLeft className="w-5 h-5"/> All Categories
                     </button>
@@ -256,6 +256,30 @@ export default function ListingsPage() {
         if (category) return `Search in ${category}...`;
         return "Search for anything...";
     }, [searchParams]);
+
+    const resultsText = useMemo(() => {
+        const q = searchParams.get('q');
+        const category = searchParams.get('category');
+        const subcategory = searchParams.get('subcategory');
+        
+        const count = filteredAds.length;
+        const s = count === 1 ? '' : 's';
+
+        let text = `Showing ${count} result${s}`;
+
+        if (q) {
+            text += ` for "${q}"`;
+        }
+        
+        if (subcategory) {
+            text += ` in ${subcategory}`;
+        } else if (category) {
+            text += ` in ${category}`;
+        }
+
+        return text;
+
+    }, [filteredAds.length, searchParams]);
     
     const conditions = ["New", "Used", "Nigerian Used", "Foreign Used"];
 
@@ -369,8 +393,7 @@ export default function ListingsPage() {
                             <div className="h-5 bg-muted rounded w-48 animate-pulse"></div>
                         ) : (
                             <p className="text-muted-foreground">
-                                Showing {filteredAds.length} result{filteredAds.length === 1 ? '' : 's'}
-                                {searchParams.get('category') && <> in <span className="font-semibold text-foreground">{searchParams.get('subcategory') || searchParams.get('category')}</span></>}
+                                {resultsText}
                             </p>
                         )}
                         <div className="flex items-center gap-1">
@@ -416,7 +439,8 @@ export default function ListingsPage() {
                         </>
                     ) : (
                         <div className="text-center py-16 border rounded-lg bg-card">
-                            <h3 className="text-2xl font-bold">No results found</h3>
+                            <Search className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-2xl font-bold">No results found</h3>
                             <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
                         </div>
                     )}
@@ -425,5 +449,3 @@ export default function ListingsPage() {
         </div>
     );
 }
-
-    
