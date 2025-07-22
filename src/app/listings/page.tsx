@@ -11,15 +11,14 @@ import AdCard from '@/components/AdCard';
 import AdCardListItem from '@/components/AdCardListItem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, X, Loader2, LayoutGrid, List, ArrowLeft, Filter } from 'lucide-react';
+import { Search, X, Loader2, LayoutGrid, List, ArrowLeft } from 'lucide-react';
 import { LocationModal } from '@/components/common/LocationModal';
 import { getAds } from '@/lib/firebase/actions';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { MobileCategorySelector } from '@/components/common/MobileCategorySelector';
-import { useDebouncedCallback } from 'use-debounce';
-import { MobileFilterSheet } from '@/components/common/MobileFilterSheet';
 
 
 const CategoryFilter = ({
@@ -117,10 +116,6 @@ export default function ListingsPage() {
     
     const { toast } = useToast();
     
-    const updateUrlParams = useDebouncedCallback((newParams: URLSearchParams) => {
-        router.push(`/listings?${newParams.toString()}`);
-    }, 300);
-
     const handleFilterChange = useCallback((key: string, value: any) => {
         const params = new URLSearchParams(searchParams.toString());
         if (value) {
@@ -226,13 +221,7 @@ export default function ListingsPage() {
     };
     
     const handleSearchClick = () => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (searchQuery) {
-            params.set('q', searchQuery);
-        } else {
-            params.delete('q');
-        }
-        router.push(`/listings?${params.toString()}`);
+        handleFilterChange('q', searchQuery);
     }
 
     const searchPlaceholder = useMemo(() => {
@@ -284,61 +273,64 @@ export default function ListingsPage() {
             </section>
             
             <div className="grid lg:grid-cols-4 gap-8">
-                <aside className="lg:col-span-1">
-                    {/* Desktop Filters */}
-                    <div className="hidden lg:block space-y-6 sticky top-24">
-                        <div className="p-4 rounded-lg border bg-card">
-                            <CategoryFilter
-                                selectedCategory={searchParams.get('category')}
-                                selectedSubcategory={searchParams.get('subcategory')}
-                                onCategorySelect={handleCategoryFilterChange}
-                            />
-                        </div>
-                        
-                       <Card>
-                            <MobileFilterSheet 
-                                onFilterChange={handleFilterChange} 
-                                onMultiFilterChange={handleMultiFilterChange}
-                            >
-                               <div className="p-4 space-y-4"></div>
-                            </MobileFilterSheet>
-                       </Card>
+                <aside className="lg:col-span-1 hidden lg:block space-y-6 sticky top-24">
+                     <div className="p-4 rounded-lg border bg-card">
+                        <CategoryFilter
+                            selectedCategory={searchParams.get('category')}
+                            selectedSubcategory={searchParams.get('subcategory')}
+                            onCategorySelect={handleCategoryFilterChange}
+                        />
                     </div>
-
-                    {/* Mobile Filters Trigger */}
-                    <div className="lg:hidden flex gap-2">
-                        <div className="w-2/3">
-                            <MobileCategorySelector
-                                selectedCategory={searchParams.get('category')}
-                                selectedSubcategory={searchParams.get('subcategory')}
-                                onCategorySelect={(cat) => {
-                                    const params = new URLSearchParams(searchParams.toString());
-                                    if (cat) params.set('category', cat);
-                                    else params.delete('category');
-                                    params.delete('subcategory');
-                                    router.push(`/listings?${params.toString()}`);
-                                }}
-                                onSubcategorySelect={(subcat) => {
-                                    const params = new URLSearchParams(searchParams.toString());
-                                    if (subcat && subcat !== 'all') params.set('subcategory', subcat);
-                                    else params.delete('subcategory');
-                                    router.push(`/listings?${params.toString()}`);
-                                }}
-                            />
-                        </div>
-                         <div className="w-1/3">
-                           <MobileFilterSheet 
-                             onFilterChange={handleFilterChange} 
-                             onMultiFilterChange={handleMultiFilterChange}
-                           >
-                                <Button variant="outline" className="w-full h-full text-base">
-                                    <Filter className="mr-2 h-4 w-4"/>
-                                    Filters
-                                </Button>
-                           </MobileFilterSheet>
-                        </div>
-                    </div>
-
+                    <Card>
+                        <CardContent className="p-4">
+                             <Accordion type="multiple" defaultValue={['location', 'price', 'verification', 'condition']} className="w-full">
+                                <AccordionItem value="location">
+                                    <AccordionTrigger className="font-semibold">Location</AccordionTrigger>
+                                    <AccordionContent className="space-y-2 pt-2">
+                                        <LocationModal onSelect={(town, lga) => handleFilterChange('location', `${town}, ${lga}`)}>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                {searchParams.get('location') || 'Enugu State'}
+                                                {searchParams.get('location') && <X className="h-4 w-4" onClick={(e) => { e.stopPropagation(); handleFilterChange('location', '');}} />}
+                                            </Button>
+                                        </LocationModal>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="price">
+                                    <AccordionTrigger className="font-semibold">Price Range</AccordionTrigger>
+                                    <AccordionContent className="space-y-2 pt-2">
+                                        <div className="flex gap-2">
+                                            <Input placeholder="Min" type="number" defaultValue={searchParams.get('minPrice') || ''} onChange={e => handleFilterChange('minPrice', e.target.value)} />
+                                            <Input placeholder="Max" type="number" defaultValue={searchParams.get('maxPrice') || ''} onChange={e => handleFilterChange('maxPrice', e.target.value)} />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="condition">
+                                    <AccordionTrigger className="font-semibold">Condition</AccordionTrigger>
+                                    <AccordionContent className="space-y-3 pt-2">
+                                        {["New", "Used", "Nigerian Used", "Foreign Used"].map(condition => (
+                                            <div key={condition} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`condition-${condition}`}
+                                                    checked={searchParams.getAll('condition').includes(condition)}
+                                                    onCheckedChange={(checked) => handleMultiFilterChange('condition', condition, !!checked)}
+                                                />
+                                                <Label htmlFor={`condition-${condition}`}>{condition}</Label>
+                                            </div>
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="verification" className="border-b-0">
+                                    <AccordionTrigger className="font-semibold">Verification</AccordionTrigger>
+                                    <AccordionContent className="space-y-3 pt-2">
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox id="verified" checked={searchParams.get('verified') === 'true'} onCheckedChange={(c) => handleFilterChange('verified', c ? 'true' : '')} />
+                                            <Label htmlFor="verified">Verified Seller</Label>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        </CardContent>
+                    </Card>
                 </aside>
 
                 <main className="lg:col-span-3">
